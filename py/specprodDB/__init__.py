@@ -13,3 +13,4 @@ It does *not* include:
 #. Pipeline processing status database.
 #. Imaging and targeting databases.
 """
+from ._version import __version__
