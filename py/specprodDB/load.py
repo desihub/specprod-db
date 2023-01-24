@@ -60,7 +60,7 @@ from desiutil.log import get_logger, DEBUG, INFO
 # from desitarget.targets import decode_targetid
 
 # from desispec.io.meta import specprod_root, faflavor2program
-from desispec.io.util import checkgzip
+# from desispec.io.util import checkgzip
 from .util import convert_dateobs, parse_pgpass, cameraid, surveyid, programid, spgrpid
 
 Base = declarative_base()
@@ -1473,7 +1473,7 @@ def main():
                                 # 'rowfilter': _remove_loaded_targetid,
                                 'chunksize': options.chunksize,
                                 'maxrows': options.maxrows
-                               }],
+                                }],
                 #
                 # This stage loads targets, and such photometry as they have, that did not
                 # successfully match to a known LS DR9 object.
@@ -1488,7 +1488,7 @@ def main():
                                 'q3c': 'ra',
                                 'chunksize': options.chunksize,
                                 'maxrows': options.maxrows
-                               }],
+                                }],
                 'target': [{'filepaths': os.path.join(options.targetpath, 'vac', 'lsdr9-photometry', os.environ['SPECPROD'], 'v1.0', 'potential-targets', 'targetphot-potential-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
                             'tcls': Target,
                             'hdu': 'TARGETPHOT',
@@ -1497,7 +1497,7 @@ def main():
                             # 'rowfilter': _remove_loaded_unique_id,
                             'chunksize': options.chunksize,
                             'maxrows': options.maxrows
-                           }],
+                            }],
                 'redshift': [{'filepaths': os.path.join(options.datapath, 'spectro', 'redux', os.environ['SPECPROD'], 'zcatalog', 'zall-pix-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
                               'tcls': Zpix,
                               'hdu': 'ZCATALOG',
@@ -1508,7 +1508,7 @@ def main():
                               'rowfilter': lambda x: (x['TARGETID'] > 0) & ((x['TARGETID'] & 2**59) == 0),
                               'chunksize': options.chunksize,
                               'maxrows': options.maxrows
-                             },
+                              },
                              {'filepaths': os.path.join(options.datapath, 'spectro', 'redux', os.environ['SPECPROD'], 'zcatalog', 'zall-tilecumulative-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
                               'tcls': Ztile,
                               'hdu': 'ZCATALOG',
@@ -1520,7 +1520,7 @@ def main():
                               'rowfilter': lambda x: (x['TARGETID'] > 0) & ((x['TARGETID'] & 2**59) == 0),
                               'chunksize': options.chunksize,
                               'maxrows': options.maxrows
-                             }],
+                              }],
                 'fiberassign': [{'filepaths': None,
                                  'tcls': Fiberassign,
                                  'hdu': 'FIBERASSIGN',
@@ -1530,7 +1530,7 @@ def main():
                                  'q3c': 'target_ra',
                                  'chunksize': options.chunksize,
                                  'maxrows': options.maxrows
-                                },
+                                 },
                                 {'filepaths': None,
                                  'tcls': Potential,
                                  'hdu': 'POTENTIAL_ASSIGNMENTS',
@@ -1539,8 +1539,7 @@ def main():
                                  'rowfilter': lambda x: (x['TARGETID'] > 0) & ((x['TARGETID'] & 2**59) == 0),
                                  'chunksize': options.chunksize,
                                  'maxrows': options.maxrows
-                                }]
-                }
+                                 }]}
     try:
         loader = loaders[options.load]
     except KeyError:
@@ -1552,7 +1551,7 @@ def main():
     if options.load == 'fiberassign':
         try:
             fiberassign_files = [checkgzip(os.path.join(options.tilespath, (f"{tileid[0]:06d}")[0:3], f"fiberassign-{tileid[0]:06d}.fits"))
-                                for tileid in dbSession.query(Tile.tileid).order_by(Tile.tileid)]
+                                 for tileid in dbSession.query(Tile.tileid).order_by(Tile.tileid)]
         except FileNotFoundError:
             log.error("Some fiberassign files were not found!")
             return 1
