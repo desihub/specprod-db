@@ -38,6 +38,18 @@ def cameraid(camera):
 def frameid(expid, camera):
     """Converts the pair `expid`, `camera` into an arbitrary integer
     suitable for use as a primary key.
+
+    Parameters
+    ----------
+    expid : :class:`int`
+        Exposure ID associated with the frame.
+    camera : :class:`str`
+        Camera name.
+
+    Returns
+    -------
+    :class:`int`
+        An arbitrary integer.
     """
     return 100*expid + cameraid(camera)
 
@@ -236,7 +248,7 @@ def convert_dateobs(timestamp, tzinfo=None):
     return x
 
 
-def parse_pgpass(hostname='nerscdb03.nersc.gov', username='desidev_admin'):
+def parse_pgpass(hostname='specprod-db.desi.lbl.gov', username='desi_admin'):
     """Read a ``~/.pgpass`` file.
 
     Parameters

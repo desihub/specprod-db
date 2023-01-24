@@ -30,8 +30,8 @@ class TestDatabase(unittest.TestCase):
                        "DESI_SPECTRO_DATA": None,
                        "DESI_SPECTRO_REDUX": None}
         cls.testEnv = {'SPECPROD': 'dailytest',
-                       "DESI_SPECTRO_DATA": os.path.join(cls.testDir,'spectro','data'),
-                       "DESI_SPECTRO_REDUX": os.path.join(cls.testDir,'spectro','redux')}
+                       "DESI_SPECTRO_DATA": os.path.join(cls.testDir, 'spectro', 'data'),
+                       "DESI_SPECTRO_REDUX": os.path.join(cls.testDir, 'spectro', 'redux')}
         for e in cls.origEnv:
             if e in os.environ:
                 cls.origEnv[e] = os.environ[e]

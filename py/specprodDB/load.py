@@ -69,6 +69,7 @@ dbSession = scoped_session(sessionmaker())
 schemaname = None
 log = None
 
+
 @declarative_mixin
 class SchemaMixin(object):
     """Mixin class to allow schema name to be changed at runtime. Also
@@ -285,7 +286,7 @@ class Tile(SchemaMixin, Base):
     faflavor = Column(String(20), nullable=False)
     nexp = Column(BigInteger, nullable=False)  # In principle this could be replaced by a count of exposures
     exptime = Column(DOUBLE_PRECISION, nullable=False)
-    tilera = Column(DOUBLE_PRECISION, nullable=False)   #- Calib exposures don't have RA, dec
+    tilera = Column(DOUBLE_PRECISION, nullable=False)  # Calib exposures don't have RA, dec
     tiledec = Column(DOUBLE_PRECISION, nullable=False)
     efftime_etc = Column(DOUBLE_PRECISION, nullable=False)
     efftime_spec = Column(DOUBLE_PRECISION, nullable=False)
@@ -298,7 +299,7 @@ class Tile(SchemaMixin, Base):
     lya_efftime_dark = Column(DOUBLE_PRECISION, nullable=False)
     goaltype = Column(String(20), nullable=False)
     mintfrac = Column(DOUBLE_PRECISION, nullable=False)
-    lastnight = Column(Integer, nullable=False) # In principle this could be replaced by MAX(night) grouped by exposures.
+    lastnight = Column(Integer, nullable=False)  # In principle this could be replaced by MAX(night) grouped by exposures.
 
     exposures = relationship("Exposure", back_populates="tile")
     fiberassign = relationship("Fiberassign", back_populates="tile")
@@ -321,7 +322,7 @@ class Exposure(SchemaMixin, Base):
     night = Column(Integer, nullable=False, index=True)
     expid = Column(Integer, primary_key=True, autoincrement=False)
     tileid = Column(Integer, ForeignKey('tile.tileid'), nullable=False, index=True)
-    tilera = Column(DOUBLE_PRECISION, nullable=False)   #- Calib exposures don't have RA, dec
+    tilera = Column(DOUBLE_PRECISION, nullable=False)  # Calib exposures don't have RA, dec
     tiledec = Column(DOUBLE_PRECISION, nullable=False)
     date_obs = Column(DateTime(True), nullable=False)
     mjd = Column(DOUBLE_PRECISION, nullable=False)

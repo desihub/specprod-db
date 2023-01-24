@@ -46,7 +46,9 @@ intersphinx_mapping = {
     'matplotlib': ('https://matplotlib.org/', None),
     'astropy': ('https://docs.astropy.org/en/stable/', None),
     'h5py': ('https://docs.h5py.org/en/latest/', None),
-    'sqlalchemy': ('https://docs.sqlalchemy.org/en/14/', None)
+    'sqlalchemy': ('https://docs.sqlalchemy.org/en/14/', None),
+    'desispec': ('https://desispec.readthedocs.io/en/latest/', None),
+    'desiutil': ('https://desiutil.readthedocs.io/en/latest/', None),
     }
 
 # Add any paths that contain templates here, relative to this directory.
