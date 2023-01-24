@@ -1460,86 +1460,86 @@ def main():
                               'chunksize': options.chunksize,
                               'maxrows': options.maxrows
                               }],
-                #
-                # The potential targets are supposed to include data for all targets.
-                # In other words, every actual target is also a potential target.
-                #
-                'photometry': [{'filepaths': glob.glob(os.path.join(options.targetpath, 'vac', 'lsdr9-photometry', os.environ['SPECPROD'], 'v1.0', 'potential-targets', 'tractorphot', 'tractorphot*.fits')),
-                                'tcls': Photometry,
-                                'hdu': 'TRACTORPHOT',
-                                'expand': {'DCHISQ': ('dchisq_psf', 'dchisq_rex', 'dchisq_dev', 'dchisq_exp', 'dchisq_ser',),
-                                           'OBJID': 'brick_objid',
-                                           'TYPE': 'morphtype'},
-                                # 'rowfilter': _remove_loaded_targetid,
+               #
+               # The potential targets are supposed to include data for all targets.
+               # In other words, every actual target is also a potential target.
+               #
+               'photometry': [{'filepaths': glob.glob(os.path.join(options.targetpath, 'vac', 'lsdr9-photometry', os.environ['SPECPROD'], 'v1.0', 'potential-targets', 'tractorphot', 'tractorphot*.fits')),
+                               'tcls': Photometry,
+                               'hdu': 'TRACTORPHOT',
+                               'expand': {'DCHISQ': ('dchisq_psf', 'dchisq_rex', 'dchisq_dev', 'dchisq_exp', 'dchisq_ser',),
+                                          'OBJID': 'brick_objid',
+                                          'TYPE': 'morphtype'},
+                               # 'rowfilter': _remove_loaded_targetid,
+                               'chunksize': options.chunksize,
+                               'maxrows': options.maxrows
+                               }],
+               #
+               # This stage loads targets, and such photometry as they have, that did not
+               # successfully match to a known LS DR9 object.
+               #
+               'targetphot': [{'filepaths': os.path.join(options.targetpath, 'vac', 'lsdr9-photometry', os.environ['SPECPROD'], 'v1.0', 'potential-targets', 'targetphot-potential-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
+                               'tcls': Photometry,
+                               'hdu': 'TARGETPHOT',
+                               'preload': _add_ls_id,
+                               'expand': {'DCHISQ': ('dchisq_psf', 'dchisq_rex', 'dchisq_dev', 'dchisq_exp', 'dchisq_ser',)},
+                               'convert': {'gaia_astrometric_params_solved': lambda x: int(x)},
+                               'rowfilter': _deduplicate_targetid,
+                               'q3c': 'ra',
+                               'chunksize': options.chunksize,
+                               'maxrows': options.maxrows
+                               }],
+               'target': [{'filepaths': os.path.join(options.targetpath, 'vac', 'lsdr9-photometry', os.environ['SPECPROD'], 'v1.0', 'potential-targets', 'targetphot-potential-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
+                           'tcls': Target,
+                           'hdu': 'TARGETPHOT',
+                           'preload': _target_unique_id,
+                           'convert': {'id': lambda x: x[0] << 64 | x[1]},
+                           # 'rowfilter': _remove_loaded_unique_id,
+                           'chunksize': options.chunksize,
+                           'maxrows': options.maxrows
+                           }],
+               'redshift': [{'filepaths': os.path.join(options.datapath, 'spectro', 'redux', os.environ['SPECPROD'], 'zcatalog', 'zall-pix-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
+                             'tcls': Zpix,
+                             'hdu': 'ZCATALOG',
+                             'preload': _survey_program,
+                             'expand': {'COEFF': ('coeff_0', 'coeff_1', 'coeff_2', 'coeff_3', 'coeff_4',
+                                                  'coeff_5', 'coeff_6', 'coeff_7', 'coeff_8', 'coeff_9',)},
+                             'convert': {'id': lambda x: x[0] << 64 | x[1]},
+                             'rowfilter': lambda x: (x['TARGETID'] > 0) & ((x['TARGETID'] & 2**59) == 0),
+                             'chunksize': options.chunksize,
+                             'maxrows': options.maxrows
+                             },
+                            {'filepaths': os.path.join(options.datapath, 'spectro', 'redux', os.environ['SPECPROD'], 'zcatalog', 'zall-tilecumulative-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
+                             'tcls': Ztile,
+                             'hdu': 'ZCATALOG',
+                             'preload': _survey_program,
+                             'expand': {'COEFF': ('coeff_0', 'coeff_1', 'coeff_2', 'coeff_3', 'coeff_4',
+                                                  'coeff_5', 'coeff_6', 'coeff_7', 'coeff_8', 'coeff_9',)},
+                             'convert': {'id': lambda x: x[0] << 64 | x[1],
+                                         'targetphotid': lambda x: x[0] << 64 | x[1]},
+                             'rowfilter': lambda x: (x['TARGETID'] > 0) & ((x['TARGETID'] & 2**59) == 0),
+                             'chunksize': options.chunksize,
+                             'maxrows': options.maxrows
+                             }],
+               'fiberassign': [{'filepaths': None,
+                                'tcls': Fiberassign,
+                                'hdu': 'FIBERASSIGN',
+                                'preload': _tileid,
+                                'convert': {'id': lambda x: x[0] << 64 | x[1]},
+                                'rowfilter': lambda x: (x['TARGETID'] > 0) & ((x['TARGETID'] & 2**59) == 0),
+                                'q3c': 'target_ra',
                                 'chunksize': options.chunksize,
                                 'maxrows': options.maxrows
-                                }],
-                #
-                # This stage loads targets, and such photometry as they have, that did not
-                # successfully match to a known LS DR9 object.
-                #
-                'targetphot': [{'filepaths': os.path.join(options.targetpath, 'vac', 'lsdr9-photometry', os.environ['SPECPROD'], 'v1.0', 'potential-targets', 'targetphot-potential-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
-                                'tcls': Photometry,
-                                'hdu': 'TARGETPHOT',
-                                'preload': _add_ls_id,
-                                'expand': {'DCHISQ': ('dchisq_psf', 'dchisq_rex', 'dchisq_dev', 'dchisq_exp', 'dchisq_ser',)},
-                                'convert': {'gaia_astrometric_params_solved': lambda x: int(x)},
-                                'rowfilter': _deduplicate_targetid,
-                                'q3c': 'ra',
+                                },
+                               {'filepaths': None,
+                                'tcls': Potential,
+                                'hdu': 'POTENTIAL_ASSIGNMENTS',
+                                'preload': _tileid,
+                                'convert': {'id': lambda x: x[0] << 64 | x[1]},
+                                'rowfilter': lambda x: (x['TARGETID'] > 0) & ((x['TARGETID'] & 2**59) == 0),
                                 'chunksize': options.chunksize,
                                 'maxrows': options.maxrows
-                                }],
-                'target': [{'filepaths': os.path.join(options.targetpath, 'vac', 'lsdr9-photometry', os.environ['SPECPROD'], 'v1.0', 'potential-targets', 'targetphot-potential-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
-                            'tcls': Target,
-                            'hdu': 'TARGETPHOT',
-                            'preload': _target_unique_id,
-                            'convert': {'id': lambda x: x[0] << 64 | x[1]},
-                            # 'rowfilter': _remove_loaded_unique_id,
-                            'chunksize': options.chunksize,
-                            'maxrows': options.maxrows
-                            }],
-                'redshift': [{'filepaths': os.path.join(options.datapath, 'spectro', 'redux', os.environ['SPECPROD'], 'zcatalog', 'zall-pix-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
-                              'tcls': Zpix,
-                              'hdu': 'ZCATALOG',
-                              'preload': _survey_program,
-                              'expand': {'COEFF': ('coeff_0', 'coeff_1', 'coeff_2', 'coeff_3', 'coeff_4',
-                                                   'coeff_5', 'coeff_6', 'coeff_7', 'coeff_8', 'coeff_9',)},
-                              'convert': {'id': lambda x: x[0] << 64 | x[1]},
-                              'rowfilter': lambda x: (x['TARGETID'] > 0) & ((x['TARGETID'] & 2**59) == 0),
-                              'chunksize': options.chunksize,
-                              'maxrows': options.maxrows
-                              },
-                             {'filepaths': os.path.join(options.datapath, 'spectro', 'redux', os.environ['SPECPROD'], 'zcatalog', 'zall-tilecumulative-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
-                              'tcls': Ztile,
-                              'hdu': 'ZCATALOG',
-                              'preload': _survey_program,
-                              'expand': {'COEFF': ('coeff_0', 'coeff_1', 'coeff_2', 'coeff_3', 'coeff_4',
-                                                   'coeff_5', 'coeff_6', 'coeff_7', 'coeff_8', 'coeff_9',)},
-                              'convert': {'id': lambda x: x[0] << 64 | x[1],
-                                          'targetphotid': lambda x: x[0] << 64 | x[1]},
-                              'rowfilter': lambda x: (x['TARGETID'] > 0) & ((x['TARGETID'] & 2**59) == 0),
-                              'chunksize': options.chunksize,
-                              'maxrows': options.maxrows
-                              }],
-                'fiberassign': [{'filepaths': None,
-                                 'tcls': Fiberassign,
-                                 'hdu': 'FIBERASSIGN',
-                                 'preload': _tileid,
-                                 'convert': {'id': lambda x: x[0] << 64 | x[1]},
-                                 'rowfilter': lambda x: (x['TARGETID'] > 0) & ((x['TARGETID'] & 2**59) == 0),
-                                 'q3c': 'target_ra',
-                                 'chunksize': options.chunksize,
-                                 'maxrows': options.maxrows
-                                 },
-                                {'filepaths': None,
-                                 'tcls': Potential,
-                                 'hdu': 'POTENTIAL_ASSIGNMENTS',
-                                 'preload': _tileid,
-                                 'convert': {'id': lambda x: x[0] << 64 | x[1]},
-                                 'rowfilter': lambda x: (x['TARGETID'] > 0) & ((x['TARGETID'] & 2**59) == 0),
-                                 'chunksize': options.chunksize,
-                                 'maxrows': options.maxrows
-                                 }]}
+                                }]}
     try:
         loader = loaders[options.load]
     except KeyError:
