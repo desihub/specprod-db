@@ -10,7 +10,7 @@ from datetime import datetime
 from os.path import expanduser
 
 
-_surveyid = {'cmx': 1, 'special': 2, 'sv1': 3, 'sv2': 4, 'sv3':5, 'main':6}
+_surveyid = {'cmx': 1, 'special': 2, 'sv1': 3, 'sv2': 4, 'sv3': 5, 'main': 6}
 _decode_surveyid = dict([(v, k) for k, v in _surveyid.items()])
 _programid = {'backup': 1, 'bright': 2, 'dark': 3, 'other': 4}
 _decode_programid = dict([(v, k) for k, v in _programid.items()])

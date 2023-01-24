@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 """Test specprodDB.
 """
-from __future__ import absolute_import, division
-import unittest, os
+import unittest
+import os
 from datetime import datetime, timedelta
 from shutil import rmtree
 
@@ -26,12 +26,12 @@ class TestDatabase(unittest.TestCase):
         # cls.testyfile = 'test-{uuid}/test-{uuid}.yaml'.format(uuid=uuid1())
         # cls.testbrfile = 'test-{uuid}/test-br-{uuid}.fits'.format(uuid=uuid1())
         cls.testDir = os.path.join(os.environ['HOME'], 'desi_test_database')
-        cls.origEnv = {'SPECPROD':None,
-            "DESI_SPECTRO_DATA":None,
-            "DESI_SPECTRO_REDUX":None}
-        cls.testEnv = {'SPECPROD':'dailytest',
-            "DESI_SPECTRO_DATA":os.path.join(cls.testDir,'spectro','data'),
-            "DESI_SPECTRO_REDUX":os.path.join(cls.testDir,'spectro','redux')}
+        cls.origEnv = {'SPECPROD': None,
+                       "DESI_SPECTRO_DATA": None,
+                       "DESI_SPECTRO_REDUX": None}
+        cls.testEnv = {'SPECPROD': 'dailytest',
+                       "DESI_SPECTRO_DATA": os.path.join(cls.testDir,'spectro','data'),
+                       "DESI_SPECTRO_REDUX": os.path.join(cls.testDir,'spectro','redux')}
         for e in cls.origEnv:
             if e in os.environ:
                 cls.origEnv[e] = os.environ[e]
