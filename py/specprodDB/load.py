@@ -13,7 +13,7 @@ Notes
 
   - Load as much data as possible from patched fiberassign files.
   - If necessary, create intermediate files for ingestion by running
-    the lsdr9-photometry_ code.
+    the desi-photometry_ code.
   - In the tractorphot files, TARGETID really is unique.  However, some
     TARGETIDs are not present because they do not match an object to within
     1 arcsec. For these, fill in what can be filled in from target files or
@@ -33,7 +33,7 @@ Notes
   - Load redshifts from all redrock files in ``tiles/cumulative``, rather than
     from the ``ztile-*-cumulative.fits`` summary file.
 
-.. _lsdr9-photometry: https://github.com/moustakas/lsdr9-photometry
+.. _desi-photometry: https://github.com/moustakas/desi-photometry
 """
 import os
 import re
@@ -90,7 +90,7 @@ class Photometry(SchemaMixin, Base):
 
     This table is deliberately designed so that ``TARGETID`` can serve as a
     primary key. Any quantities created or modified by desitarget are
-    defined in the :class:`~desispec.database.redshift.Target` class.
+    defined in the :class:`~specprodDB.Target` class.
 
     However we *avoid* the use of the term "tractor" for this table,
     because not every target will have *tractor* photometry,
@@ -313,10 +313,6 @@ class Tile(SchemaMixin, Base):
 
 class Exposure(SchemaMixin, Base):
     """Representation of the EXPOSURES HDU in the exposures file.
-
-    Notes
-    -----
-    The column ``program`` is filled in via :func:`~desispec.io.meta.faflavor2program`.
     """
 
     night = Column(Integer, nullable=False, index=True)
@@ -388,7 +384,7 @@ class Frame(SchemaMixin, Base):
 
         frameid = 100*expid + cameraid(camera)
 
-    where ``cameraid()`` is :func:`desispec.database.util.cameraid`.
+    where ``cameraid()`` is :func:`specprodDB.util.cameraid`.
     """
 
     frameid = Column(Integer, primary_key=True, autoincrement=False)  # Arbitrary integer composed from expid + cameraid
@@ -849,7 +845,7 @@ def _deduplicate_targetid(data):
 
     Returns
     -------
-    :class:`numpy.array`
+    :class:`numpy.ndarray`
         An array of rows that are safe to load.
     """
     rows = dbSession.query(Photometry.targetid, Photometry.ls_id).order_by(Photometry.targetid).all()
@@ -878,7 +874,7 @@ def _remove_loaded_targetid(data):
 
     Returns
     -------
-    :class:`numpy.array`
+    :class:`numpy.ndarray`
         An array of rows that are safe to load.
     """
     targetid = data['TARGETID'].data
@@ -899,7 +895,7 @@ def _remove_loaded_unique_id(data):
 
     Returns
     -------
-    :class:`numpy.array`
+    :class:`numpy.ndarray`
         An array of rows that are safe to load.
     """
     rows = dbSession.query(Target.id).all()
@@ -1273,11 +1269,11 @@ def setup_db(options=None, **kwargs):
 
     Parameters
     ----------
-    options : :class:`argpare.Namespace`
+    options : :class:`argparse.Namespace`
         Parsed command-line options.
     kwargs : keywords
         If present, use these instead of `options`.  This is more
-        user-friendly than setting up a :class:`~argpare.Namespace`
+        user-friendly than setting up a :class:`~argparse.Namespace`
         object in, *e.g.* a Jupyter Notebook.
 
     Returns

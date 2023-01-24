@@ -2,7 +2,7 @@
 specprod-db
 ===========
 
-|Actions Status| |Coveralls Status|
+|Actions Status| |Coveralls Status| |Documentation Status|
 
 .. |Actions Status| image:: https://github.com/desihub/specprod-db/workflows/CI/badge.svg
     :target: https://github.com/desihub/specprod-db/actions
