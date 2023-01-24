@@ -4,8 +4,8 @@
 specprodDB.load
 ===============
 
-Code for loading spectroscopic pipeline results (specifically redshifts)
-into a database.
+Code for loading a spectroscopic production database. This includes both
+targeting and redshift data.
 
 Notes
 -----
@@ -59,7 +59,7 @@ from desiutil.iers import freeze_iers
 from desiutil.log import get_logger, DEBUG, INFO
 # from desitarget.targets import decode_targetid
 
-from desispec.io.meta import specprod_root, faflavor2program
+# from desispec.io.meta import specprod_root, faflavor2program
 from desispec.io.util import checkgzip
 from .util import convert_dateobs, parse_pgpass, cameraid, surveyid, programid, spgrpid
 
@@ -779,6 +779,9 @@ def _survey_program(data):
     if 'MAIN_NSPEC' not in data.colnames:
         data.add_column(np.array([0]*len(data), dtype=np.int16), name='MAIN_NSPEC', index=data.colnames.index('SV_PRIMARY')+1)
         data.add_column(np.array([False]*len(data), dtype=np.int16), name='MAIN_PRIMARY', index=data.colnames.index('MAIN_NSPEC')+1)
+    if 'SV_NSPEC' not in data.colnames:
+        data.add_column(np.array([0]*len(data), dtype=np.int16), name='SV_NSPEC', index=data.colnames.index('TSNR2_LRG')+1)
+        data.add_column(np.array([False]*len(data), dtype=np.int16), name='SV_PRIMARY', index=data.colnames.index('SV_NSPEC')+1)
     if 'TILEID' in data.colnames:
         data.add_column(np.array(['cumulative']*len(data)), name='SPGRP', index=data.colnames.index('PROGRAM')+1)
         data = _target_unique_id(data)
@@ -1111,7 +1114,7 @@ def update_truth(filepath, hdu=2, chunksize=50000, skip=('SLOPES', 'EMLINES')):
     tcls = Truth
     tn = tcls.__tablename__
     t = tcls.__table__
-    if filepath.endswith( ('.fits', '.fits.gz') ):
+    if filepath.endswith(('.fits', '.fits.gz')):
         with fits.open(filepath) as hdulist:
             data = hdulist[hdu].data
     elif filepath.endswith('.ecsv'):
@@ -1339,13 +1342,13 @@ def setup_db(options=None, **kwargs):
     engine = create_engine(db_connection, echo=verbose)
     dbSession.remove()
     dbSession.configure(bind=engine, autoflush=False, expire_on_commit=False)
-    log.info("Begin creating tables.")
     for tab in Base.metadata.tables.values():
         tab.schema = schemaname
     if overwrite:
+        log.info("Begin creating tables.")
         Base.metadata.drop_all(engine)
         Base.metadata.create_all(engine)
-    log.info("Finished creating tables.")
+        log.info("Finished creating tables.")
     return postgresql
 
 
@@ -1440,7 +1443,7 @@ def main():
                               'q3c': 'tilera',
                               'chunksize': options.chunksize,
                               'maxrows': options.maxrows
-                             },
+                              },
                              {'filepaths': os.path.join(options.datapath, 'spectro', 'redux', os.environ['SPECPROD'], 'exposures-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
                               'tcls': Exposure,
                               'hdu': 'EXPOSURES',
@@ -1449,44 +1452,33 @@ def main():
                               'q3c': 'tilera',
                               'chunksize': options.chunksize,
                               'maxrows': options.maxrows
-                             },
+                              },
                              {'filepaths': os.path.join(options.datapath, 'spectro', 'redux', os.environ['SPECPROD'], 'exposures-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
                               'tcls': Frame,
                               'hdu': 'FRAMES',
                               'preload': _frameid,
                               'chunksize': options.chunksize,
-                               'maxrows': options.maxrows
-                             }],
-                'photometry': [{'filepaths': glob.glob(os.path.join(options.targetpath, 'vac', 'lsdr9-photometry', os.environ['SPECPROD'], 'v1.0', 'observed-targets', 'tractorphot', 'tractorphot*.fits')),
+                              'maxrows': options.maxrows
+                              }],
+                #
+                # The potential targets are supposed to include data for all targets.
+                # In other words, every actual target is also a potential target.
+                #
+                'photometry': [{'filepaths': glob.glob(os.path.join(options.targetpath, 'vac', 'lsdr9-photometry', os.environ['SPECPROD'], 'v1.0', 'potential-targets', 'tractorphot', 'tractorphot*.fits')),
                                 'tcls': Photometry,
                                 'hdu': 'TRACTORPHOT',
                                 'expand': {'DCHISQ': ('dchisq_psf', 'dchisq_rex', 'dchisq_dev', 'dchisq_exp', 'dchisq_ser',),
                                            'OBJID': 'brick_objid',
                                            'TYPE': 'morphtype'},
-                                'chunksize': options.chunksize,
-                                'maxrows': options.maxrows
-                               },
-                               {'filepaths': glob.glob(os.path.join(options.targetpath, 'vac', 'lsdr9-photometry', os.environ['SPECPROD'], 'v1.0', 'potential-targets', 'tractorphot', 'tractorphot*.fits')),
-                                'tcls': Photometry,
-                                'hdu': 'TRACTORPHOT',
-                                'expand': {'DCHISQ': ('dchisq_psf', 'dchisq_rex', 'dchisq_dev', 'dchisq_exp', 'dchisq_ser',),
-                                           'OBJID': 'brick_objid',
-                                           'TYPE': 'morphtype'},
-                                'rowfilter': _remove_loaded_targetid,
+                                # 'rowfilter': _remove_loaded_targetid,
                                 'chunksize': options.chunksize,
                                 'maxrows': options.maxrows
                                }],
-                'targetphot': [{'filepaths': os.path.join(options.targetpath, 'vac', 'lsdr9-photometry', os.environ['SPECPROD'], 'v1.0', 'observed-targets', 'targetphot-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
-                                'tcls': Photometry,
-                                'hdu': 'TARGETPHOT',
-                                'preload': _add_ls_id,
-                                'expand': {'DCHISQ': ('dchisq_psf', 'dchisq_rex', 'dchisq_dev', 'dchisq_exp', 'dchisq_ser',)},
-                                'convert': {'gaia_astrometric_params_solved': lambda x: int(x)},
-                                'rowfilter': _deduplicate_targetid,
-                                'chunksize': options.chunksize,
-                                'maxrows': options.maxrows
-                               },
-                               {'filepaths': os.path.join(options.targetpath, 'vac', 'lsdr9-photometry', os.environ['SPECPROD'], 'v1.0', 'potential-targets', 'targetphot-potential-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
+                #
+                # This stage loads targets, and such photometry as they have, that did not
+                # successfully match to a known LS DR9 object.
+                #
+                'targetphot': [{'filepaths': os.path.join(options.targetpath, 'vac', 'lsdr9-photometry', os.environ['SPECPROD'], 'v1.0', 'potential-targets', 'targetphot-potential-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
                                 'tcls': Photometry,
                                 'hdu': 'TARGETPHOT',
                                 'preload': _add_ls_id,
@@ -1497,20 +1489,12 @@ def main():
                                 'chunksize': options.chunksize,
                                 'maxrows': options.maxrows
                                }],
-                'target': [{'filepaths': os.path.join(options.targetpath, 'vac', 'lsdr9-photometry', os.environ['SPECPROD'], 'v1.0', 'observed-targets', 'targetphot-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
+                'target': [{'filepaths': os.path.join(options.targetpath, 'vac', 'lsdr9-photometry', os.environ['SPECPROD'], 'v1.0', 'potential-targets', 'targetphot-potential-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
                             'tcls': Target,
                             'hdu': 'TARGETPHOT',
                             'preload': _target_unique_id,
                             'convert': {'id': lambda x: x[0] << 64 | x[1]},
-                            'chunksize': options.chunksize,
-                            'maxrows': options.maxrows
-                           },
-                           {'filepaths': os.path.join(options.targetpath, 'vac', 'lsdr9-photometry', os.environ['SPECPROD'], 'v1.0', 'potential-targets', 'targetphot-potential-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
-                            'tcls': Target,
-                            'hdu': 'TARGETPHOT',
-                            'preload': _target_unique_id,
-                            'convert': {'id': lambda x: x[0] << 64 | x[1]},
-                            'rowfilter': _remove_loaded_unique_id,
+                            # 'rowfilter': _remove_loaded_unique_id,
                             'chunksize': options.chunksize,
                             'maxrows': options.maxrows
                            }],
