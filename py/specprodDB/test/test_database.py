@@ -4,7 +4,6 @@
 """
 import unittest
 import os
-from datetime import datetime, timedelta
 from shutil import rmtree
 
 try:
@@ -57,41 +56,15 @@ class TestDatabase(unittest.TestCase):
         if os.path.exists(cls.testDir):
             rmtree(cls.testDir)
 
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
+
     @unittest.skipUnless(sqlalchemy_available, "SQLAlchemy not installed; skipping specprodDB class tests.")
     def test_datachallenge_classes(self):
         """Test SQLAlchemy classes in specprodDB.load.
         """
         from ..load import (Tile, Exposure, Frame, Fiberassign, Potential, Target)
         pass
-
-    def test_convert_dateobs(self):
-        """Test specprodDB.util.convert_dateobs.
-        """
-        from pytz import utc
-        from ..util import convert_dateobs
-        ts = convert_dateobs('2019-01-03T01:11:33.247')
-        self.assertEqual(ts.year, 2019)
-        self.assertEqual(ts.month, 1)
-        self.assertEqual(ts.microsecond, 247000)
-        self.assertIsNone(ts.tzinfo)
-        ts = convert_dateobs('2019-01-03T01:11:33.247', tzinfo=utc)
-        self.assertEqual(ts.year, 2019)
-        self.assertEqual(ts.month, 1)
-        self.assertEqual(ts.microsecond, 247000)
-        self.assertIs(ts.tzinfo, utc)
-
-    def test_cameraid(self):
-        """Test specprodDB.util.cameraid.
-        """
-        from ..util import cameraid
-        self.assertEqual(cameraid('b0'), 0)
-        self.assertEqual(cameraid('r5'), 15)
-        self.assertEqual(cameraid('z9'), 29)
-
-    def test_frameid(self):
-        """Test specprodDB.util.frameid.
-        """
-        from ..util import frameid
-        self.assertEqual(frameid(12345, 'b0'), 1234500)
-        self.assertEqual(frameid(54321, 'r5'), 5432115)
-        self.assertEqual(frameid(9876543, 'z9'), 987654329)

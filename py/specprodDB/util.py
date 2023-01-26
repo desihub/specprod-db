@@ -14,7 +14,8 @@ _surveyid = {'cmx': 1, 'special': 2, 'sv1': 3, 'sv2': 4, 'sv3': 5, 'main': 6}
 _decode_surveyid = dict([(v, k) for k, v in _surveyid.items()])
 _programid = {'backup': 1, 'bright': 2, 'dark': 3, 'other': 4}
 _decode_programid = dict([(v, k) for k, v in _programid.items()])
-_spgrpid = {'1x_depth': 1, '4x_depth': 2, 'cumulative': 3, 'lowspeed': 4, 'perexp': 5, 'pernight': 6}
+_spgrpid = {'1x_depth': 1, '4x_depth': 2, 'cumulative': 3, 'lowspeed': 4,
+            'perexp': 5, 'pernight': 6, 'healpix': 7}
 _decode_spgrpid = dict([(v, k) for k, v in _spgrpid.items()])
 
 
@@ -131,6 +132,7 @@ def targetphotid(targetid, tileid, survey):
     tileid : :class:`int`
         Standard ``TILEID``.
     survey : :class:`str`
+        Survey name.
 
     Returns
     -------
@@ -156,7 +158,7 @@ def decode_targetphotid(targetphotid):
     """
     targetid = targetphotid & (2**64 - 1)
     t = targetphotid >> 64
-    tileid = targetphotid * (2**32 - 1)
+    tileid = t & (2**32 - 1)
     survey = decode_surveyid(t >> 32)
     return (targetid, tileid, survey)
 
@@ -191,8 +193,8 @@ def ztileid(targetid, spgrp, spgrpval, tileid):
         Standard ``TARGETID``.
     spgrp : :class:`str`
         Tile grouping.
-    spgrpval : :class:`str`
-        Id with in `spgrp`.
+    spgrpval : :class:`int`
+        Id within `spgrp`.
     tileid : :class:`int`
         Standard ``TILEID``.
 
