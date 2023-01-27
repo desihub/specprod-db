@@ -4,6 +4,7 @@
 """
 import unittest
 from unittest.mock import patch
+from ..batch import get_options
 
 
 class TestBatch(unittest.TestCase):
@@ -22,4 +23,3 @@ class TestBatch(unittest.TestCase):
 
     def tearDown(self):
         pass
-
