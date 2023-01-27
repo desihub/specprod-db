@@ -1,6 +1,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 # -*- coding: utf-8 -*-
-"""Test specprodDB.
+"""Test specprodDB.load.
 """
 import unittest
 import os
@@ -13,8 +13,8 @@ except ImportError:
     sqlalchemy_available = False
 
 
-class TestDatabase(unittest.TestCase):
-    """Test specprodDB.
+class TestLoad(unittest.TestCase):
+    """Test specprodDB.load
     """
     @classmethod
     def setUpClass(cls):
