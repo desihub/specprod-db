@@ -37,7 +37,7 @@ class TestBatch(unittest.TestCase):
     def test_prepare_template_csh(self):
         """Test conversion of options to scripts with csh.
         """
-        with patch.dict('os.environ', {'DESI_ROOT': '/global/cfs/cdirs/desi'}):
+        with patch.dict('os.environ', {'DESI_ROOT': '/global/cfs/cdirs/desi', 'DESI_TARGET': '/global/cfs/cdirs/desi/target'}):
             options = get_options()
             scripts = prepare_template(options)
         self.assertIn('load_specprod_db_fuji_exposures.csh', scripts)
@@ -46,7 +46,7 @@ class TestBatch(unittest.TestCase):
     def test_prepare_template_bash(self):
         """Test conversion of options to scripts with bash.
         """
-        with patch.dict('os.environ', {'DESI_ROOT': '/global/cfs/cdirs/desi'}):
+        with patch.dict('os.environ', {'DESI_ROOT': '/global/cfs/cdirs/desi', 'DESI_TARGET': '/global/cfs/cdirs/desi/target'}):
             options = get_options()
             scripts = prepare_template(options)
         self.assertIn('load_specprod_db_fuji_exposures.sh', scripts)
