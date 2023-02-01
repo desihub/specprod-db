@@ -1,6 +1,6 @@
-===============
-specprod-db API
-===============
+==============
+specprodDB API
+==============
 
 .. automodule:: specprodDB
     :members:
