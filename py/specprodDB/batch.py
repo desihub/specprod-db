@@ -28,6 +28,8 @@ srun --ntasks=1 load_specprod_db {overwrite} \\
     --load {stage} --schema ${{SPECPROD}} ${{DESI_ROOT}}
 """
 
+times = {'exposures': '00:10:00'}
+
 
 def get_options():
     """Parse command-line options.
@@ -104,10 +106,14 @@ def prepare_template(options):
         else:
             overwrite = ''
         script_name = 'load_specprod_db_{schema}_{stage}.{extension}'.format(schema=options.schema, stage=stage, extension=extension)
+        try:
+            wall_time = times[stage]
+        except KeyError:
+            wall_time = '12:00:00'
         t = {'shell': shell,
              'qos': options.qos,
              'constraint': options.constraint,
-             'time': '12:00:00',
+             'time': wall_time,
              'schema': options.schema,
              'stage': stage,
              'email': options.email,

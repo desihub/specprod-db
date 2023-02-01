@@ -59,7 +59,7 @@ class TestBatch(unittest.TestCase):
 #SBATCH --qos=bigmem
 #SBATCH --constraint=haswell
 #SBATCH --nodes=1
-#SBATCH --time=12:00:00
+#SBATCH --time=00:10:00
 #SBATCH --job-name=load_specprod_db_fuji_exposures
 #SBATCH --licenses=SCRATCH,cfs
 #SBATCH --account=desi
@@ -71,10 +71,28 @@ srun --ntasks=1 load_specprod_db --overwrite \\
     --hostname specprod-db.desi.lbl.gov --username desi_admin \\
     --load exposures --schema ${SPECPROD} ${DESI_ROOT}
 """
+        photometry = """#!/bin/bash
+#SBATCH --qos=bigmem
+#SBATCH --constraint=haswell
+#SBATCH --nodes=1
+#SBATCH --time=12:00:00
+#SBATCH --job-name=load_specprod_db_fuji_photometry
+#SBATCH --licenses=SCRATCH,cfs
+#SBATCH --account=desi
+#SBATCH --mail-type=end,fail
+#SBATCH --mail-user=foo@example.com
+module load specprod-db/main
+export SPECPROD=fuji
+srun --ntasks=1 load_specprod_db  \\
+    --hostname specprod-db.desi.lbl.gov --username desi_admin \\
+    --load photometry --schema ${SPECPROD} ${DESI_ROOT}
+"""
+
         options = get_options()
         scripts = prepare_template(options)
         self.assertIn('load_specprod_db_fuji_exposures.sh', scripts)
         self.assertEqual(scripts['load_specprod_db_fuji_exposures.sh'], exposures)
+        self.assertEqual(scripts['load_specprod_db_fuji_photometry.sh'], photometry)
 
     @patch('sys.argv', ['prepare_batch_specprod_db', '--schema', 'fuji', 'foo@example.com'])
     def test_write_scripts(self):
