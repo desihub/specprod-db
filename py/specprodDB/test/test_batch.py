@@ -25,7 +25,7 @@ class TestBatch(unittest.TestCase):
     def tearDown(self):
         pass
 
-    @patch('sys.argv', ['prepare_batch_specprod_db', '--csh', 'foo@example.com'])
+    @patch('sys.argv', ['prepare_batch_specprod_db', '--csh', 'foo@example.com', '/global/cfs/cdirs/desi'])
     def test_get_options(self):
         """Test option parser.
         """
@@ -33,7 +33,7 @@ class TestBatch(unittest.TestCase):
         self.assertTrue(options.csh)
         self.assertEqual(options.hostname, 'specprod-db.desi.lbl.gov')
 
-    @patch('sys.argv', ['prepare_batch_specprod_db', '--csh', '--schema', 'fuji', 'foo@example.com'])
+    @patch('sys.argv', ['prepare_batch_specprod_db', '--csh', '--schema', 'fuji', 'foo@example.com', '/global/cfs/cdirs/desi'])
     def test_prepare_template_csh(self):
         """Test conversion of options to scripts with csh.
         """
@@ -42,7 +42,7 @@ class TestBatch(unittest.TestCase):
             scripts = prepare_template(options)
         self.assertIn('load_specprod_db_fuji_exposures.csh', scripts)
 
-    @patch('sys.argv', ['prepare_batch_specprod_db', '--schema', 'fuji', 'foo@example.com'])
+    @patch('sys.argv', ['prepare_batch_specprod_db', '--schema', 'fuji', 'foo@example.com', '/global/cfs/cdirs/desi'])
     def test_prepare_template_bash(self):
         """Test conversion of options to scripts with bash.
         """
@@ -51,7 +51,7 @@ class TestBatch(unittest.TestCase):
             scripts = prepare_template(options)
         self.assertIn('load_specprod_db_fuji_exposures.sh', scripts)
 
-    @patch('sys.argv', ['prepare_batch_specprod_db', '--qos', 'bigmem', '--constraint', 'haswell', '--schema', 'fuji', 'foo@example.com'])
+    @patch('sys.argv', ['prepare_batch_specprod_db', '--qos', 'bigmem', '--constraint', 'haswell', '--schema', 'fuji', 'foo@example.com', '/global/cfs/cdirs/desi'])
     def test_prepare_template_bash_qos(self):
         """Test conversion of options to scripts with bash and alternate qos/constraint.
         """
@@ -66,6 +66,7 @@ class TestBatch(unittest.TestCase):
 #SBATCH --mail-type=end,fail
 #SBATCH --mail-user=foo@example.com
 module load specprod-db/main
+export DESI_ROOT=/global/cfs/cdirs/desi
 export SPECPROD=fuji
 srun --ntasks=1 load_specprod_db --overwrite \\
     --hostname specprod-db.desi.lbl.gov --username desi_admin \\
@@ -75,13 +76,14 @@ srun --ntasks=1 load_specprod_db --overwrite \\
 #SBATCH --qos=bigmem
 #SBATCH --constraint=haswell
 #SBATCH --nodes=1
-#SBATCH --time=12:00:00
+#SBATCH --time=04:00:00
 #SBATCH --job-name=load_specprod_db_fuji_photometry
 #SBATCH --licenses=SCRATCH,cfs
 #SBATCH --account=desi
 #SBATCH --mail-type=end,fail
 #SBATCH --mail-user=foo@example.com
 module load specprod-db/main
+export DESI_ROOT=/global/cfs/cdirs/desi
 export SPECPROD=fuji
 srun --ntasks=1 load_specprod_db  \\
     --hostname specprod-db.desi.lbl.gov --username desi_admin \\
@@ -94,7 +96,7 @@ srun --ntasks=1 load_specprod_db  \\
         self.assertEqual(scripts['load_specprod_db_fuji_exposures.sh'], exposures)
         self.assertEqual(scripts['load_specprod_db_fuji_photometry.sh'], photometry)
 
-    @patch('sys.argv', ['prepare_batch_specprod_db', '--schema', 'fuji', 'foo@example.com'])
+    @patch('sys.argv', ['prepare_batch_specprod_db', '--schema', 'fuji', 'foo@example.com', '/global/cfs/cdirs/desi'])
     def test_write_scripts(self):
         """Test conversion of options to scripts with bash.
         """

@@ -22,13 +22,15 @@ template = """#!/bin/{shell}
 #SBATCH --mail-type=end,fail
 #SBATCH --mail-user={email}
 module load specprod-db/main
-{export}{schema}
+{export_root}
+{export_specprod}
 srun --ntasks=1 load_specprod_db {overwrite} \\
     --hostname {hostname} --username {username} \\
     --load {stage} --schema ${{SPECPROD}} ${{DESI_ROOT}}
 """
 
-times = {'exposures': '00:10:00'}
+times = {'exposures': '00:10:00',
+         'photometry': '04:00:00'}
 
 
 def get_options():
@@ -73,7 +75,7 @@ def get_options():
     # prsr.add_argument('-v', '--verbose', action='store_true', dest='verbose',
     #                   help='Print extra information.')
     prsr.add_argument('email', metavar='EMAIL', help='Send batch messages to EMAIL.')
-    # prsr.add_argument('datapath', metavar='DIR', help='Load the data in DIR.')
+    prsr.add_argument('root', metavar='DIR', help='Load the data in DIR.')
     options = prsr.parse_args()
     return options
 
@@ -94,11 +96,13 @@ def prepare_template(options):
     if options.csh:
         extension = 'csh'
         shell = 'tcsh'
-        export = 'setenv SPECPROD '
+        export_root = f'setenv DESI_ROOT {options.root}'
+        export_specprod = f'setenv SPECPROD {options.schema}'
     else:
         extension = 'sh'
         shell = 'bash'
-        export = 'export SPECPROD='
+        export_root = f'export DESI_ROOT={options.root}'
+        export_specprod = f'export SPECPROD={options.schema}'
     scripts = dict()
     for stage in ('exposures', 'photometry', 'targetphot', 'target', 'redshift', 'fiberassign'):
         if stage == 'exposures':
@@ -117,7 +121,8 @@ def prepare_template(options):
              'schema': options.schema,
              'stage': stage,
              'email': options.email,
-             'export': export,
+             'export_root': export_root,
+             'export_specprod': export_specprod,
              'overwrite': overwrite,
              'hostname': options.hostname,
              'username': options.username}
