@@ -37,16 +37,18 @@ class TestBatch(unittest.TestCase):
     def test_prepare_template_csh(self):
         """Test conversion of options to scripts with csh.
         """
-        options = get_options()
-        scripts = prepare_template(options)
+        with patch.dict('os.environ', {'DESI_ROOT': '/global/cfs/cdirs/desi'}):
+            options = get_options()
+            scripts = prepare_template(options)
         self.assertIn('load_specprod_db_fuji_exposures.csh', scripts)
 
     @patch('sys.argv', ['prepare_batch_specprod_db', '--schema', 'fuji', 'foo@example.com'])
     def test_prepare_template_bash(self):
         """Test conversion of options to scripts with bash.
         """
-        options = get_options()
-        scripts = prepare_template(options)
+        with patch.dict('os.environ', {'DESI_ROOT': '/global/cfs/cdirs/desi'}):
+            options = get_options()
+            scripts = prepare_template(options)
         self.assertIn('load_specprod_db_fuji_exposures.sh', scripts)
 
     @patch('sys.argv', ['prepare_batch_specprod_db', '--target-path', '/foo/bar', '--schema', 'fuji', 'foo@example.com'])
@@ -68,10 +70,11 @@ export SPECPROD=fuji
 srun -n 1 load_specprod_db --overwrite \\
     --hostname specprod-db.desi.lbl.gov --username desi_admin \\
     --load exposures --schema ${SPECPROD} \\
-    --target-path /foo/bar --tiles-path /Users/benjamin.weaver/Documents/Data/desi/target/fiberassign/tiles/trunk ${DESI_ROOT}
+    --target-path /foo/bar --tiles-path /global/cfs/cdirs/desi/target/fiberassign/tiles/trunk ${DESI_ROOT}
 """
-        options = get_options()
-        scripts = prepare_template(options)
+        with patch.dict('os.environ', {'DESI_TARGET': '/global/cfs/cdirs/desi/target'}):
+            options = get_options()
+            scripts = prepare_template(options)
         self.assertIn('load_specprod_db_fuji_exposures.sh', scripts)
         self.assertEqual(scripts['load_specprod_db_fuji_exposures.sh'], exposures)
 
