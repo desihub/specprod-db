@@ -11,8 +11,7 @@ from sys import argv
 from argparse import ArgumentParser
 
 
-template = """
-#!/bin/{shell}
+template = """#!/bin/{shell}
 #SBATCH --qos={qos}
 #SBATCH --constraint={constraint}
 #SBATCH --nodes=1
@@ -31,13 +30,8 @@ srun -n 1 load_specprod_db {overwrite} \\
 """
 
 
-def get_options(*args):
+def get_options():
     """Parse command-line options.
-
-    Parameters
-    ----------
-    args : iterable
-        If arguments are passed, use them instead of ``sys.argv``.
 
     Returns
     -------
@@ -51,8 +45,11 @@ def get_options(*args):
     prsr.add_argument('-H', '--hostname', action='store', dest='hostname',
                       metavar='HOSTNAME', default='specprod-db.desi.lbl.gov',
                       help='If specified, connect to a PostgreSQL database on HOSTNAME (default %(default)s).')
-    prsr.add_argument('-o', '--overwrite', action='store_true', dest='overwrite',
-                      help='Delete any existing file(s) before loading.')
+    prsr.add_argument('-j', '--job-dir', action='store', dest='job_dir', metavar='DIR',
+                      default=os.path.join(os.environ['HOME'], 'Documents', 'Jobs'),
+                      help='Write batch job files to DIR (default %(default)s).')
+    # prsr.add_argument('-o', '--overwrite', action='store_true', dest='overwrite',
+    #                   help='Delete any existing file(s) before loading.')
     # prsr.add_argument('-r', '--rows', action='store', dest='chunksize',
     #                   type=int, default=50000, metavar='N',
     #                   help="Load N rows at a time (default %(default)s).")
@@ -60,10 +57,8 @@ def get_options(*args):
                       metavar='SCHEMA',
                       help='Set the schema name in the PostgreSQL database.')
     prsr.add_argument('-t', '--tiles-path', action='store', dest='tilespath', metavar='PATH',
-                      default=os.path.join(os.environ['DESI_TARGET'], 'fiberassign', 'tiles', 'trunk'),
-                      help="Load fiberassign data from PATH (default %(default)s).")
+                      help="Load fiberassign data from PATH.")
     prsr.add_argument('-T', '--target-path', action='store', dest='targetpath', metavar='PATH',
-                      default=os.path.join(os.environ['DESI_TARGET'], 'foo'),
                       help="Load target photometry data from PATH.")
     prsr.add_argument('-U', '--username', action='store', dest='username',
                       metavar='USERNAME', default='desi_admin',
@@ -72,36 +67,48 @@ def get_options(*args):
                       help='Print extra information.')
     prsr.add_argument('email', metavar='EMAIL', help='Send batch messages to EMAIL.')
     # prsr.add_argument('datapath', metavar='DIR', help='Load the data in DIR.')
-    # if len(args) > 0:
-    #     options = prsr.parse_args(args)
-    # else:
-    #     options = prsr.parse_args()
     options = prsr.parse_args()
     # if options.targetpath is None:
     #     options.targetpath = options.datapath
     return options
 
 
-def main():
-    """Entry point for command-line script.
+def prepare_template(options):
+    """Convert command-line options to template inputs and format.
+
+    Parameters
+    ----------
+    options : :class:`argparse.Namespace`
+        The parsed options.
 
     Returns
     -------
-    :class:`int`
-        An integer suitable for passing to :func:`sys.exit`.
+    :class:`dict`
+        A dictionary mapping file name to contents.
     """
-    options = get_options()
     if options.csh:
+        extension = 'csh'
         shell = 'tcsh'
         export = 'setenv SPECPROD '
     else:
+        extension = 'sh'
         shell = 'bash'
         export = 'export SPECPROD='
+    scripts = dict()
+    if options.targetpath is None:
+        targetpath = os.path.join(os.environ['DESI_ROOT'], 'public', 'edr')
+    else:
+        targetpath = options.targetpath
+    if options.tilespath is None:
+        tilespath = os.path.join(os.environ['DESI_TARGET'], 'fiberassign', 'tiles', 'trunk')
+    else:
+        tilespath = options.tilespath
     for stage in ('exposures', 'photometry', 'targetphot', 'target', 'redshift', 'fiberassign'):
         if stage == 'exposures':
             overwrite = '--overwrite'
         else:
             overwrite = ''
+        script_name = 'load_specprod_db_{schema}_{stage}.{extension}'.format(schema=options.schema, stage=stage, extension=extension)
         t = {'shell': shell,
              'qos': 'regular',
              'constraint': 'cpu',
@@ -113,7 +120,37 @@ def main():
              'overwrite': overwrite,
              'hostname': options.hostname,
              'username': options.username,
-             'targetpath': options.targetpath,
-             'tilespath': options.tilespath}
-        print(template.format(**t))
+             'targetpath': targetpath,
+             'tilespath': tilespath}
+        scripts[script_name] = template.format(**t)
+    return scripts
+
+
+def write_scripts(scripts, jobs):
+    """Write scripts to job directory.
+
+    Parameters
+    ----------
+    scripts : :class:`dict`
+        A dictionary mapping file name to contents.
+    jobs : :class:`str`
+        Name of a directory to write to.
+    """
+    for s in scripts:
+        path = os.path.join(jobs, s)
+        with open(path, 'w') as j:
+            j.write(scripts[s])
+
+
+def main():
+    """Entry point for command-line script.
+
+    Returns
+    -------
+    :class:`int`
+        An integer suitable for passing to :func:`sys.exit`.
+    """
+    options = get_options()
+    scripts = prepare_template(options)
+    write_scripts(scripts, options.job_dir)
     return 0
