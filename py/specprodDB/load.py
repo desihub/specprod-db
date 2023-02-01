@@ -41,11 +41,13 @@ import glob
 import sys
 
 import numpy as np
+from astropy import __version__ as astropy_version
 from astropy.io import fits
 from astropy.table import Table, MaskedColumn, join
 from astropy.time import Time
 from pytz import utc
 
+from sqlalchemy import __version__ as sqlalchemy_version
 from sqlalchemy import (create_engine, event, ForeignKey, Column, DDL,
                         BigInteger, Boolean, Integer, String, Float, DateTime,
                         SmallInteger, bindparam, Numeric)
@@ -55,13 +57,14 @@ from sqlalchemy.orm import (declarative_base, declarative_mixin, declared_attr,
 from sqlalchemy.schema import CreateSchema, Index
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, REAL
 
+from desiutil import __version__ as desiutil_version
 from desiutil.iers import freeze_iers
 from desiutil.log import get_logger, DEBUG, INFO
-# from desitarget.targets import decode_targetid
 
-# from desispec.io.meta import specprod_root, faflavor2program
-# from desispec.io.util import checkgzip
-from .util import convert_dateobs, parse_pgpass, cameraid, surveyid, programid, spgrpid
+from . import __version__ as specprodDB_version
+from .util import (convert_dateobs, parse_pgpass, cameraid, surveyid, programid,
+                   spgrpid, checkgzip)
+
 
 Base = declarative_base()
 engine = None
@@ -83,6 +86,17 @@ class SchemaMixin(object):
     @declared_attr
     def __table_args__(cls):
         return {'schema': schemaname}
+
+
+class Version(SchemaMixin, Base):
+    """Store package version metadata.
+    """
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    package = Column(String(20), nullable=False, unique=True)
+    version = Column(String(20), nullable=False)
+
+    def __repr__(self):
+        return "Version(package='{0.package}', version='{0.version}')".format(self)
 
 
 class Photometry(SchemaMixin, Base):
@@ -1155,7 +1169,7 @@ def update_truth(filepath, hdu=2, chunksize=50000, skip=('SLOPES', 'EMLINES')):
                      min((k+1)*chunksize, finalrows), tn)
 
 
-def load_redrock(datapath=None, hdu='REDSHIFTS', q3c=False):
+def load_redrock(datapath, hdu='REDSHIFTS', q3c=False):
     """Load redrock files into the zcat table.
 
     This function is deprecated since there should now be a single
@@ -1170,8 +1184,6 @@ def load_redrock(datapath=None, hdu='REDSHIFTS', q3c=False):
     q3c : :class:`bool`, optional
         If set, create q3c index on the table.
     """
-    if datapath is None:
-        datapath = specprod_root()
     redrockpath = os.path.join(datapath, 'spectra-64', '*', '*', 'redrock-64-*.fits')
     log.info("Using redrock file search path: %s.", redrockpath)
     redrock_files = glob.glob(redrockpath)
@@ -1287,11 +1299,11 @@ def setup_db(options=None, **kwargs):
     #
     if options is None:
         if len(kwargs) > 0:
-            dbfile = kwargs.get('dbfile', 'redshift.db')
+            dbfile = kwargs.get('dbfile', 'specprod.db')
             hostname = kwargs.get('hostname', None)
             overwrite = kwargs.get('overwrite', False)
             schema = kwargs.get('schema', None)
-            username = kwargs.get('username', 'desidev_admin')
+            username = kwargs.get('username', 'desi_admin')
             verbose = kwargs.get('verbose', False)
         else:
             raise ValueError("No options specified!")
@@ -1348,13 +1360,8 @@ def setup_db(options=None, **kwargs):
     return postgresql
 
 
-def get_options(*args):
+def get_options():
     """Parse command-line options.
-
-    Parameters
-    ----------
-    args : iterable
-        If arguments are passed, use them instead of ``sys.argv``.
 
     Returns
     -------
@@ -1366,11 +1373,11 @@ def get_options(*args):
     prsr = ArgumentParser(description=("Load redshift data into a database."),
                           prog=os.path.basename(argv[0]))
     prsr.add_argument('-f', '--filename', action='store', dest='dbfile',
-                      default='redshift.db', metavar='FILE',
-                      help="Store data in FILE (default %(default)s).")
+                      default='specprod.db', metavar='FILE',
+                      help='Store data in FILE (default "%(default)s").')
     prsr.add_argument('-H', '--hostname', action='store', dest='hostname',
-                      metavar='HOSTNAME', default='nerscdb03.nersc.gov',
-                      help='If specified, connect to a PostgreSQL database on HOSTNAME (default %(default)s).')
+                      metavar='HOSTNAME', default='specprod-db.desi.lbl.gov',
+                      help='If specified, connect to a PostgreSQL database on HOSTNAME (default "%(default)s").')
     prsr.add_argument('-l', '--load', action='store', dest='load',
                       default='exposures', metavar='STAGE',
                       help='Load the set of files associated with STAGE (default "%(default)s").')
@@ -1378,30 +1385,26 @@ def get_options(*args):
                       type=int, default=0, metavar='M',
                       help="Load up to M rows in the tables (default is all rows).")
     prsr.add_argument('-o', '--overwrite', action='store_true', dest='overwrite',
-                      help='Delete any existing file(s) before loading.')
+                      help='Delete any existing files or tables before loading.')
+    prsr.add_argument('-p', '--photometry-version', action='store', dest='photometry_version',
+                      metavar='VERSION', default='v2.0',
+                      help='Load target photometry data from VERSION (default "%(default)s").')
     prsr.add_argument('-r', '--rows', action='store', dest='chunksize',
                       type=int, default=50000, metavar='N',
                       help="Load N rows at a time (default %(default)s).")
     prsr.add_argument('-s', '--schema', action='store', dest='schema',
                       metavar='SCHEMA',
                       help='Set the schema name in the PostgreSQL database.')
-    prsr.add_argument('-t', '--tiles-path', action='store', dest='tilespath', metavar='PATH',
-                      default=os.path.join(os.environ['DESI_TARGET'], 'fiberassign', 'tiles', 'trunk'),
-                      help="Load fiberassign data from PATH (default %(default)s).")
-    prsr.add_argument('-T', '--target-path', action='store', dest='targetpath', metavar='PATH',
-                      help="Load target photometry data from PATH.")
+    prsr.add_argument('-t', '--tiles-version', action='store', dest='tiles_version',
+                      metavar='VERSION', default='trunk',
+                      help='Load fiberassign data from VERSION (default "%(default)s").')
     prsr.add_argument('-U', '--username', action='store', dest='username',
-                      metavar='USERNAME', default='desidev_admin',
-                      help="If specified, connect to a PostgreSQL database with USERNAME (default %(default)s).")
+                      metavar='USERNAME', default='desi_admin',
+                      help='If specified, connect to a PostgreSQL database with USERNAME (default "%(default)s").')
     prsr.add_argument('-v', '--verbose', action='store_true', dest='verbose',
                       help='Print extra information.')
     prsr.add_argument('datapath', metavar='DIR', help='Load the data in DIR.')
-    if len(args) > 0:
-        options = prsr.parse_args(args)
-    else:
-        options = prsr.parse_args()
-    if options.targetpath is None:
-        options.targetpath = options.datapath
+    options = prsr.parse_args()
     return options
 
 
@@ -1460,7 +1463,7 @@ def main():
                # The potential targets are supposed to include data for all targets.
                # In other words, every actual target is also a potential target.
                #
-               'photometry': [{'filepaths': glob.glob(os.path.join(options.targetpath, 'vac', 'lsdr9-photometry', os.environ['SPECPROD'], 'v1.0', 'potential-targets', 'tractorphot', 'tractorphot*.fits')),
+               'photometry': [{'filepaths': glob.glob(os.path.join(options.datapath, 'vac', 'lsdr9-photometry', os.environ['SPECPROD'], options.photometry_version, 'potential-targets', 'tractorphot', 'tractorphot*.fits')),
                                'tcls': Photometry,
                                'hdu': 'TRACTORPHOT',
                                'expand': {'DCHISQ': ('dchisq_psf', 'dchisq_rex', 'dchisq_dev', 'dchisq_exp', 'dchisq_ser',),
@@ -1474,7 +1477,7 @@ def main():
                # This stage loads targets, and such photometry as they have, that did not
                # successfully match to a known LS DR9 object.
                #
-               'targetphot': [{'filepaths': os.path.join(options.targetpath, 'vac', 'lsdr9-photometry', os.environ['SPECPROD'], 'v1.0', 'potential-targets', 'targetphot-potential-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
+               'targetphot': [{'filepaths': os.path.join(options.datapath, 'vac', 'lsdr9-photometry', os.environ['SPECPROD'], options.photometry_version, 'potential-targets', 'targetphot-potential-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
                                'tcls': Photometry,
                                'hdu': 'TARGETPHOT',
                                'preload': _add_ls_id,
@@ -1485,7 +1488,7 @@ def main():
                                'chunksize': options.chunksize,
                                'maxrows': options.maxrows
                                }],
-               'target': [{'filepaths': os.path.join(options.targetpath, 'vac', 'lsdr9-photometry', os.environ['SPECPROD'], 'v1.0', 'potential-targets', 'targetphot-potential-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
+               'target': [{'filepaths': os.path.join(options.targetpath, 'vac', 'lsdr9-photometry', os.environ['SPECPROD'], options.photometry_version, 'potential-targets', 'targetphot-potential-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
                            'tcls': Target,
                            'hdu': 'TARGETPHOT',
                            'preload': _target_unique_id,
@@ -1557,6 +1560,19 @@ def main():
     #
     # Load the tables that correspond to a set of files.
     #
+    if options.load == 'exposures' and options.overwrite:
+        log.info("Loading version metadata.")
+        versions = [Version(package='specprod-db', version=specprodDB_version),
+                    Version(package='lsdr9-photometry', version=options.photometry_version),
+                    Version(package='tiles', version=options.tiles_version),
+                    Version(package='specprod', version=os.environ['SPECPROD']),
+                    Version(package='numpy', version=np.__version__),
+                    Version(package='astropy', version=astropy_version),
+                    Version(package='sqlalchemy', version=sqlalchemy_version),
+                    Version(package='desiutil', version=desiutil_version)]
+        dbSession.add_all(versions)
+        dbSession.commit()
+        log.info("Completed loading version metadata.")
     for l in loader:
         tn = l['tcls'].__tablename__
         log.info("Loading %s from %s.", tn, str(l['filepaths']))

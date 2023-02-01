@@ -3,14 +3,14 @@
 """Test specprodDB.util.
 """
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, call
 # import os
 from datetime import datetime
 from pkg_resources import resource_filename
 from pytz import utc
 from ..util import (cameraid, frameid, surveyid, decode_surveyid, programid,
                     spgrpid, targetphotid, decode_targetphotid, zpixid, ztileid,
-                    fiberassignid, convert_dateobs, parse_pgpass)
+                    fiberassignid, convert_dateobs, checkgzip, parse_pgpass)
 
 
 class TestUtil(unittest.TestCase):
@@ -125,6 +125,43 @@ class TestUtil(unittest.TestCase):
         self.assertEqual(ts.month, 1)
         self.assertEqual(ts.microsecond, 247000)
         self.assertIs(ts.tzinfo, utc)
+
+    @patch('specprodDB.util.exists')
+    def test_checkgzip(self, mock_exists):
+        """Basic test for existence.
+        """
+        mock_exists.return_value = True
+        path = checkgzip('filename.txt')
+        self.assertEqual(path, 'filename.txt')
+        mock_exists.assert_called_once_with('filename.txt')
+
+    @patch('specprodDB.util.exists')
+    def test_checkgzip_gz(self, mock_exists):
+        """Basic test for existence of gz file.
+        """
+        mock_exists.side_effect = [False, True]
+        path = checkgzip('filename.txt')
+        self.assertEqual(path, 'filename.txt.gz')
+        mock_exists.assert_has_calls([call('filename.txt'), call('filename.txt.gz')])
+
+    @patch('specprodDB.util.exists')
+    def test_checkgzip_already_gz(self, mock_exists):
+        """Basic test for existence of gz file that's uncompressed.
+        """
+        mock_exists.side_effect = [False, True]
+        path = checkgzip('filename.txt.gz')
+        self.assertEqual(path, 'filename.txt')
+        mock_exists.assert_has_calls([call('filename.txt.gz'), call('filename.txt')])
+
+    @patch('specprodDB.util.exists')
+    def test_checkgzip_raises(self, mock_exists):
+        """Basic test for existence of gz file; file does not exist.
+        """
+        mock_exists.return_value = False
+        with self.assertRaises(FileNotFoundError) as e:
+            path = checkgzip('filename.txt')
+        mock_exists.assert_has_calls([call('filename.txt'), call('filename.txt.gz')])
+        self.assertEqual(str(e.exception), 'Neither filename.txt nor filename.txt.gz could be found!')
 
     @patch('specprodDB.util.expanduser')
     def test_parse_pgpass(self, mock_expand):

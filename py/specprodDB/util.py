@@ -7,7 +7,7 @@ specprodDB.util
 Classes and functions for use by all database code.
 """
 from datetime import datetime
-from os.path import expanduser
+from os.path import expanduser, exists
 
 
 _surveyid = {'cmx': 1, 'special': 2, 'sv1': 3, 'sv2': 4, 'sv3': 5, 'main': 6}
@@ -248,6 +248,38 @@ def convert_dateobs(timestamp, tzinfo=None):
     if tzinfo is not None:
         x = x.replace(tzinfo=tzinfo)
     return x
+
+
+def checkgzip(filename):
+    """Check for existence of `filename`, with or without a ``.gz`` extension.
+
+    Parameters
+    ----------
+    filename : :class:`str`
+        Filename to check.
+
+    Returns
+    -------
+    :class:`str`
+        Path of existing file with or without ``.gz``.
+
+    Raises
+    ------
+    :exc:`FileNotFoundError`
+        If neither file type exists.
+    """
+    if exists(filename):
+        return filename
+
+    if filename.endswith('.gz'):
+        altfilename = filename[0:-3]
+    else:
+        altfilename = filename + '.gz'
+
+    if exists(altfilename):
+        return altfilename
+    else:
+        raise FileNotFoundError(f'Neither {filename} nor {altfilename} could be found!')
 
 
 def parse_pgpass(hostname='specprod-db.desi.lbl.gov', username='desi_admin'):
