@@ -133,7 +133,7 @@ jobs:
                 python -m pip install --upgrade pip setuptools wheel
                 python -m pip install git+https://github.com/desihub/desiutil.git@${DESIUTIL_VERSION}#egg=desiutil
             - name: Generate api.rst
-              run: desi_api_file --api ./api.rst specprod-db
+              run: desi_api_file --api ./api.rst specprodDB
             - name: Compare generated api.rst to checked-in version
               run: diff --ignore-space-change --ignore-blank-lines ./api.rst ./doc/api.rst
 
