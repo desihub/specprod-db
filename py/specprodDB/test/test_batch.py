@@ -67,7 +67,7 @@ class TestBatch(unittest.TestCase):
 #SBATCH --mail-user=foo@example.com
 module load specprod-db/main
 export SPECPROD=fuji
-srun -n 1 load_specprod_db --overwrite \\
+srun --ntasks=1 load_specprod_db --overwrite \\
     --hostname specprod-db.desi.lbl.gov --username desi_admin \\
     --load exposures --schema ${SPECPROD} ${DESI_ROOT}
 """

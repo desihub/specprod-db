@@ -23,7 +23,7 @@ template = """#!/bin/{shell}
 #SBATCH --mail-user={email}
 module load specprod-db/main
 {export}{schema}
-srun -n 1 load_specprod_db {overwrite} \\
+srun --ntasks=1 load_specprod_db {overwrite} \\
     --hostname {hostname} --username {username} \\
     --load {stage} --schema ${{SPECPROD}} ${{DESI_ROOT}}
 """
