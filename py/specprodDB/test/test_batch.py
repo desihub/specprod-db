@@ -51,13 +51,13 @@ class TestBatch(unittest.TestCase):
             scripts = prepare_template(options)
         self.assertIn('load_specprod_db_fuji_exposures.sh', scripts)
 
-    @patch('sys.argv', ['prepare_batch_specprod_db', '--target-path', '/foo/bar', '--schema', 'fuji', 'foo@example.com'])
-    def test_prepare_template_bash_target(self):
-        """Test conversion of options to scripts with bash and alternate targets.
+    @patch('sys.argv', ['prepare_batch_specprod_db', '--qos', 'bigmem', '--constraint', 'haswell', '--schema', 'fuji', 'foo@example.com'])
+    def test_prepare_template_bash_qos(self):
+        """Test conversion of options to scripts with bash and alternate qos/constraint.
         """
         exposures = """#!/bin/bash
-#SBATCH --qos=regular
-#SBATCH --constraint=cpu
+#SBATCH --qos=bigmem
+#SBATCH --constraint=haswell
 #SBATCH --nodes=1
 #SBATCH --time=12:00:00
 #SBATCH --job-name=load_specprod_db_fuji_exposures
@@ -69,39 +69,10 @@ module load specprod-db/main
 export SPECPROD=fuji
 srun -n 1 load_specprod_db --overwrite \\
     --hostname specprod-db.desi.lbl.gov --username desi_admin \\
-    --load exposures --schema ${SPECPROD} \\
-    --target-path /foo/bar --tiles-path /global/cfs/cdirs/desi/target/fiberassign/tiles/trunk ${DESI_ROOT}
+    --load exposures --schema ${SPECPROD} ${DESI_ROOT}
 """
-        with patch.dict('os.environ', {'DESI_TARGET': '/global/cfs/cdirs/desi/target'}):
-            options = get_options()
-            scripts = prepare_template(options)
-        self.assertIn('load_specprod_db_fuji_exposures.sh', scripts)
-        self.assertEqual(scripts['load_specprod_db_fuji_exposures.sh'], exposures)
-
-    @patch('sys.argv', ['prepare_batch_specprod_db', '--tiles-path', '/foo/bar', '--schema', 'fuji', 'foo@example.com'])
-    def test_prepare_template_bash_tiles(self):
-        """Test conversion of options to scripts with bash and alternate tiles.
-        """
-        exposures = """#!/bin/bash
-#SBATCH --qos=regular
-#SBATCH --constraint=cpu
-#SBATCH --nodes=1
-#SBATCH --time=12:00:00
-#SBATCH --job-name=load_specprod_db_fuji_exposures
-#SBATCH --licenses=SCRATCH,cfs
-#SBATCH --account=desi
-#SBATCH --mail-type=end,fail
-#SBATCH --mail-user=foo@example.com
-module load specprod-db/main
-export SPECPROD=fuji
-srun -n 1 load_specprod_db --overwrite \\
-    --hostname specprod-db.desi.lbl.gov --username desi_admin \\
-    --load exposures --schema ${SPECPROD} \\
-    --target-path /global/cfs/cdirs/desi/public/edr --tiles-path /foo/bar ${DESI_ROOT}
-"""
-        with patch.dict('os.environ', {'DESI_ROOT': '/global/cfs/cdirs/desi'}):
-            options = get_options()
-            scripts = prepare_template(options)
+        options = get_options()
+        scripts = prepare_template(options)
         self.assertIn('load_specprod_db_fuji_exposures.sh', scripts)
         self.assertEqual(scripts['load_specprod_db_fuji_exposures.sh'], exposures)
 

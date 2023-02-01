@@ -9,31 +9,13 @@ targeting and redshift data.
 
 Notes
 -----
-* EDR development:
 
-  - Load as much data as possible from patched fiberassign files.
-  - If necessary, create intermediate files for ingestion by running
-    the desi-photometry_ code.
-  - In the tractorphot files, TARGETID really is unique.  However, some
-    TARGETIDs are not present because they do not match an object to within
-    1 arcsec. For these, fill in what can be filled in from target files or
-    fiberassign files.
-  - For every duplicate potential targetid, use only the most recent desitarget
-    version containing that targetid, rather than the default associated with
-    the fiberassign file.
-  - Read redshifts from ``zall-*.fits`` files to get the ``*_primary``
-    columns, or run the primary generation code on the data
-    (:func:`~desispec.zcatalog.find_primary_spectra`).
-
-* Future devlopment:
-
-  - Plan for how to support fuji+guadalupe combined analysis.  May need to look
-    into cross-schema views, or daughter tables that inherit from both schemas.
-  - Anticipating loading afterburners and VACs into the database.
-  - Load redshifts from all redrock files in ``tiles/cumulative``, rather than
-    from the ``ztile-*-cumulative.fits`` summary file.
-
-.. _desi-photometry: https://github.com/moustakas/desi-photometry
+- Plan for how to support fuji+guadalupe combined analysis.  May need to look
+  into cross-schema views, or daughter tables that inherit from both schemas.
+- Plan for loading daily reductions, in addition to static reductions.
+- Anticipate loading afterburners and VACs into the database.
+- Load redshifts from all redrock files in ``tiles/cumulative``, rather than
+  from the ``ztile-*-cumulative.fits`` summary file.
 """
 import os
 import re
