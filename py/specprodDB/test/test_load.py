@@ -2,15 +2,12 @@
 # -*- coding: utf-8 -*-
 """Test specprodDB.load.
 """
-import unittest
 import os
+import unittest
+from unittest.mock import patch, call
+from tempfile import mkdtemp
 from shutil import rmtree
-
-try:
-    import sqlalchemy
-    sqlalchemy_available = True
-except ImportError:
-    sqlalchemy_available = False
+from ..load import load_file, setup_db, q3c_index, get_options
 
 
 class TestLoad(unittest.TestCase):
@@ -18,41 +15,14 @@ class TestLoad(unittest.TestCase):
     """
     @classmethod
     def setUpClass(cls):
-        """Create unique test filename in a subdirectory.
+        """Create temporary directory.
         """
-        # from uuid import uuid1
-        # cls.testfile = 'test-{uuid}/test-{uuid}.fits'.format(uuid=uuid1())
-        # cls.testyfile = 'test-{uuid}/test-{uuid}.yaml'.format(uuid=uuid1())
-        # cls.testbrfile = 'test-{uuid}/test-br-{uuid}.fits'.format(uuid=uuid1())
-        cls.testDir = os.path.join(os.environ['HOME'], 'desi_test_database')
-        cls.origEnv = {'SPECPROD': None,
-                       "DESI_SPECTRO_DATA": None,
-                       "DESI_SPECTRO_REDUX": None}
-        cls.testEnv = {'SPECPROD': 'dailytest',
-                       "DESI_SPECTRO_DATA": os.path.join(cls.testDir, 'spectro', 'data'),
-                       "DESI_SPECTRO_REDUX": os.path.join(cls.testDir, 'spectro', 'redux')}
-        for e in cls.origEnv:
-            if e in os.environ:
-                cls.origEnv[e] = os.environ[e]
-            os.environ[e] = cls.testEnv[e]
+        cls.testDir = mkdtemp()
 
     @classmethod
     def tearDownClass(cls):
-        """Cleanup test files if they exist.
+        """Clean up temporary directory.
         """
-        # for testfile in [cls.testfile, cls.testyfile, cls.testbrfile]:
-        #     if os.path.exists(testfile):
-        #         os.remove(testfile)
-        #         testpath = os.path.normpath(os.path.dirname(testfile))
-        #         if testpath != '.':
-        #             os.removedirs(testpath)
-
-        for e in cls.origEnv:
-            if cls.origEnv[e] is None:
-                del os.environ[e]
-            else:
-                os.environ[e] = cls.origEnv[e]
-
         if os.path.exists(cls.testDir):
             rmtree(cls.testDir)
 
@@ -62,9 +32,22 @@ class TestLoad(unittest.TestCase):
     def tearDown(self):
         pass
 
-    @unittest.skipUnless(sqlalchemy_available, "SQLAlchemy not installed; skipping specprodDB class tests.")
-    def test_datachallenge_classes(self):
-        """Test SQLAlchemy classes in specprodDB.load.
+    @patch('sys.argv', ['load_specprod_db', '/global/cfs/cdirs/desi'])
+    def test_get_options(self):
+        """Test parsing of command-line options.
         """
-        from ..load import (Tile, Exposure, Frame, Fiberassign, Potential, Target)
-        pass
+        options = get_options()
+        self.assertEqual(options.hostname, 'specprod-db.desi.lbl.gov')
+        self.assertFalse(options.verbose)
+        self.assertEqual(options.load, 'exposures')
+
+    @patch('specprodDB.load.dbSession')
+    @patch('specprodDB.load.log')
+    def test_q3c_index(self, mock_log, mock_session):
+        """Test creation of q3c index.
+        """
+        with patch('specprodDB.load.schemaname', 'fuji'):
+            q3c_index('target', ra='tile_ra')
+        mock_session.execute.assert_called_once_with('CREATE INDEX ix_target_q3c_ang2ipix ON fuji.target (q3c_ang2ipix(tile_ra, tile_dec));\n    CLUSTER fuji.target USING ix_target_q3c_ang2ipix;\n    ANALYZE fuji.target;\n    ')
+        mock_log.info.assert_has_calls([call("Creating q3c index on %s.%s.", 'fuji', 'target'),
+                                        call("Finished q3c index on %s.%s.", 'fuji', 'target')])
