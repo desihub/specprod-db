@@ -1324,7 +1324,7 @@ def main():
                                'chunksize': options.chunksize,
                                'maxrows': options.maxrows
                                }],
-               'target': [{'filepaths': os.path.join(options.targetpath, 'vac', 'lsdr9-photometry', os.environ['SPECPROD'], options.photometry_version, 'potential-targets', 'targetphot-potential-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
+               'target': [{'filepaths': os.path.join(options.datapath, 'vac', 'lsdr9-photometry', os.environ['SPECPROD'], options.photometry_version, 'potential-targets', 'targetphot-potential-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
                            'tcls': Target,
                            'hdu': 'TARGETPHOT',
                            'preload': _target_unique_id,
@@ -1384,8 +1384,18 @@ def main():
     # Find the tiles that need to be loaded. Not all fiberassign files are compressed!
     #
     if options.load == 'fiberassign':
+        fiberassign_search_dirs = [os.path.join(options.datapath, 'target', 'fiberassign', 'tiles', 'tags', options.tiles_version),
+                                   os.path.join(options.datapath, 'target', 'fiberassign', 'tiles', options.tiles_version),
+                                   os.path.join('/global/cfs/cdirs/desi', 'target', 'fiberassign', 'tiles', 'tags', options.tiles_version),
+                                   os.path.join('/global/cfs/cdirs/desi', 'target', 'fiberassign', 'tiles', options.tiles_version),
+                                   os.path.join('/global/cfs/cdirs/desi', 'target', 'fiberassign', 'tiles', 'branches', options.tiles_version)]
+        for d in fiberassign_search_dirs:
+            if os.path.isdir(d):
+                fiberassign_dir = d
+                log.info('Found fiberassign directory: %s.', fiberassign_dir)
+                break
         try:
-            fiberassign_files = [checkgzip(os.path.join(options.tilespath, (f"{tileid[0]:06d}")[0:3], f"fiberassign-{tileid[0]:06d}.fits"))
+            fiberassign_files = [checkgzip(os.path.join(fiberassign_dir, (f"{tileid[0]:06d}")[0:3], f"fiberassign-{tileid[0]:06d}.fits"))
                                  for tileid in dbSession.query(Tile.tileid).order_by(Tile.tileid)]
         except FileNotFoundError:
             log.error("Some fiberassign files were not found!")
