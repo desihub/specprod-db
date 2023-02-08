@@ -2,6 +2,12 @@
 Change Log
 ==========
 
+1.0.0 (unreleased)
+------------------
+
+*Planned*: this release is intended for loading ``fuji`` and ``guadalupe`` with
+all data files tagged.
+
 0.9.0 (2023-02-08)
 ------------------
 
