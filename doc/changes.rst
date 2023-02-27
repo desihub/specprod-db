@@ -5,8 +5,11 @@ Change Log
 1.0.0 (unreleased)
 ------------------
 
-*Planned*: this release is intended for loading ``fuji`` and ``guadalupe`` with
-all data files tagged.
+* This release was used for loading ``fuji`` and ``guadalupe`` with
+  all data files tagged.
+* Set the final tagged version of tiles files (PR `#1`_).
+
+.. _`#1`: https://github.com/desihub/specprod-db/pull/1
 
 0.9.0 (2023-02-08)
 ------------------
