@@ -2,11 +2,21 @@
 Change Log
 ==========
 
-1.0.0 (unreleased)
+1.1.0 (unreleased)
 ------------------
 
-*Planned*: this release is intended for loading ``fuji`` and ``guadalupe`` with
-all data files tagged.
+*Planned*: This release will correspond to loading the ``iron`` spectroscopic
+production. A known change is that potential photometry and target data
+will be split into several files instead of a monolithic file.
+
+1.0.0 (2023-02-28)
+------------------
+
+* This release was used for loading ``fuji`` and ``guadalupe`` with
+  all data files tagged.
+* Set the final tagged version of tiles files (PR `#1`_).
+
+.. _`#1`: https://github.com/desihub/specprod-db/pull/1
 
 0.9.0 (2023-02-08)
 ------------------

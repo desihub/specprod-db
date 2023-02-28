@@ -1232,7 +1232,7 @@ def get_options():
                       metavar='SCHEMA',
                       help='Set the schema name in the PostgreSQL database.')
     prsr.add_argument('-t', '--tiles-version', action='store', dest='tiles_version',
-                      metavar='VERSION', default='trunk',
+                      metavar='VERSION', default='0.5',
                       help='Load fiberassign data from VERSION (default "%(default)s").')
     prsr.add_argument('-U', '--username', action='store', dest='username',
                       metavar='USERNAME', default='desi_admin',
