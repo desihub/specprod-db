@@ -2,7 +2,14 @@
 Change Log
 ==========
 
-1.0.0 (unreleased)
+1.1.0 (unreleased)
+------------------
+
+*Planned*: This release will correspond to loading the ``iron`` spectroscopic
+production. A known change is that potential photometry and target data
+will be split into several files instead of a monolithic file.
+
+1.0.0 (2023-02-28)
 ------------------
 
 * This release was used for loading ``fuji`` and ``guadalupe`` with
