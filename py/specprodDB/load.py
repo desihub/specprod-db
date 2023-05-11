@@ -20,6 +20,7 @@ Notes
 import os
 import re
 import glob
+import itertools
 import sys
 
 import numpy as np
@@ -530,6 +531,31 @@ class Zpix(SchemaMixin, Base):
     ncoeff = Column(BigInteger, nullable=False)
     deltachi2 = Column(DOUBLE_PRECISION, nullable=False)
     coadd_fiberstatus = Column(Integer, nullable=False)
+    #
+    # Skipping columns that are in other tables.
+    #
+    # These target bitmask columns are *not* the same as
+    # in the zall-pix-specprod.fits file. They will be replaced
+    # after the fact with values from the bitwise-or of
+    # values in the target table.
+    #
+    cmx_target = Column(BigInteger, nullable=False)
+    desi_target = Column(BigInteger, nullable=False)
+    bgs_target = Column(BigInteger, nullable=False)
+    mws_target = Column(BigInteger, nullable=False)
+    scnd_target = Column(BigInteger, nullable=False)
+    sv1_desi_target = Column(BigInteger, nullable=False)
+    sv1_bgs_target = Column(BigInteger, nullable=False)
+    sv1_mws_target = Column(BigInteger, nullable=False)
+    sv1_scnd_target = Column(BigInteger, nullable=False)
+    sv2_desi_target = Column(BigInteger, nullable=False)
+    sv2_bgs_target = Column(BigInteger, nullable=False)
+    sv2_mws_target = Column(BigInteger, nullable=False)
+    sv2_scnd_target = Column(BigInteger, nullable=False)
+    sv3_desi_target = Column(BigInteger, nullable=False)
+    sv3_bgs_target = Column(BigInteger, nullable=False)
+    sv3_mws_target = Column(BigInteger, nullable=False)
+    sv3_scnd_target = Column(BigInteger, nullable=False)
     #
     # Skipping columns that are in other tables.
     #
@@ -1108,6 +1134,39 @@ def q3c_index(table, ra='ra'):
     log.info("Creating q3c index on %s.%s.", schemaname, table)
     dbSession.execute(q3c_sql)
     log.info("Finished q3c index on %s.%s.", schemaname, table)
+    dbSession.commit()
+    return
+
+
+def zpix_target(table='zpix'):
+    """Replace targeting bitmasks in `table`.
+
+    Parameters
+    ----------
+    table : :class:`str`, optional
+        Name of the table to update, default is 'zpix'.
+
+    Notes
+    -----
+    Check postgres settings from: https://github.com/biorack/labkey_deploy/blob/master/db/db.yaml
+    """
+    surveys = ('', 'sv1', 'sv2', 'sv3')
+    programs = ('desi', 'bgs', 'mws', 'scnd')
+    masks = ['cmx_target'] + [('_'.join(p) if p[0] else p[1]) + '_target'
+                              for p in itertools.product(surveys, programs)]
+    inner_columns = ['targetid', 'surveys', 'programs'] + masks
+    inner_select = ("SELECT " +
+                    ', '.join([f"t.{c}" for c in inner_columns]) +
+                    f" FROM {schemaname}.target AS t JOIN {schemaname}.fiberassign AS f ON (t.targetid = f.targetid AND t.tileid = f.tileid)")
+    outer_select = ("SELECT z.id, " +
+                    ', '.join([f"BIT_OR(tgt.{m}) AS {m}" for m in masks]) +
+                    f" FROM {schemaname}.{table} AS z JOIN ({inner_select}) AS tgt ON (z.targetid=tgt.targetid AND z.survey=tgt.survey AND z.program=tgt.program) GROUP BY z.id")
+    update = (f"UPDATE {schemaname}.{table} AS z1 SET " +
+              ', '.join([f"{m} = z0.{m}" for m in masks]) +
+              f" FROM ({outer_select}) AS z0 WHERE z1.id = z0.id;")
+    log.info("Updating target bitmasks on %s.%s", schemaname, table)
+    dbSession.execute(update)
+    log.info("Finished updating target bitmasks on %s.%s.", schemaname, table)
     dbSession.commit()
     return
 
