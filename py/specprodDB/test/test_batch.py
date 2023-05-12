@@ -61,6 +61,7 @@ class TestBatch(unittest.TestCase):
 #SBATCH --nodes=1
 #SBATCH --time=00:10:00
 #SBATCH --job-name=load_specprod_db_fuji_exposures
+#SBATCH --output=/home/test/Documents/Jobs/%x-%j.log
 #SBATCH --licenses=SCRATCH,cfs
 #SBATCH --account=desi
 #SBATCH --mail-type=end,fail
@@ -78,6 +79,7 @@ srun --ntasks=1 load_specprod_db --overwrite \\
 #SBATCH --nodes=1
 #SBATCH --time=04:00:00
 #SBATCH --job-name=load_specprod_db_fuji_photometry
+#SBATCH --output=/home/test/Documents/Jobs/%x-%j.log
 #SBATCH --licenses=SCRATCH,cfs
 #SBATCH --account=desi
 #SBATCH --mail-type=end,fail
@@ -89,9 +91,9 @@ srun --ntasks=1 load_specprod_db  \\
     --hostname specprod-db.desi.lbl.gov --username desi_admin \\
     --load photometry --schema ${SPECPROD} ${DESI_ROOT}
 """
-
-        options = get_options()
-        scripts = prepare_template(options)
+        with patch('os.environ', {'HOME': '/home/test'}):
+            options = get_options()
+            scripts = prepare_template(options)
         self.assertIn('load_specprod_db_fuji_exposures.sh', scripts)
         self.assertEqual(scripts['load_specprod_db_fuji_exposures.sh'], exposures)
         self.assertEqual(scripts['load_specprod_db_fuji_photometry.sh'], photometry)

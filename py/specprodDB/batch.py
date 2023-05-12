@@ -17,6 +17,7 @@ template = """#!/bin/{shell}
 #SBATCH --nodes=1
 #SBATCH --time={time}
 #SBATCH --job-name=load_specprod_db_{schema}_{stage}
+#SBATCH --output={job_dir}/%x-%j.log
 #SBATCH --licenses=SCRATCH,cfs
 #SBATCH --account=desi
 #SBATCH --mail-type=end,fail
@@ -120,6 +121,7 @@ def prepare_template(options):
              'time': wall_time,
              'schema': options.schema,
              'stage': stage,
+             'job_dir': options.job_dir,
              'email': options.email,
              'export_root': export_root,
              'export_specprod': export_specprod,
