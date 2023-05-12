@@ -1145,9 +1145,9 @@ def zpix_target(survey, program):
     Parameters
     ----------
     survey : :class:`str`
-        The survey value to use, depends on the :env:`SPECPROD`.
+        The survey value to use, depends on the :envvar:`SPECPROD`.
     program : :class:`str`
-        The program value to use, depends on the :env:`SPECPROD`.
+        The program value to use, depends on the :envvar:`SPECPROD`.
     """
     # surveys = ('', 'sv1', 'sv2', 'sv3')
     # programs = ('desi', 'bgs', 'mws', 'scnd')
@@ -1205,7 +1205,7 @@ def zpix_target(survey, program):
                        Zpix.sv3_desi_target: row.sv3_desi_target,
                        Zpix.sv3_bgs_target: row.sv3_bgs_target,
                        Zpix.sv3_mws_target: row.sv3_mws_target,
-                       Zpix.sv3_scnd_target: row.sv3_scnd_target,}
+                       Zpix.sv3_scnd_target: row.sv3_scnd_target}
             zpix_update = dbSession.query(Zpix).filter(Zpix.targetid == row.targetid).filter(Zpix.survey == survey).filter(Zpix.program == program).update(updates)
         except ProgrammingError as e:
             print(e)
@@ -1543,7 +1543,7 @@ def main():
         #
         # Fiberassign table has to be loaded for this step.
         #
-        zpix_target_config = {'fuji':(('sv1', 'dark'), ),
+        zpix_target_config = {'fuji': (('sv1', 'dark'), ),
                               'guadalupe': (('main', 'bright'),
                                             ('main', 'dark')),
                               'iron': (('sv1', 'dark'),
