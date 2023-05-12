@@ -18,14 +18,14 @@ Notes
   from the ``ztile-*-cumulative.fits`` summary file.
 """
 import os
-import re
+# import re
 import glob
-import itertools
-import sys
+# import itertools
+# import sys
 
 import numpy as np
 from astropy import __version__ as astropy_version
-from astropy.io import fits
+# from astropy.io import fits
 from astropy.table import Table, MaskedColumn, join
 from astropy.time import Time
 from pytz import utc
