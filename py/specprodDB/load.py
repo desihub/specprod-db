@@ -33,8 +33,9 @@ from pytz import utc
 from sqlalchemy import __version__ as sqlalchemy_version
 from sqlalchemy import (create_engine, event, ForeignKey, Column, DDL,
                         BigInteger, Boolean, Integer, String, Float, DateTime,
-                        SmallInteger, bindparam, Numeric)
-from sqlalchemy.exc import IntegrityError
+                        SmallInteger, bindparam, Numeric, and_)
+from sqlalchemy.sql import func
+from sqlalchemy.exc import IntegrityError, ProgrammingError
 from sqlalchemy.orm import (declarative_base, declarative_mixin, declared_attr,
                             scoped_session, sessionmaker, relationship)
 from sqlalchemy.schema import CreateSchema, Index
@@ -1138,31 +1139,78 @@ def q3c_index(table, ra='ra'):
     return
 
 
-def zpix_target(table='zpix'):
+def zpix_target(survey, program):
     """Replace targeting bitmasks in `table`.
 
     Parameters
     ----------
-    table : :class:`str`, optional
-        Name of the table to update, default is 'zpix'.
+    survey : :class:`str`
+        The survey value to use, depends on the :env:`SPECPROD`.
+    program : :class:`str`
+        The program value to use, depends on the :env:`SPECPROD`.
     """
-    surveys = ('', 'sv1', 'sv2', 'sv3')
-    programs = ('desi', 'bgs', 'mws', 'scnd')
-    masks = ['cmx_target'] + [('_'.join(p) if p[0] else p[1]) + '_target'
-                              for p in itertools.product(surveys, programs)]
-    inner_columns = ['targetid', 'surveys', 'programs'] + masks
-    inner_select = ("SELECT " +
-                    ', '.join([f"t.{c}" for c in inner_columns]) +
-                    f" FROM {schemaname}.target AS t JOIN {schemaname}.fiberassign AS f ON (t.targetid = f.targetid AND t.tileid = f.tileid)")
-    outer_select = ("SELECT z.id, " +
-                    ', '.join([f"BIT_OR(tgt.{m}) AS {m}" for m in masks]) +
-                    f" FROM {schemaname}.{table} AS z JOIN ({inner_select}) AS tgt ON (z.targetid=tgt.targetid AND z.survey=tgt.survey AND z.program=tgt.program) GROUP BY z.id")
-    update = (f"UPDATE {schemaname}.{table} AS z1 SET " +
-              ', '.join([f"{m} = z0.{m}" for m in masks]) +
-              f" FROM ({outer_select}) AS z0 WHERE z1.id = z0.id;")
-    log.info("Updating target bitmasks on %s.%s", schemaname, table)
-    dbSession.execute(update)
-    log.info("Finished updating target bitmasks on %s.%s.", schemaname, table)
+    # surveys = ('', 'sv1', 'sv2', 'sv3')
+    # programs = ('desi', 'bgs', 'mws', 'scnd')
+    # masks = ['cmx_target'] + [('_'.join(p) if p[0] else p[1]) + '_target'
+    #                           for p in itertools.product(surveys, programs)]
+    # inner_columns = ['targetid', 'surveys', 'programs'] + masks
+    # inner_select = ("SELECT " +
+    #                 ', '.join([f"t.{c}" for c in inner_columns]) +
+    #                 f" FROM {schemaname}.target AS t JOIN {schemaname}.fiberassign AS f ON (t.targetid = f.targetid AND t.tileid = f.tileid)")
+    # outer_select = ("SELECT z.id, " +
+    #                 ', '.join([f"BIT_OR(tgt.{m}) AS {m}" for m in masks]) +
+    #                 f" FROM {schemaname}.{table} AS z JOIN ({inner_select}) AS tgt ON (z.targetid=tgt.targetid AND z.survey=tgt.survey AND z.program=tgt.program) GROUP BY z.id")
+    # update = (f"UPDATE {schemaname}.{table} AS z1 SET " +
+    #           ', '.join([f"{m} = z0.{m}" for m in masks]) +
+    #           f" FROM ({outer_select}) AS z0 WHERE z1.id = z0.id;")
+    observed_multiple_tiles = dbSession.query(Target.targetid).join(Fiberassign,
+                                                                    and_(Target.targetid == Fiberassign.targetid,
+                                                                         Target.tileid == Fiberassign.tileid)).filter(Target.survey == survey).filter(Target.program == program).group_by(Target.targetid).having(func.count(Target.tileid) > 1)
+    distinct_target = dbSession.query(Target.targetid, Target.sv1_desi_target).filter(Target.targetid.in_(observed_multiple_tiles)).filter(Target.survey == survey).filter(Target.program == program).distinct().subquery()
+    multiple_target = dbSession.query(distinct_target.c.targetid).group_by(distinct_target.c.targetid).having(func.count(distinct_target.c.sv1_desi_target) > 1)
+    multiple_target_or = dbSession.query(Target.targetid,
+                                         func.bit_or(Target.cmx_target).label('cmx_target'),
+                                         func.bit_or(Target.desi_target).label('desi_target'),
+                                         func.bit_or(Target.bgs_target).label('bgs_target'),
+                                         func.bit_or(Target.mws_target).label('mws_target'),
+                                         func.bit_or(Target.scnd_target).label('scnd_target'),
+                                         func.bit_or(Target.sv1_desi_target).label('sv1_desi_target'),
+                                         func.bit_or(Target.sv1_bgs_target).label('sv1_bgs_target'),
+                                         func.bit_or(Target.sv1_mws_target).label('sv1_mws_target'),
+                                         func.bit_or(Target.sv1_scnd_target).label('sv1_scnd_target'),
+                                         func.bit_or(Target.sv2_desi_target).label('sv2_desi_target'),
+                                         func.bit_or(Target.sv2_bgs_target).label('sv2_bgs_target'),
+                                         func.bit_or(Target.sv2_mws_target).label('sv2_mws_target'),
+                                         func.bit_or(Target.sv2_scnd_target).label('sv2_scnd_target'),
+                                         func.bit_or(Target.sv3_desi_target).label('sv3_desi_target'),
+                                         func.bit_or(Target.sv3_bgs_target).label('sv3_bgs_target'),
+                                         func.bit_or(Target.sv3_mws_target).label('sv3_mws_target'),
+                                         func.bit_or(Target.sv3_scnd_target).label('sv3_scnd_target')).filter(Target.targetid.in_(multiple_target)).filter(Target.survey == survey).filter(Target.program == program).group_by(Target.targetid)
+    for row in multiple_target_or.all():
+        # zpix_match = dbSession.query(Zpix).filter(Zpix.targetid == row.targetid).filter(Zpix.survey == survey).filter(Zpix.program == program)
+        try:
+            updates = {Zpix.cmx_target: row.cmx_target,
+                       Zpix.desi_target: row.desi_target,
+                       Zpix.bgs_target: row.bgs_target,
+                       Zpix.mws_target: row.mws_target,
+                       Zpix.scnd_target: row.scnd_target,
+                       Zpix.sv1_desi_target: row.sv1_desi_target,
+                       Zpix.sv1_bgs_target: row.sv1_bgs_target,
+                       Zpix.sv1_mws_target: row.sv1_mws_target,
+                       Zpix.sv1_scnd_target: row.sv1_scnd_target,
+                       Zpix.sv2_desi_target: row.sv2_desi_target,
+                       Zpix.sv2_bgs_target: row.sv2_bgs_target,
+                       Zpix.sv2_mws_target: row.sv2_mws_target,
+                       Zpix.sv2_scnd_target: row.sv2_scnd_target,
+                       Zpix.sv3_desi_target: row.sv3_desi_target,
+                       Zpix.sv3_bgs_target: row.sv3_bgs_target,
+                       Zpix.sv3_mws_target: row.sv3_mws_target,
+                       Zpix.sv3_scnd_target: row.sv3_scnd_target,}
+            zpix_update = dbSession.query(Zpix).filter(Zpix.targetid == row.targetid).filter(Zpix.survey == survey).filter(Zpix.program == program).update(updates)
+        except ProgrammingError as e:
+            print(e)
+            dbSession.rollback()
+            raise
     dbSession.commit()
     return
 
@@ -1492,7 +1540,24 @@ def main():
         load_file(**l)
         log.info("Finished loading %s.", tn)
     if options.load == 'fiberassign':
-        log.info("Applying target bitmask corrections to zpix table.")
-        zpix_target()
-        log.info('Finished target bitmask corrections to zpix table.')
+        #
+        # Fiberassign table has to be loaded for this step.
+        #
+        zpix_target_config = {'fuji':(('sv1', 'dark'), ),
+                              'guadalupe': (('main', 'bright'),
+                                            ('main', 'dark')),
+                              'iron': (('sv1', 'dark'),
+                                       ('main', 'bright'),
+                                       ('main', 'dark'))}
+        if os.environ['SPECPROD'] in zpix_target_config:
+            for s in zpix_target_config[os.environ['SPECPROD']]:
+                for args in s:
+                    log.info("Applying target bitmask corrections for %s, %s, %s to zpix table.",
+                             os.environ['SPECPROD'], args[0], args[1])
+                    zpix_target(*args)
+                    log.info("Finished target bitmask corrections for %s, %s, %s to zpix table.",
+                             os.environ['SPECPROD'], args[0], args[1])
+        else:
+            log.warning("Unknown SPECPROD='%s', skipping target bitmask corrections.",
+                        os.environ['SPECPROD'])
     return 0
