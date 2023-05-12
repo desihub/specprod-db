@@ -1541,9 +1541,13 @@ def main():
         log.info("Completed loading version metadata.")
     for l in loader:
         tn = l['tcls'].__tablename__
-        log.info("Loading %s from %s.", tn, str(l['filepaths']))
-        load_file(**l)
-        log.info("Finished loading %s.", tn)
+        loaded = dbSession.query(l['tlcs']).count()
+        if loaded > 0:
+            log.info("Loading appears to be complete on %s.", tn)
+        else:
+            log.info("Loading %s from %s.", tn, str(l['filepaths']))
+            load_file(**l)
+            log.info("Finished loading %s.", tn)
     if options.load == 'fiberassign':
         #
         # Fiberassign table has to be loaded for this step.
@@ -1555,13 +1559,12 @@ def main():
                                        ('main', 'bright'),
                                        ('main', 'dark'))}
         if os.environ['SPECPROD'] in zpix_target_config:
-            for s in zpix_target_config[os.environ['SPECPROD']]:
-                for args in s:
-                    log.info("Applying target bitmask corrections for %s, %s, %s to zpix table.",
-                             os.environ['SPECPROD'], args[0], args[1])
-                    zpix_target(*args)
-                    log.info("Finished target bitmask corrections for %s, %s, %s to zpix table.",
-                             os.environ['SPECPROD'], args[0], args[1])
+            for args in zpix_target_config[os.environ['SPECPROD']]:
+                log.info("Applying target bitmask corrections for %s, %s, %s to zpix table.",
+                         os.environ['SPECPROD'], args[0], args[1])
+                zpix_target(*args)
+                log.info("Finished target bitmask corrections for %s, %s, %s to zpix table.",
+                         os.environ['SPECPROD'], args[0], args[1])
         else:
             log.warning("Unknown SPECPROD='%s', skipping target bitmask corrections.",
                         os.environ['SPECPROD'])
