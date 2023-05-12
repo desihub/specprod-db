@@ -1166,8 +1166,12 @@ def zpix_target(survey, program):
     observed_multiple_tiles = dbSession.query(Target.targetid).join(Fiberassign,
                                                                     and_(Target.targetid == Fiberassign.targetid,
                                                                          Target.tileid == Fiberassign.tileid)).filter(Target.survey == survey).filter(Target.program == program).group_by(Target.targetid).having(func.count(Target.tileid) > 1)
-    distinct_target = dbSession.query(Target.targetid, Target.sv1_desi_target).filter(Target.targetid.in_(observed_multiple_tiles)).filter(Target.survey == survey).filter(Target.program == program).distinct().subquery()
-    multiple_target = dbSession.query(distinct_target.c.targetid).group_by(distinct_target.c.targetid).having(func.count(distinct_target.c.sv1_desi_target) > 1)
+    if survey == 'sv1':
+        target_bit = Target.sv1_desi_target
+    else:
+        target_bit = Target.desi_target
+    distinct_target = dbSession.query(Target.targetid, target_bit.label('distinct_bitmask')).filter(Target.targetid.in_(observed_multiple_tiles)).filter(Target.survey == survey).filter(Target.program == program).distinct().subquery()
+    multiple_target = dbSession.query(distinct_target.c.targetid).group_by(distinct_target.c.targetid).having(func.count(distinct_target.c.distinct_bitmask) > 1)
     multiple_target_or = dbSession.query(Target.targetid,
                                          func.bit_or(Target.cmx_target).label('cmx_target'),
                                          func.bit_or(Target.desi_target).label('desi_target'),
@@ -1206,6 +1210,7 @@ def zpix_target(survey, program):
                        Zpix.sv3_bgs_target: row.sv3_bgs_target,
                        Zpix.sv3_mws_target: row.sv3_mws_target,
                        Zpix.sv3_scnd_target: row.sv3_scnd_target}
+            log.info("Updating %s %s %s.", str(row.targetid), survey, program)
             zpix_update = dbSession.query(Zpix).filter(Zpix.targetid == row.targetid).filter(Zpix.survey == survey).filter(Zpix.program == program).update(updates)
         except ProgrammingError as e:
             print(e)
