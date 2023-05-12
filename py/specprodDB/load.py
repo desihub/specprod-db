@@ -1194,6 +1194,7 @@ def setup_db(options=None, **kwargs):
             hostname = kwargs.get('hostname', None)
             overwrite = kwargs.get('overwrite', False)
             schema = kwargs.get('schema', None)
+            public = kwargs.get('public', False)
             username = kwargs.get('username', 'desi_admin')
             verbose = kwargs.get('verbose', False)
         else:
@@ -1203,6 +1204,7 @@ def setup_db(options=None, **kwargs):
         hostname = options.hostname
         overwrite = options.overwrite
         schema = options.schema
+        public = options.public
         username = options.username
         verbose = options.verbose
     if schema:
@@ -1213,8 +1215,16 @@ def setup_db(options=None, **kwargs):
         #                  DDL('DROP SCHEMA IF EXISTS {0} CASCADE'.format(schemaname)))
         event.listen(Base.metadata, 'before_create',
                      DDL(f'CREATE SCHEMA IF NOT EXISTS {schema};'))
-        event.listen(Base.metadata, 'after_create',
-                     DDL(f'GRANT USAGE ON SCHEMA {schema} TO desi; GRANT SELECT ON ALL TABLES IN SCHEMA {schema} TO desi; GRANT SELECT ON ALL SEQUENCES IN SCHEMA {schema} TO desi;'))
+        grant = f"""GRANT USAGE ON SCHEMA {schema} TO desi;
+GRANT SELECT ON ALL TABLES IN SCHEMA {schema} TO desi;
+GRANT SELECT ON ALL SEQUENCES IN SCHEMA {schema} TO desi;
+"""
+        if public:
+            grant += f"""GRANT USAGE ON SCHEMA {schema} TO desi_public;
+GRANT SELECT ON ALL TABLES IN SCHEMA {schema} TO desi_public;
+GRANT SELECT ON ALL SEQUENCES IN SCHEMA {schema} TO desi_public;
+"""
+        event.listen(Base.metadata, 'after_create', DDL(grant))
     #
     # Create the file.
     #
@@ -1277,6 +1287,8 @@ def get_options():
                       help="Load up to M rows in the tables (default is all rows).")
     prsr.add_argument('-o', '--overwrite', action='store_true', dest='overwrite',
                       help='Delete any existing files or tables before loading.')
+    prsr.add_argument('-P', '--public', action='store_true', dest='public',
+                      help='GRANT access to the schema to the public database user.')
     prsr.add_argument('-p', '--photometry-version', action='store', dest='photometry_version',
                       metavar='VERSION', default='v2.0',
                       help='Load target photometry data from VERSION (default "%(default)s").')
@@ -1354,7 +1366,7 @@ def main():
                # The potential targets are supposed to include data for all targets.
                # In other words, every actual target is also a potential target.
                #
-               'photometry': [{'filepaths': glob.glob(os.path.join(options.datapath, 'vac', 'lsdr9-photometry', os.environ['SPECPROD'], options.photometry_version, 'potential-targets', 'tractorphot', 'tractorphot*.fits')),
+               'photometry': [{'filepaths': glob.glob(os.path.join(options.datapath, 'vac', 'edr', 'lsdr9-photometry', os.environ['SPECPROD'], options.photometry_version, 'potential-targets', 'tractorphot', 'tractorphot*.fits')),
                                'tcls': Photometry,
                                'hdu': 'TRACTORPHOT',
                                'expand': {'DCHISQ': ('dchisq_psf', 'dchisq_rex', 'dchisq_dev', 'dchisq_exp', 'dchisq_ser',),
@@ -1368,7 +1380,7 @@ def main():
                # This stage loads targets, and such photometry as they have, that did not
                # successfully match to a known LS DR9 object.
                #
-               'targetphot': [{'filepaths': os.path.join(options.datapath, 'vac', 'lsdr9-photometry', os.environ['SPECPROD'], options.photometry_version, 'potential-targets', 'targetphot-potential-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
+               'targetphot': [{'filepaths': os.path.join(options.datapath, 'vac', 'edr', 'lsdr9-photometry', os.environ['SPECPROD'], options.photometry_version, 'potential-targets', 'targetphot-potential-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
                                'tcls': Photometry,
                                'hdu': 'TARGETPHOT',
                                'preload': _add_ls_id,
@@ -1379,7 +1391,7 @@ def main():
                                'chunksize': options.chunksize,
                                'maxrows': options.maxrows
                                }],
-               'target': [{'filepaths': os.path.join(options.datapath, 'vac', 'lsdr9-photometry', os.environ['SPECPROD'], options.photometry_version, 'potential-targets', 'targetphot-potential-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
+               'target': [{'filepaths': os.path.join(options.datapath, 'vac', 'edr', 'lsdr9-photometry', os.environ['SPECPROD'], options.photometry_version, 'potential-targets', 'targetphot-potential-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
                            'tcls': Target,
                            'hdu': 'TARGETPHOT',
                            'preload': _target_unique_id,
@@ -1479,4 +1491,8 @@ def main():
         log.info("Loading %s from %s.", tn, str(l['filepaths']))
         load_file(**l)
         log.info("Finished loading %s.", tn)
+    if options.load == 'fiberassign':
+        log.info("Applying target bitmask corrections to zpix table.")
+        zpix_target()
+        log.info('Finished target bitmask corrections to zpix table.')
     return 0
