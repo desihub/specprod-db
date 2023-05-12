@@ -1541,7 +1541,7 @@ def main():
         log.info("Completed loading version metadata.")
     for l in loader:
         tn = l['tcls'].__tablename__
-        loaded = dbSession.query(l['tlcs']).count()
+        loaded = dbSession.query(l['tcls']).count()
         if loaded > 0:
             log.info("Loading appears to be complete on %s.", tn)
         else:
