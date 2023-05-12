@@ -1145,10 +1145,6 @@ def zpix_target(table='zpix'):
     ----------
     table : :class:`str`, optional
         Name of the table to update, default is 'zpix'.
-
-    Notes
-    -----
-    Check postgres settings from: https://github.com/biorack/labkey_deploy/blob/master/db/db.yaml
     """
     surveys = ('', 'sv1', 'sv2', 'sv3')
     programs = ('desi', 'bgs', 'mws', 'scnd')
