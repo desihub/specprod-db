@@ -1273,9 +1273,9 @@ def zpix_target(specprod):
         for program in bit_or_query[survey]:
             for row in bit_or_query[survey][program].all():
                 zpix_match = dbSession.query(Zpix).filter(Zpix.targetid == row.targetid).filter(Zpix.survey == survey).filter(Zpix.program == program).one()
-                update = eval(update_string.format(row))
+                update = eval(update_string.format(row), globals={'Zpix': Zpix})
                 try:
-                    log.info("%s.update(%s)", zpix_match, update_string)
+                    log.info("%s.update(%s)", zpix_match, update_string.format(row))
                     # zpix_match.update(update)
                 except ProgrammingError as e:
                     log.critical(e)
