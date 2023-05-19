@@ -1618,7 +1618,7 @@ def main():
         # Fiberassign table has to be loaded for this step.
         #
         log.info("Applying target bitmask corrections for %s to zpix table.",
-                    os.environ['SPECPROD'])
+                 os.environ['SPECPROD'])
         try:
             zpix_target(os.environ['SPECPROD'])
         except ProgrammingError:
@@ -1626,5 +1626,5 @@ def main():
                          os.environ['SPECPROD'])
             return 1
         log.info("Finished target bitmask corrections for %s zpix table.",
-                    os.environ['SPECPROD'])
+                 os.environ['SPECPROD'])
     return 0
