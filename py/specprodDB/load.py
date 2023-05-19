@@ -1275,16 +1275,9 @@ def zpix_target(specprod):
                 zpix_match = dbSession.query(Zpix).filter(Zpix.targetid == row.targetid).filter(Zpix.survey == survey).filter(Zpix.program == program).one()
                 for m in masks:
                     log.info("%s.%s = %s", zpix_match, m, str(getattr(row, m)))
-                    # getattr(zpix_match, m) = getattr(row, m)
-                # dbSession.commit()
-                # try:
-                #     log.info("%s.update(%s)", zpix_match, update_string.format(row))
-                #     zpix_match.update(update)
-                # except ProgrammingError as e:
-                #     log.critical(e)
-                #     dbSession.rollback()
-                #     raise
-    dbSession.commit()
+                    update_column = getattr(zpix_match, m)
+                    update_column = getattr(row, m)
+                dbSession.commit()
     return
 
 
