@@ -1159,13 +1159,13 @@ def zpix_target(specprod):
                                         'special': ('backup', 'bright', 'dark', 'other'),
                                         'sv1': ('backup', 'bright', 'dark', 'other'),
                                         'sv2': ('backup', 'bright', 'dark'),
-                                        'sv3': ('backup', 'bright', 'dark')},}
+                                        'sv3': ('backup', 'bright', 'dark')}}
     target_bits = {'cmx': {'cmx': Target.cmx_target},
                    'sv1': {'desi': Target.sv1_desi_target, 'bgs': Target.sv1_bgs_target, 'mws': Target.sv1_mws_target},
                    'sv2': {'desi': Target.sv2_desi_target, 'bgs': Target.sv2_bgs_target, 'mws': Target.sv2_mws_target},
                    'sv3': {'desi': Target.sv3_desi_target, 'bgs': Target.sv3_bgs_target, 'mws': Target.sv3_mws_target},
                    'main': {'desi': Target.desi_target, 'bgs': Target.bgs_target, 'mws': Target.mws_target},
-                   'special': {'desi': Target.desi_target, 'bgs': Target.bgs_target, 'mws': Target.mws_target},}
+                   'special': {'desi': Target.desi_target, 'bgs': Target.bgs_target, 'mws': Target.mws_target}}
     #
     # Find targetid assigned to multiple tiles.
     #
@@ -1175,7 +1175,7 @@ def zpix_target(specprod):
         for program in specprod_survey_program[specprod][survey]:
             assigned_multiple_tiles[survey][program] = dbSession.query(Target.targetid).join(Fiberassign,
                                                                                              and_(Target.targetid == Fiberassign.targetid,
-                                                                                             Target.tileid == Fiberassign.tileid)).filter(Target.survey == survey).filter(Target.program == program).group_by(Target.targetid).having(func.count(Target.tileid) > 1)
+                                                                                                  Target.tileid == Fiberassign.tileid)).filter(Target.survey == survey).filter(Target.program == program).group_by(Target.targetid).having(func.count(Target.tileid) > 1)
     #
     # From that set, find cases targetid and a targeting bit are distinct pairs.
     #
@@ -1258,11 +1258,11 @@ def zpix_target(specprod):
         bit_or_query[survey] = dict()
         for program in targetids_to_fix[survey]:
             log.debug("SELECT t.targetid, " +
-                ', '.join([f"BIT_OR(t.{m}) AS {m}" for m in masks]) +
-                f" FROM {specprod}.target AS t WHERE t.targetid IN ({', '.join(map(str, set(targetids_to_fix[survey][program])))}) AND t.survey = '{survey}' AND t.program = '{program}' GROUP BY t.targetid;")
+                      ', '.join([f"BIT_OR(t.{m}) AS {m}" for m in masks]) +
+                      f" FROM {specprod}.target AS t WHERE t.targetid IN ({', '.join(map(str, set(targetids_to_fix[survey][program])))}) AND t.survey = '{survey}' AND t.program = '{program}' GROUP BY t.targetid;")
             bq = ("dbSession.query(Target.targetid, " +
-                ', '.join([f"func.bit_or(Target.{m}).label('{m}')" for m in masks]) +
-                f").filter(Target.targetid.in_([{', '.join(map(str, set(targetids_to_fix[survey][program])))}])).filter(Target.survey == '{survey}').filter(Target.program == '{program}').group_by(Target.targetid)")
+                  ', '.join([f"func.bit_or(Target.{m}).label('{m}')" for m in masks]) +
+                  f").filter(Target.targetid.in_([{', '.join(map(str, set(targetids_to_fix[survey][program])))}])).filter(Target.survey == '{survey}').filter(Target.program == '{program}').group_by(Target.targetid)")
             log.debug(bq)
             bit_or_query[survey][program] = eval(bq)
     #
@@ -1276,7 +1276,7 @@ def zpix_target(specprod):
                 update = eval(update_string)
                 try:
                     log.info("%s.update(%s)", zpix_match, update_string)
-                    zpix_match.update(update)
+                    # zpix_match.update(update)
                 except ProgrammingError as e:
                     log.critical(e)
                     dbSession.rollback()
