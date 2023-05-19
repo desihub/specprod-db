@@ -1275,8 +1275,23 @@ def zpix_target(specprod):
                 zpix_match = dbSession.query(Zpix).filter(Zpix.targetid == row.targetid).filter(Zpix.survey == survey).filter(Zpix.program == program).one()
                 for m in masks:
                     log.info("%s.%s = %s", zpix_match, m, str(getattr(row, m)))
-                    update_column = getattr(zpix_match, m)
-                    update_column = getattr(row, m)
+                zpix_match.cmx_target = row.cmx_target
+                zpix_match.desi_target = row.desi_target
+                zpix_match.bgs_target = row.bgs_target
+                zpix_match.mws_target = row.mws_target
+                zpix_match.scnd_target = row.scnd_target
+                zpix_match.sv1_desi_target = row.sv1_desi_target
+                zpix_match.sv1_bgs_target = row.sv1_bgs_target
+                zpix_match.sv1_mws_target = row.sv1_mws_target
+                zpix_match.sv1_scnd_target = row.sv1_scnd_target
+                zpix_match.sv2_desi_target = row.sv2_desi_target
+                zpix_match.sv2_bgs_target = row.sv2_bgs_target
+                zpix_match.sv2_mws_target = row.sv2_mws_target
+                zpix_match.sv2_scnd_target = row.sv2_scnd_target
+                zpix_match.sv3_desi_target = row.sv3_desi_target
+                zpix_match.sv3_bgs_target = row.sv3_bgs_target
+                zpix_match.sv3_mws_target = row.sv3_mws_target
+                zpix_match.sv3_scnd_target = row.sv3_scnd_target
                 dbSession.commit()
     return
 
