@@ -1268,19 +1268,22 @@ def zpix_target(specprod):
     #
     # Apply the updates
     #
-    update_string = '{' + ', '.join([f"Zpix.{m}: {{0.{m}:d}}" for m in masks]) + '}'
+    # update_string = '{' + ', '.join([f"Zpix.{m}: {{0.{m}:d}}" for m in masks]) + '}'
     for survey in bit_or_query:
         for program in bit_or_query[survey]:
             for row in bit_or_query[survey][program].all():
                 zpix_match = dbSession.query(Zpix).filter(Zpix.targetid == row.targetid).filter(Zpix.survey == survey).filter(Zpix.program == program).one()
-                update = eval(update_string.format(row), globals={'Zpix': Zpix}, locals={'Zpix': Zpix})
-                try:
-                    log.info("%s.update(%s)", zpix_match, update_string.format(row))
-                    # zpix_match.update(update)
-                except ProgrammingError as e:
-                    log.critical(e)
-                    dbSession.rollback()
-                    raise
+                for m in masks:
+                    log.info("%s.%s = %s", zpix_match, m, str(getattr(row, m)))
+                    # getattr(zpix_match, m) = getattr(row, m)
+                # dbSession.commit()
+                # try:
+                #     log.info("%s.update(%s)", zpix_match, update_string.format(row))
+                #     zpix_match.update(update)
+                # except ProgrammingError as e:
+                #     log.critical(e)
+                #     dbSession.rollback()
+                #     raise
     dbSession.commit()
     return
 
