@@ -1312,6 +1312,11 @@ def setup_db(options=None, **kwargs):
     -------
     :class:`bool`
         ``True`` if the configured database is a PostgreSQL database.
+
+    Raises
+    ------
+    RuntimeError
+        If database connection details could not be found.
     """
     global engine, schemaname
     #
@@ -1364,7 +1369,7 @@ GRANT SELECT ON ALL SEQUENCES IN SCHEMA {schema} TO desi_public;
                                      username=username)
         if db_connection is None:
             log.critical("Could not load database information!")
-            return 1
+            raise RuntimeError("Could not load database information!")
     else:
         if os.path.basename(dbfile) == dbfile:
             db_file = os.path.join(options.datapath, dbfile)
