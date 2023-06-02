@@ -1626,7 +1626,10 @@ def main():
     for l in loader:
         tn = l['tcls'].__tablename__
         loaded = dbSession.query(l['tcls']).count()
-        if loaded > 0:
+        #
+        # The targetphot stage adds to the existing photometry table.
+        #
+        if loaded > 0 and options.load != 'targetphot':
             log.info("Loading appears to be complete on %s.", tn)
         else:
             log.info("Loading %s from %s.", tn, str(l['filepaths']))
