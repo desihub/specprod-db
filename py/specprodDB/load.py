@@ -1424,7 +1424,7 @@ def get_options():
     prsr.add_argument('-P', '--public', action='store_true', dest='public',
                       help='GRANT access to the schema to the public database user.')
     prsr.add_argument('-p', '--photometry-version', action='store', dest='photometry_version',
-                      metavar='VERSION', default='v2.0',
+                      metavar='VERSION', default='v2.1',
                       help='Load target photometry data from VERSION (default "%(default)s").')
     prsr.add_argument('-r', '--rows', action='store', dest='chunksize',
                       type=int, default=50000, metavar='N',
