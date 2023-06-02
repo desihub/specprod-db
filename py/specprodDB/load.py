@@ -1407,6 +1407,9 @@ def get_options():
     from argparse import ArgumentParser
     prsr = ArgumentParser(description=("Load redshift data into a database."),
                           prog=os.path.basename(argv[0]))
+    prsr.add_argument('-d', '--data-release', action='store', dest='release',
+                      default='edr', metavar='RELEASE',
+                      help='Use data release RELEASE (default "%(default)s").')
     prsr.add_argument('-f', '--filename', action='store', dest='dbfile',
                       default='specprod.db', metavar='FILE',
                       help='Store data in FILE (default "%(default)s").')
@@ -1500,7 +1503,7 @@ def main():
                # The potential targets are supposed to include data for all targets.
                # In other words, every actual target is also a potential target.
                #
-               'photometry': [{'filepaths': glob.glob(os.path.join(options.datapath, 'vac', 'edr', 'lsdr9-photometry', os.environ['SPECPROD'], options.photometry_version, 'potential-targets', 'tractorphot', 'tractorphot*.fits')),
+               'photometry': [{'filepaths': glob.glob(os.path.join(options.datapath, 'vac', options.release, 'lsdr9-photometry', os.environ['SPECPROD'], options.photometry_version, 'potential-targets', 'tractorphot', 'tractorphot*.fits')),
                                'tcls': Photometry,
                                'hdu': 'TRACTORPHOT',
                                'expand': {'DCHISQ': ('dchisq_psf', 'dchisq_rex', 'dchisq_dev', 'dchisq_exp', 'dchisq_ser',),
@@ -1514,7 +1517,7 @@ def main():
                # This stage loads targets, and such photometry as they have, that did not
                # successfully match to a known LS DR9 object.
                #
-               'targetphot': [{'filepaths': os.path.join(options.datapath, 'vac', 'edr', 'lsdr9-photometry', os.environ['SPECPROD'], options.photometry_version, 'potential-targets', 'targetphot-potential-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
+               'targetphot': [{'filepaths': os.path.join(options.datapath, 'vac', options.release, 'lsdr9-photometry', os.environ['SPECPROD'], options.photometry_version, 'potential-targets', 'targetphot-potential-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
                                'tcls': Photometry,
                                'hdu': 'TARGETPHOT',
                                'preload': _add_ls_id,
@@ -1525,7 +1528,7 @@ def main():
                                'chunksize': options.chunksize,
                                'maxrows': options.maxrows
                                }],
-               'target': [{'filepaths': os.path.join(options.datapath, 'vac', 'edr', 'lsdr9-photometry', os.environ['SPECPROD'], options.photometry_version, 'potential-targets', 'targetphot-potential-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
+               'target': [{'filepaths': os.path.join(options.datapath, 'vac', options.release, 'lsdr9-photometry', os.environ['SPECPROD'], options.photometry_version, 'potential-targets', 'targetphot-potential-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
                            'tcls': Target,
                            'hdu': 'TARGETPHOT',
                            'preload': _target_unique_id,
