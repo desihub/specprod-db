@@ -2,23 +2,25 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
-    deployment.kubernetes.io/revision: "2"
+    deployment.kubernetes.io/revision: '9'
     field.cattle.io/creatorId: u-ldwpzwsmnv
-    field.cattle.io/publicEndpoints: '[{"addresses":["128.55.212.60"],"port":5432,"protocol":"TCP","serviceName":"specprod:db-loadbalancer","allNodes":false}]'
+    field.cattle.io/publicEndpoints: >-
+      [{"addresses":["128.55.212.60"],"port":5432,"protocol":"TCP","serviceName":"specprod:db-loadbalancer","allNodes":false}]
     nersc.gov/collab_uids: 68595,58191,58102,33567
-    nersc.gov/gid: "1034448"
-    nersc.gov/gids: 1034448,1033567,2797,5529,43050,42636,51354,58102,58191,3860,68595,56023,57470,76870,96414
+    nersc.gov/gid: '1034448'
+    nersc.gov/gids: >-
+      1034448,1033567,2797,5529,43050,42636,51354,58102,58191,3860,68595,56023,57470,76870,96414
     nersc.gov/roles: user
-    nersc.gov/uid: "34448"
+    nersc.gov/uid: '34448'
     nersc.gov/username: bweaver
-  creationTimestamp: "2023-01-20T17:47:07Z"
-  generation: 7
+  creationTimestamp: '2023-01-20T17:47:07Z'
+  generation: 14
   labels:
     cattle.io/creator: norman
     workload.user.cattle.io/workloadselector: deployment-specprod-db
   name: db
   namespace: specprod
-  resourceVersion: "405613386"
+  resourceVersion: '466812814'
   selfLink: /apis/apps/v1/namespaces/specprod/deployments/db
   uid: 265185bf-1377-4c17-9422-46a260d445d1
 spec:
@@ -36,90 +38,119 @@ spec:
   template:
     metadata:
       annotations:
-        cattle.io/timestamp: "2023-01-20T17:53:02Z"
-        field.cattle.io/ports: '[[{"containerPort":5432,"dnsName":"db-loadbalancer","kind":"LoadBalancer","name":"postgresql","protocol":"TCP","sourcePort":5432}]]'
-        field.cattle.io/publicEndpoints: '[{"addresses":["128.55.212.60"],"port":5432,"protocol":"TCP","serviceId":"specprod:db-loadbalancer"}]'
+        cattle.io/timestamp: '2023-01-20T17:53:02Z'
+        field.cattle.io/ports: >-
+          [[{"containerPort":5432,"dnsName":"db-loadbalancer","kind":"LoadBalancer","name":"postgresql","protocol":"TCP","sourcePort":5432}]]
+        field.cattle.io/publicEndpoints: >-
+          [{"addresses":["128.55.212.60"],"port":5432,"protocol":"TCP","serviceId":"specprod:db-loadbalancer"}]
         nersc.gov/collab_uids: 68595,58191,58102,33567
-        nersc.gov/gid: "1034448"
-        nersc.gov/gids: 1034448,1033567,2797,5529,43050,42636,51354,58102,58191,3860,68595,56023,57470,76870,96414
+        nersc.gov/gid: '1034448'
+        nersc.gov/gids: >-
+          1034448,1033567,2797,5529,43050,42636,51354,58102,58191,3860,68595,56023,57470,76870,96414
         nersc.gov/roles: user
-        nersc.gov/uid: "34448"
+        nersc.gov/uid: '34448'
         nersc.gov/username: bweaver
       creationTimestamp: null
       labels:
         workload.user.cattle.io/workloadselector: deployment-specprod-db
     spec:
+      affinity: {}
       containers:
-      - env:
-        - name: DESI_ADMIN_PASSWORD
-          value: /secrets/desi_admin_password
-        - name: DESI_PASSWORD
-          value: /secrets/desi_password
-        - name: POSTGRES_HOST_AUTH_METHOD
-          value: md5
-        - name: POSTGRES_PASSWORD_FILE
-          value: /secrets/postgres_password_file
-        image: registry.nersc.gov/desi/specprod/db:11-bullseye-q3c
-        imagePullPolicy: Always
-        name: db
-        ports:
-        - containerPort: 5432
-          name: postgresql
-          protocol: TCP
-        resources: {}
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            add:
-            - CHOWN
-            - DAC_OVERRIDE
-            - FOWNER
-            - SETGID
-            - SETUID
-            drop:
-            - ALL
-          privileged: false
-          readOnlyRootFilesystem: false
-          runAsNonRoot: true
-          runAsUser: 999
-        stdin: true
-        terminationMessagePath: /dev/termination-log
-        terminationMessagePolicy: File
-        tty: true
-        volumeMounts:
-        - mountPath: /secrets
-          name: specprod-db-secret
+        - args:
+            - postgres
+            - '-c'
+            - max_wal_size=5GB
+            - '-c'
+            - shared_buffers=8GB
+            - '-c'
+            - max_locks_per_transaction=256
+            - '-c'
+            - effective_cache_size=10GB
+            - '-c'
+            - maintenance_work_mem=512MB
+            - '-c'
+            - work_mem=24MB
+          env:
+            - name: DESI_ADMIN_PASSWORD
+              value: /secrets/desi_admin_password
+            - name: DESI_PASSWORD
+              value: /secrets/desi_password
+            - name: POSTGRES_HOST_AUTH_METHOD
+              value: md5
+            - name: POSTGRES_PASSWORD_FILE
+              value: /secrets/postgres_password_file
+          image: registry.nersc.gov/desi/specprod/db:11-bullseye-q3c
+          imagePullPolicy: Always
+          name: db
+          ports:
+            - containerPort: 5432
+              name: postgresql
+              protocol: TCP
+          resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              add:
+                - CHOWN
+                - DAC_OVERRIDE
+                - FOWNER
+                - SETGID
+                - SETUID
+              drop:
+                - ALL
+            privileged: false
+            readOnlyRootFilesystem: false
+            runAsNonRoot: true
+            runAsUser: 999
+          stdin: true
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          tty: true
+          volumeMounts:
+            - mountPath: /secrets
+              name: specprod-db-secret
+            - mountPath: /var/lib/postgresql/data
+              name: specprod-db-data
+            - mountPath: /dev/shm
+              name: specprod-db-devshm
       dnsConfig: {}
       dnsPolicy: ClusterFirst
       imagePullSecrets:
-      - name: registry-nersc
+        - name: registry-nersc
       restartPolicy: Always
       schedulerName: default-scheduler
       securityContext:
         fsGroup: 999
       terminationGracePeriodSeconds: 30
       volumes:
-      - name: specprod-db-secret
-        secret:
-          defaultMode: 256
-          optional: false
-          secretName: specprod-db-keys
+        - name: specprod-db-secret
+          secret:
+            defaultMode: 256
+            optional: false
+            secretName: specprod-db-keys
+        - name: specprod-db-data
+          persistentVolumeClaim:
+            claimName: specprod-db-data
+        - emptyDir:
+            medium: Memory
+            sizeLimit: 1Gi
+          name: specprod-db-devshm
 status:
   availableReplicas: 1
   conditions:
-  - lastTransitionTime: "2023-01-20T17:53:27Z"
-    lastUpdateTime: "2023-01-20T17:53:27Z"
-    message: Deployment has minimum availability.
-    reason: MinimumReplicasAvailable
-    status: "True"
-    type: Available
-  - lastTransitionTime: "2023-01-20T22:05:09Z"
-    lastUpdateTime: "2023-01-20T22:05:09Z"
-    message: ReplicaSet "db-b656f8495" has successfully progressed.
-    reason: NewReplicaSetAvailable
-    status: "True"
-    type: Progressing
-  observedGeneration: 7
+    - lastTransitionTime: '2023-01-20T22:05:09Z'
+      lastUpdateTime: '2023-05-11T21:53:23Z'
+      message: ReplicaSet "db-6b65c9dbd4" has successfully progressed.
+      reason: NewReplicaSetAvailable
+      status: 'True'
+      type: Progressing
+    - lastTransitionTime: '2023-05-11T21:54:26Z'
+      lastUpdateTime: '2023-05-11T21:54:26Z'
+      message: Deployment has minimum availability.
+      reason: MinimumReplicasAvailable
+      status: 'True'
+      type: Available
+  observedGeneration: 14
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1

@@ -18,13 +18,14 @@ Notes
   from the ``ztile-*-cumulative.fits`` summary file.
 """
 import os
-import re
+# import re
 import glob
-import sys
+import itertools
+# import sys
 
 import numpy as np
 from astropy import __version__ as astropy_version
-from astropy.io import fits
+# from astropy.io import fits
 from astropy.table import Table, MaskedColumn, join
 from astropy.time import Time
 from pytz import utc
@@ -32,8 +33,9 @@ from pytz import utc
 from sqlalchemy import __version__ as sqlalchemy_version
 from sqlalchemy import (create_engine, event, ForeignKey, Column, DDL,
                         BigInteger, Boolean, Integer, String, Float, DateTime,
-                        SmallInteger, bindparam, Numeric)
-from sqlalchemy.exc import IntegrityError
+                        SmallInteger, bindparam, Numeric, and_)
+from sqlalchemy.sql import func
+from sqlalchemy.exc import IntegrityError, ProgrammingError
 from sqlalchemy.orm import (declarative_base, declarative_mixin, declared_attr,
                             scoped_session, sessionmaker, relationship)
 from sqlalchemy.schema import CreateSchema, Index
@@ -86,7 +88,7 @@ class Photometry(SchemaMixin, Base):
 
     This table is deliberately designed so that ``TARGETID`` can serve as a
     primary key. Any quantities created or modified by desitarget are
-    defined in the :class:`~specprodDB.Target` class.
+    defined in the :class:`~specprodTarget` class.
 
     However we *avoid* the use of the term "tractor" for this table,
     because not every target will have *tractor* photometry,
@@ -458,14 +460,19 @@ class Fiberassign(SchemaMixin, Base):
     fiberstatus = Column(Integer, nullable=False)
     target_ra = Column(DOUBLE_PRECISION, nullable=False)
     target_dec = Column(DOUBLE_PRECISION, nullable=False)
+    pmra = Column(REAL, nullable=False)
+    pmdec = Column(REAL, nullable=False)
+    ref_epoch = Column(REAL, nullable=False)
     lambda_ref = Column(REAL, nullable=False)
     fa_target = Column(BigInteger, nullable=False)
     fa_type = Column(SmallInteger, nullable=False)
     fiberassign_x = Column(REAL, nullable=False)
     fiberassign_y = Column(REAL, nullable=False)
     priority = Column(Integer, nullable=False)
-    plate_ra = Column(DOUBLE_PRECISION, nullable=False)
-    plate_dec = Column(DOUBLE_PRECISION, nullable=False)
+    subpriority = Column(DOUBLE_PRECISION, nullable=False)
+    parallax = Column(REAL, nullable=False)
+    # plate_ra = Column(DOUBLE_PRECISION, nullable=False)
+    # plate_dec = Column(DOUBLE_PRECISION, nullable=False)
 
     photometry = relationship("Photometry", back_populates="fiberassign")
     tile = relationship("Tile", back_populates="fiberassign")
@@ -533,19 +540,44 @@ class Zpix(SchemaMixin, Base):
     #
     # Skipping columns that are in other tables.
     #
+    # These target bitmask columns are *not* the same as
+    # in the zall-pix-specprod.fits file. They will be replaced
+    # after the fact with values from the bitwise-or of
+    # values in the target table.
+    #
+    cmx_target = Column(BigInteger, nullable=False)
+    desi_target = Column(BigInteger, nullable=False)
+    bgs_target = Column(BigInteger, nullable=False)
+    mws_target = Column(BigInteger, nullable=False)
+    scnd_target = Column(BigInteger, nullable=False)
+    sv1_desi_target = Column(BigInteger, nullable=False)
+    sv1_bgs_target = Column(BigInteger, nullable=False)
+    sv1_mws_target = Column(BigInteger, nullable=False)
+    sv1_scnd_target = Column(BigInteger, nullable=False)
+    sv2_desi_target = Column(BigInteger, nullable=False)
+    sv2_bgs_target = Column(BigInteger, nullable=False)
+    sv2_mws_target = Column(BigInteger, nullable=False)
+    sv2_scnd_target = Column(BigInteger, nullable=False)
+    sv3_desi_target = Column(BigInteger, nullable=False)
+    sv3_bgs_target = Column(BigInteger, nullable=False)
+    sv3_mws_target = Column(BigInteger, nullable=False)
+    sv3_scnd_target = Column(BigInteger, nullable=False)
+    #
+    # Skipping columns that are in other tables.
+    #
     coadd_numexp = Column(SmallInteger, nullable=False)
     coadd_exptime = Column(REAL, nullable=False)
     coadd_numnight = Column(SmallInteger, nullable=False)
     coadd_numtile = Column(SmallInteger, nullable=False)
-    mean_delta_x = Column(REAL, nullable=False)
-    rms_delta_x = Column(REAL, nullable=False)
-    mean_delta_y = Column(REAL, nullable=False)
-    rms_delta_y = Column(REAL, nullable=False)
-    mean_fiber_ra = Column(DOUBLE_PRECISION, nullable=False)
-    std_fiber_ra = Column(REAL, nullable=False)
-    mean_fiber_dec = Column(DOUBLE_PRECISION, nullable=False)
-    std_fiber_dec = Column(REAL, nullable=False)
-    mean_psf_to_fiber_specflux = Column(REAL, nullable=False)
+    # mean_delta_x = Column(REAL, nullable=False)
+    # rms_delta_x = Column(REAL, nullable=False)
+    # mean_delta_y = Column(REAL, nullable=False)
+    # rms_delta_y = Column(REAL, nullable=False)
+    # mean_fiber_ra = Column(DOUBLE_PRECISION, nullable=False)
+    # std_fiber_ra = Column(REAL, nullable=False)
+    # mean_fiber_dec = Column(DOUBLE_PRECISION, nullable=False)
+    # std_fiber_dec = Column(REAL, nullable=False)
+    # mean_psf_to_fiber_specflux = Column(REAL, nullable=False)
     tsnr2_gpbdark_b = Column(REAL, nullable=False)
     tsnr2_elg_b = Column(REAL, nullable=False)
     tsnr2_gpbbright_b = Column(REAL, nullable=False)
@@ -634,15 +666,15 @@ class Ztile(SchemaMixin, Base):
     coadd_exptime = Column(REAL, nullable=False)
     coadd_numnight = Column(SmallInteger, nullable=False)
     coadd_numtile = Column(SmallInteger, nullable=False)
-    mean_delta_x = Column(REAL, nullable=False)
-    rms_delta_x = Column(REAL, nullable=False)
-    mean_delta_y = Column(REAL, nullable=False)
-    rms_delta_y = Column(REAL, nullable=False)
-    mean_fiber_ra = Column(DOUBLE_PRECISION, nullable=False)
-    std_fiber_ra = Column(REAL, nullable=False)
-    mean_fiber_dec = Column(DOUBLE_PRECISION, nullable=False)
-    std_fiber_dec = Column(REAL, nullable=False)
-    mean_psf_to_fiber_specflux = Column(REAL, nullable=False)
+    # mean_delta_x = Column(REAL, nullable=False)
+    # rms_delta_x = Column(REAL, nullable=False)
+    # mean_delta_y = Column(REAL, nullable=False)
+    # rms_delta_y = Column(REAL, nullable=False)
+    # mean_fiber_ra = Column(DOUBLE_PRECISION, nullable=False)
+    # std_fiber_ra = Column(REAL, nullable=False)
+    # mean_fiber_dec = Column(DOUBLE_PRECISION, nullable=False)
+    # std_fiber_dec = Column(REAL, nullable=False)
+    # mean_psf_to_fiber_specflux = Column(REAL, nullable=False)
     tsnr2_gpbdark_b = Column(REAL, nullable=False)
     tsnr2_elg_b = Column(REAL, nullable=False)
     tsnr2_gpbbright_b = Column(REAL, nullable=False)
@@ -1112,6 +1144,163 @@ def q3c_index(table, ra='ra'):
     return
 
 
+def zpix_target(specprod):
+    """Replace targeting bitmasks in `table`.
+
+    Parameters
+    ----------
+    specprod : :class:`str`
+        The spectroscopic production, normally the value of :envvar:`SPECPROD`.
+    """
+    specprod_survey_program = {'fuji': {'cmx': ('other', ),
+                                        'special': ('dark', ),
+                                        'sv1': ('backup', 'bright', 'dark', 'other'),
+                                        'sv2': ('backup', 'bright', 'dark'),
+                                        'sv3': ('backup', 'bright', 'dark')},
+                               'guadalupe': {'special': ('bright', 'dark'),
+                                             'main': ('bright', 'dark')},
+                               'iron': {'cmx': ('other', ),
+                                        'main': ('backup', 'bright', 'dark'),
+                                        'special': ('backup', 'bright', 'dark', 'other'),
+                                        'sv1': ('backup', 'bright', 'dark', 'other'),
+                                        'sv2': ('backup', 'bright', 'dark'),
+                                        'sv3': ('backup', 'bright', 'dark')}}
+    target_bits = {'cmx': {'cmx': Target.cmx_target},
+                   'sv1': {'desi': Target.sv1_desi_target, 'bgs': Target.sv1_bgs_target, 'mws': Target.sv1_mws_target},
+                   'sv2': {'desi': Target.sv2_desi_target, 'bgs': Target.sv2_bgs_target, 'mws': Target.sv2_mws_target},
+                   'sv3': {'desi': Target.sv3_desi_target, 'bgs': Target.sv3_bgs_target, 'mws': Target.sv3_mws_target},
+                   'main': {'desi': Target.desi_target, 'bgs': Target.bgs_target, 'mws': Target.mws_target},
+                   'special': {'desi': Target.desi_target, 'bgs': Target.bgs_target, 'mws': Target.mws_target}}
+    #
+    # Find targetid assigned to multiple tiles.
+    #
+    assigned_multiple_tiles = dict()
+    for survey in specprod_survey_program[specprod]:
+        assigned_multiple_tiles[survey] = dict()
+        for program in specprod_survey_program[specprod][survey]:
+            assigned_multiple_tiles[survey][program] = dbSession.query(Target.targetid).join(Fiberassign,
+                                                                                             and_(Target.targetid == Fiberassign.targetid,
+                                                                                                  Target.tileid == Fiberassign.tileid)).filter(Target.survey == survey).filter(Target.program == program).group_by(Target.targetid).having(func.count(Target.tileid) > 1)
+    #
+    # From that set, find cases targetid and a targeting bit are distinct pairs.
+    #
+    distinct_target = dict()
+    for survey in assigned_multiple_tiles:
+        distinct_target[survey] = dict()
+        for program in assigned_multiple_tiles[survey]:
+            distinct_target[survey][program] = dict()
+            for bits in target_bits[survey]:
+                distinct_target[survey][program][bits] = dbSession.query(Target.targetid, target_bits[survey][bits]).filter(Target.targetid.in_(assigned_multiple_tiles[survey][program])).filter(Target.survey == survey).filter(Target.program == program).distinct().subquery()
+    #
+    # Obtain the list of targetids where a targeting bit appears more than once with different values.
+    #
+    multiple_target = dict()
+    for survey in distinct_target:
+        multiple_target[survey] = dict()
+        for program in distinct_target[survey]:
+            multiple_target[survey][program] = dict()
+            for bits in distinct_target[survey][program]:
+                if survey.startswith('sv'):
+                    column = getattr(distinct_target[survey][program][bits].c, f"{survey}_{bits}_target")
+                elif survey == 'cmx':
+                    column = distinct_target[survey][program][bits].c.cmx_target
+                else:
+                    column = getattr(distinct_target[survey][program][bits].c, f"{bits}_target")
+                multiple_target[survey][program][bits] = [row[0] for row in dbSession.query(distinct_target[survey][program][bits].c.targetid).group_by(distinct_target[survey][program][bits].c.targetid).having(func.count(column) > 1).all()]
+    #
+    # Consolidate the list of targetids.
+    #
+    targetids_to_fix = dict()
+    for survey in multiple_target:
+        for program in multiple_target[survey]:
+            for bits in multiple_target[survey][program]:
+                if multiple_target[survey][program][bits]:
+                    if survey not in targetids_to_fix:
+                        targetids_to_fix[survey] = dict()
+                    if program in targetids_to_fix[survey]:
+                        log.debug("targetids_to_fix['%s']['%s'] += multiple_target['%s']['%s']['%s']",
+                                  survey, program, survey, program, bits)
+                        targetids_to_fix[survey][program] += multiple_target[survey][program][bits]
+                    else:
+                        log.debug("targetids_to_fix['%s']['%s'] = multiple_target['%s']['%s']['%s']",
+                                  survey, program, survey, program, bits)
+                        targetids_to_fix[survey][program] = multiple_target[survey][program][bits]
+    #
+    # ToO observations that had targeting bits zeroed out.
+    #
+    if specprod == 'fuji':
+        #
+        # Maybe this problem only affects fuji, but need to confirm that.
+        #
+        zero_ToO = dict()
+        for survey in specprod_survey_program[specprod]:
+            zero_ToO[survey] = dict()
+            for program in specprod_survey_program[specprod][survey]:
+                zero_ToO[survey][program] = [row[0] for row in dbSession.query(Zpix.targetid).filter((Zpix.targetid.op('&')((2**16 - 1) << 42)).op('>>')(42) == 9999).filter(Zpix.survey == survey).filter(Zpix.program == program).all()]
+        for survey in zero_ToO:
+            for program in zero_ToO[survey]:
+                if zero_ToO[survey][program]:
+                    if survey not in targetids_to_fix:
+                        targetids_to_fix[survey] = dict()
+                    if program in targetids_to_fix[survey]:
+                        log.debug("targetids_to_fix['%s']['%s'] += zero_ToO['%s']['%s']",
+                                  survey, program, survey, program)
+                        targetids_to_fix[survey][program] += zero_ToO[survey][program]
+                    else:
+                        log.debug("targetids_to_fix['%s']['%s'] = zero_ToO['%s']['%s']",
+                                  survey, program, survey, program)
+                        targetids_to_fix[survey][program] = zero_ToO[survey][program]
+    #
+    # Generate the query to obtain the bitwise-or of each targeting bit.
+    #
+    # table = 'zpix'
+    surveys = ('', 'sv1', 'sv2', 'sv3')
+    programs = ('desi', 'bgs', 'mws', 'scnd')
+    masks = ['cmx_target'] + [('_'.join(p) if p[0] else p[1]) + '_target'
+                              for p in itertools.product(surveys, programs)]
+    bit_or_query = dict()
+    for survey in targetids_to_fix:
+        bit_or_query[survey] = dict()
+        for program in targetids_to_fix[survey]:
+            log.debug("SELECT t.targetid, " +
+                      ', '.join([f"BIT_OR(t.{m}) AS {m}" for m in masks]) +
+                      f" FROM {specprod}.target AS t WHERE t.targetid IN ({', '.join(map(str, set(targetids_to_fix[survey][program])))}) AND t.survey = '{survey}' AND t.program = '{program}' GROUP BY t.targetid;")
+            bq = ("dbSession.query(Target.targetid, " +
+                  ', '.join([f"func.bit_or(Target.{m}).label('{m}')" for m in masks]) +
+                  f").filter(Target.targetid.in_([{', '.join(map(str, set(targetids_to_fix[survey][program])))}])).filter(Target.survey == '{survey}').filter(Target.program == '{program}').group_by(Target.targetid)")
+            log.debug(bq)
+            bit_or_query[survey][program] = eval(bq)
+    #
+    # Apply the updates
+    #
+    # update_string = '{' + ', '.join([f"Zpix.{m}: {{0.{m}:d}}" for m in masks]) + '}'
+    for survey in bit_or_query:
+        for program in bit_or_query[survey]:
+            for row in bit_or_query[survey][program].all():
+                zpix_match = dbSession.query(Zpix).filter(Zpix.targetid == row.targetid).filter(Zpix.survey == survey).filter(Zpix.program == program).one()
+                for m in masks:
+                    log.info("%s.%s = %s", zpix_match, m, str(getattr(row, m)))
+                zpix_match.cmx_target = row.cmx_target
+                zpix_match.desi_target = row.desi_target
+                zpix_match.bgs_target = row.bgs_target
+                zpix_match.mws_target = row.mws_target
+                zpix_match.scnd_target = row.scnd_target
+                zpix_match.sv1_desi_target = row.sv1_desi_target
+                zpix_match.sv1_bgs_target = row.sv1_bgs_target
+                zpix_match.sv1_mws_target = row.sv1_mws_target
+                zpix_match.sv1_scnd_target = row.sv1_scnd_target
+                zpix_match.sv2_desi_target = row.sv2_desi_target
+                zpix_match.sv2_bgs_target = row.sv2_bgs_target
+                zpix_match.sv2_mws_target = row.sv2_mws_target
+                zpix_match.sv2_scnd_target = row.sv2_scnd_target
+                zpix_match.sv3_desi_target = row.sv3_desi_target
+                zpix_match.sv3_bgs_target = row.sv3_bgs_target
+                zpix_match.sv3_mws_target = row.sv3_mws_target
+                zpix_match.sv3_scnd_target = row.sv3_scnd_target
+                dbSession.commit()
+    return
+
+
 def setup_db(options=None, **kwargs):
     """Initialize the database connection.
 
@@ -1128,6 +1317,11 @@ def setup_db(options=None, **kwargs):
     -------
     :class:`bool`
         ``True`` if the configured database is a PostgreSQL database.
+
+    Raises
+    ------
+    RuntimeError
+        If database connection details could not be found.
     """
     global engine, schemaname
     #
@@ -1139,6 +1333,7 @@ def setup_db(options=None, **kwargs):
             hostname = kwargs.get('hostname', None)
             overwrite = kwargs.get('overwrite', False)
             schema = kwargs.get('schema', None)
+            public = kwargs.get('public', False)
             username = kwargs.get('username', 'desi_admin')
             verbose = kwargs.get('verbose', False)
         else:
@@ -1148,6 +1343,7 @@ def setup_db(options=None, **kwargs):
         hostname = options.hostname
         overwrite = options.overwrite
         schema = options.schema
+        public = options.public
         username = options.username
         verbose = options.verbose
     if schema:
@@ -1158,8 +1354,16 @@ def setup_db(options=None, **kwargs):
         #                  DDL('DROP SCHEMA IF EXISTS {0} CASCADE'.format(schemaname)))
         event.listen(Base.metadata, 'before_create',
                      DDL(f'CREATE SCHEMA IF NOT EXISTS {schema};'))
-        event.listen(Base.metadata, 'after_create',
-                     DDL(f'GRANT USAGE ON SCHEMA {schema} TO desi; GRANT SELECT ON ALL TABLES IN SCHEMA {schema} TO desi; GRANT SELECT ON ALL SEQUENCES IN SCHEMA {schema} TO desi;'))
+        grant = f"""GRANT USAGE ON SCHEMA {schema} TO desi;
+GRANT SELECT ON ALL TABLES IN SCHEMA {schema} TO desi;
+GRANT SELECT ON ALL SEQUENCES IN SCHEMA {schema} TO desi;
+"""
+        if public:
+            grant += f"""GRANT USAGE ON SCHEMA {schema} TO desi_public;
+GRANT SELECT ON ALL TABLES IN SCHEMA {schema} TO desi_public;
+GRANT SELECT ON ALL SEQUENCES IN SCHEMA {schema} TO desi_public;
+"""
+        event.listen(Base.metadata, 'after_create', DDL(grant))
     #
     # Create the file.
     #
@@ -1170,7 +1374,7 @@ def setup_db(options=None, **kwargs):
                                      username=username)
         if db_connection is None:
             log.critical("Could not load database information!")
-            return 1
+            raise RuntimeError("Could not load database information!")
     else:
         if os.path.basename(dbfile) == dbfile:
             db_file = os.path.join(options.datapath, dbfile)
@@ -1208,6 +1412,9 @@ def get_options():
     from argparse import ArgumentParser
     prsr = ArgumentParser(description=("Load redshift data into a database."),
                           prog=os.path.basename(argv[0]))
+    prsr.add_argument('-d', '--data-release', action='store', dest='release',
+                      default='edr', metavar='RELEASE',
+                      help='Use data release RELEASE (default "%(default)s").')
     prsr.add_argument('-f', '--filename', action='store', dest='dbfile',
                       default='specprod.db', metavar='FILE',
                       help='Store data in FILE (default "%(default)s").')
@@ -1222,8 +1429,10 @@ def get_options():
                       help="Load up to M rows in the tables (default is all rows).")
     prsr.add_argument('-o', '--overwrite', action='store_true', dest='overwrite',
                       help='Delete any existing files or tables before loading.')
+    prsr.add_argument('-P', '--public', action='store_true', dest='public',
+                      help='GRANT access to the schema to the public database user.')
     prsr.add_argument('-p', '--photometry-version', action='store', dest='photometry_version',
-                      metavar='VERSION', default='v2.0',
+                      metavar='VERSION', default='v2.1',
                       help='Load target photometry data from VERSION (default "%(default)s").')
     prsr.add_argument('-r', '--rows', action='store', dest='chunksize',
                       type=int, default=50000, metavar='N',
@@ -1299,7 +1508,7 @@ def main():
                # The potential targets are supposed to include data for all targets.
                # In other words, every actual target is also a potential target.
                #
-               'photometry': [{'filepaths': glob.glob(os.path.join(options.datapath, 'vac', 'lsdr9-photometry', os.environ['SPECPROD'], options.photometry_version, 'potential-targets', 'tractorphot', 'tractorphot*.fits')),
+               'photometry': [{'filepaths': glob.glob(os.path.join(options.datapath, 'vac', options.release, 'lsdr9-photometry', os.environ['SPECPROD'], options.photometry_version, 'potential-targets', 'tractorphot', 'tractorphot*.fits')),
                                'tcls': Photometry,
                                'hdu': 'TRACTORPHOT',
                                'expand': {'DCHISQ': ('dchisq_psf', 'dchisq_rex', 'dchisq_dev', 'dchisq_exp', 'dchisq_ser',),
@@ -1313,7 +1522,7 @@ def main():
                # This stage loads targets, and such photometry as they have, that did not
                # successfully match to a known LS DR9 object.
                #
-               'targetphot': [{'filepaths': os.path.join(options.datapath, 'vac', 'lsdr9-photometry', os.environ['SPECPROD'], options.photometry_version, 'potential-targets', 'targetphot-potential-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
+               'targetphot': [{'filepaths': os.path.join(options.datapath, 'vac', options.release, 'lsdr9-photometry', os.environ['SPECPROD'], options.photometry_version, 'potential-targets', 'targetphot-potential-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
                                'tcls': Photometry,
                                'hdu': 'TARGETPHOT',
                                'preload': _add_ls_id,
@@ -1324,7 +1533,7 @@ def main():
                                'chunksize': options.chunksize,
                                'maxrows': options.maxrows
                                }],
-               'target': [{'filepaths': os.path.join(options.datapath, 'vac', 'lsdr9-photometry', os.environ['SPECPROD'], options.photometry_version, 'potential-targets', 'targetphot-potential-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
+               'target': [{'filepaths': os.path.join(options.datapath, 'vac', options.release, 'lsdr9-photometry', os.environ['SPECPROD'], options.photometry_version, 'potential-targets', 'targetphot-potential-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
                            'tcls': Target,
                            'hdu': 'TARGETPHOT',
                            'preload': _target_unique_id,
@@ -1421,7 +1630,28 @@ def main():
         log.info("Completed loading version metadata.")
     for l in loader:
         tn = l['tcls'].__tablename__
-        log.info("Loading %s from %s.", tn, str(l['filepaths']))
-        load_file(**l)
-        log.info("Finished loading %s.", tn)
+        loaded = dbSession.query(l['tcls']).count()
+        #
+        # The targetphot stage adds to the existing photometry table.
+        #
+        if loaded > 0 and options.load != 'targetphot':
+            log.info("Loading appears to be complete on %s.", tn)
+        else:
+            log.info("Loading %s from %s.", tn, str(l['filepaths']))
+            load_file(**l)
+            log.info("Finished loading %s.", tn)
+    if options.load == 'fiberassign':
+        #
+        # Fiberassign table has to be loaded for this step.
+        #
+        log.info("Applying target bitmask corrections for %s to zpix table.",
+                 os.environ['SPECPROD'])
+        try:
+            zpix_target(os.environ['SPECPROD'])
+        except ProgrammingError:
+            log.critical("Failed target bitmask corrections for %s!",
+                         os.environ['SPECPROD'])
+            return 1
+        log.info("Finished target bitmask corrections for %s zpix table.",
+                 os.environ['SPECPROD'])
     return 0

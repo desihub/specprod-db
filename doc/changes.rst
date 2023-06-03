@@ -2,12 +2,19 @@
 Change Log
 ==========
 
-1.1.0 (unreleased)
+1.2.0 (unreleased)
 ------------------
 
 *Planned*: This release will correspond to loading the ``iron`` spectroscopic
 production. A known change is that potential photometry and target data
 will be split into several files instead of a monolithic file.
+
+1.1.0 (unreleased)
+------------------
+
+* Corrections to the ``fuji`` schema in preparation for EDR (PR `#4`_).
+
+.. _`#4`: https://github.com/desihub/specprod-db/pull/4
 
 1.0.0 (2023-02-28)
 ------------------
