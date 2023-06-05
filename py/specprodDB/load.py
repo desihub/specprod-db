@@ -1448,6 +1448,9 @@ def get_options():
                       help='If specified, connect to a PostgreSQL database with USERNAME (default "%(default)s").')
     prsr.add_argument('-v', '--verbose', action='store_true', dest='verbose',
                       help='Print extra information.')
+    prsr.add_argument('-z', '--redshift-version', action='store', dest='redshift_version',
+                      metavar='VESRSION',
+                      help='Load redshift data from VAC VERSION')
     prsr.add_argument('datapath', metavar='DIR', help='Load the data in DIR.')
     options = prsr.parse_args()
     return options
@@ -1481,6 +1484,12 @@ def main():
     #
     # Load configuration
     #
+    if options.redshift_version is None:
+        zpix_file = os.path.join(options.datapath, 'spectro', 'redux', os.environ['SPECPROD'], 'zcatalog', 'zall-pix-{specprod}.fits'.format(specprod=os.environ['SPECPROD']))
+        ztile_file = os.path.join(options.datapath, 'spectro', 'redux', os.environ['SPECPROD'], 'zcatalog', 'zall-tilecumulative-{specprod}.fits'.format(specprod=os.environ['SPECPROD']))
+    else:
+        zpix_file = os.path.join(options.datapath, 'vac', options.release, 'zcat', options.redshift_version, 'zall-pix-{release}-vac.fits'.format(release=options.release))
+        ztile_file = os.path.join(options.datapath, 'vac', options.release, 'zcat', options.redshift_version, 'zall-tilecumulative-{release}-vac.fits'.format(release=options.release))
     loaders = {'exposures': [{'filepaths': os.path.join(options.datapath, 'spectro', 'redux', os.environ['SPECPROD'], 'tiles-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
                               'tcls': Tile,
                               'hdu': 'TILE_COMPLETENESS',
@@ -1542,7 +1551,7 @@ def main():
                            'chunksize': options.chunksize,
                            'maxrows': options.maxrows
                            }],
-               'redshift': [{'filepaths': os.path.join(options.datapath, 'spectro', 'redux', os.environ['SPECPROD'], 'zcatalog', 'zall-pix-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
+               'redshift': [{'filepaths': zpix_file,
                              'tcls': Zpix,
                              'hdu': 'ZCATALOG',
                              'preload': _survey_program,
@@ -1553,7 +1562,7 @@ def main():
                              'chunksize': options.chunksize,
                              'maxrows': options.maxrows
                              },
-                            {'filepaths': os.path.join(options.datapath, 'spectro', 'redux', os.environ['SPECPROD'], 'zcatalog', 'zall-tilecumulative-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
+                            {'filepaths': ztile_file,
                              'tcls': Ztile,
                              'hdu': 'ZCATALOG',
                              'preload': _survey_program,
@@ -1625,6 +1634,8 @@ def main():
                     Version(package='astropy', version=astropy_version),
                     Version(package='sqlalchemy', version=sqlalchemy_version),
                     Version(package='desiutil', version=desiutil_version)]
+        if options.redshift_version is not None:
+            versions.append(Version(package='zcat', version=options.redshift_version))
         dbSession.add_all(versions)
         dbSession.commit()
         log.info("Completed loading version metadata.")
@@ -1640,7 +1651,7 @@ def main():
             log.info("Loading %s from %s.", tn, str(l['filepaths']))
             load_file(**l)
             log.info("Finished loading %s.", tn)
-    if options.load == 'fiberassign':
+    if options.redshift_version is not None and options.load == 'fiberassign':
         #
         # Fiberassign table has to be loaded for this step.
         #
