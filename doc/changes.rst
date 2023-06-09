@@ -9,12 +9,13 @@ Change Log
 production. A known change is that potential photometry and target data
 will be split into several files instead of a monolithic file.
 
-1.1.0 (unreleased)
+1.1.0 (2023-06-09)
 ------------------
 
-* Corrections to the ``fuji`` schema in preparation for EDR (PR `#4`_).
+* Corrections to the ``fuji`` schema in preparation for EDR (PR `#4`_, `#8`_).
 
 .. _`#4`: https://github.com/desihub/specprod-db/pull/4
+.. _`#8`: https://github.com/desihub/specprod-db/pull/8
 
 1.0.0 (2023-02-28)
 ------------------
