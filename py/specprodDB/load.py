@@ -1500,8 +1500,8 @@ def main():
         zpix_file = os.path.join(options.datapath, 'spectro', 'redux', os.environ['SPECPROD'], 'zcatalog', 'zall-pix-{specprod}.fits'.format(specprod=os.environ['SPECPROD']))
         ztile_file = os.path.join(options.datapath, 'spectro', 'redux', os.environ['SPECPROD'], 'zcatalog', 'zall-tilecumulative-{specprod}.fits'.format(specprod=os.environ['SPECPROD']))
     else:
-        zpix_file = os.path.join(options.datapath, 'vac', options.release, 'zcat', options.redshift_version, 'zall-pix-{release}-vac.fits'.format(release=options.release))
-        ztile_file = os.path.join(options.datapath, 'vac', options.release, 'zcat', options.redshift_version, 'zall-tilecumulative-{release}-vac.fits'.format(release=options.release))
+        zpix_file = os.path.join(options.datapath, 'vac', options.release, 'zcat', os.environ['SPECPROD'], options.redshift_version, 'zall-pix-{release}-vac.fits'.format(release=options.release))
+        ztile_file = os.path.join(options.datapath, 'vac', options.release, 'zcat', os.environ['SPECPROD'], options.redshift_version, 'zall-tilecumulative-{release}-vac.fits'.format(release=options.release))
     loaders = {'exposures': [{'filepaths': os.path.join(options.datapath, 'spectro', 'redux', os.environ['SPECPROD'], 'tiles-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
                               'tcls': Tile,
                               'hdu': 'TILE_COMPLETENESS',
