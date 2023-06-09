@@ -569,15 +569,15 @@ class Zpix(SchemaMixin, Base):
     coadd_exptime = Column(REAL, nullable=False)
     coadd_numnight = Column(SmallInteger, nullable=False)
     coadd_numtile = Column(SmallInteger, nullable=False)
-    # mean_delta_x = Column(REAL, nullable=False)
-    # rms_delta_x = Column(REAL, nullable=False)
-    # mean_delta_y = Column(REAL, nullable=False)
-    # rms_delta_y = Column(REAL, nullable=False)
-    # mean_fiber_ra = Column(DOUBLE_PRECISION, nullable=False)
-    # std_fiber_ra = Column(REAL, nullable=False)
-    # mean_fiber_dec = Column(DOUBLE_PRECISION, nullable=False)
-    # std_fiber_dec = Column(REAL, nullable=False)
-    # mean_psf_to_fiber_specflux = Column(REAL, nullable=False)
+    mean_delta_x = Column(REAL, nullable=False)
+    rms_delta_x = Column(REAL, nullable=False)
+    mean_delta_y = Column(REAL, nullable=False)
+    rms_delta_y = Column(REAL, nullable=False)
+    mean_fiber_ra = Column(DOUBLE_PRECISION, nullable=False)
+    std_fiber_ra = Column(REAL, nullable=False)
+    mean_fiber_dec = Column(DOUBLE_PRECISION, nullable=False)
+    std_fiber_dec = Column(REAL, nullable=False)
+    mean_psf_to_fiber_specflux = Column(REAL, nullable=False)
     tsnr2_gpbdark_b = Column(REAL, nullable=False)
     tsnr2_elg_b = Column(REAL, nullable=False)
     tsnr2_gpbbright_b = Column(REAL, nullable=False)
@@ -616,6 +616,11 @@ class Zpix(SchemaMixin, Base):
     main_primary = Column(Boolean, nullable=False)
     zcat_nspec = Column(SmallInteger, nullable=False)
     zcat_primary = Column(Boolean, nullable=False)
+    firstnight = Column(Integer, nullable=False)
+    lastnight = Column(Integer, nullable=False)
+    min_mjd = Column(DOUBLE_PRECISION, nullable=False)
+    mean_mjd = Column(DOUBLE_PRECISION, nullable=False)
+    max_mjd = Column(DOUBLE_PRECISION, nullable=False)
 
     photometry = relationship("Photometry", back_populates="zpix_redshifts")
 
@@ -666,15 +671,17 @@ class Ztile(SchemaMixin, Base):
     coadd_exptime = Column(REAL, nullable=False)
     coadd_numnight = Column(SmallInteger, nullable=False)
     coadd_numtile = Column(SmallInteger, nullable=False)
-    # mean_delta_x = Column(REAL, nullable=False)
-    # rms_delta_x = Column(REAL, nullable=False)
-    # mean_delta_y = Column(REAL, nullable=False)
-    # rms_delta_y = Column(REAL, nullable=False)
-    # mean_fiber_ra = Column(DOUBLE_PRECISION, nullable=False)
-    # std_fiber_ra = Column(REAL, nullable=False)
-    # mean_fiber_dec = Column(DOUBLE_PRECISION, nullable=False)
-    # std_fiber_dec = Column(REAL, nullable=False)
-    # mean_psf_to_fiber_specflux = Column(REAL, nullable=False)
+    mean_delta_x = Column(REAL, nullable=False)
+    rms_delta_x = Column(REAL, nullable=False)
+    mean_delta_y = Column(REAL, nullable=False)
+    rms_delta_y = Column(REAL, nullable=False)
+    mean_fiber_ra = Column(DOUBLE_PRECISION, nullable=False)
+    std_fiber_ra = Column(REAL, nullable=False)
+    mean_fiber_dec = Column(DOUBLE_PRECISION, nullable=False)
+    std_fiber_dec = Column(REAL, nullable=False)
+    mean_psf_to_fiber_specflux = Column(REAL, nullable=False)
+    mean_fiber_x = Column(REAL, nullable=False)
+    mean_fiber_y = Column(REAL, nullable=False)
     tsnr2_gpbdark_b = Column(REAL, nullable=False)
     tsnr2_elg_b = Column(REAL, nullable=False)
     tsnr2_gpbbright_b = Column(REAL, nullable=False)
@@ -713,6 +720,11 @@ class Ztile(SchemaMixin, Base):
     main_primary = Column(Boolean, nullable=False)
     zcat_nspec = Column(SmallInteger, nullable=False)
     zcat_primary = Column(Boolean, nullable=False)
+    firstnight = Column(Integer, nullable=False)
+    lastnight = Column(Integer, nullable=False)
+    min_mjd = Column(DOUBLE_PRECISION, nullable=False)
+    mean_mjd = Column(DOUBLE_PRECISION, nullable=False)
+    max_mjd = Column(DOUBLE_PRECISION, nullable=False)
 
     photometry = relationship("Photometry", back_populates="ztile_redshifts")
     tile = relationship("Tile", back_populates="ztile_redshifts")
@@ -1448,6 +1460,9 @@ def get_options():
                       help='If specified, connect to a PostgreSQL database with USERNAME (default "%(default)s").')
     prsr.add_argument('-v', '--verbose', action='store_true', dest='verbose',
                       help='Print extra information.')
+    prsr.add_argument('-z', '--redshift-version', action='store', dest='redshift_version',
+                      metavar='VERSION',
+                      help='Load redshift data from VAC VERSION')
     prsr.add_argument('datapath', metavar='DIR', help='Load the data in DIR.')
     options = prsr.parse_args()
     return options
@@ -1481,6 +1496,12 @@ def main():
     #
     # Load configuration
     #
+    if options.redshift_version is None:
+        zpix_file = os.path.join(options.datapath, 'spectro', 'redux', os.environ['SPECPROD'], 'zcatalog', 'zall-pix-{specprod}.fits'.format(specprod=os.environ['SPECPROD']))
+        ztile_file = os.path.join(options.datapath, 'spectro', 'redux', os.environ['SPECPROD'], 'zcatalog', 'zall-tilecumulative-{specprod}.fits'.format(specprod=os.environ['SPECPROD']))
+    else:
+        zpix_file = os.path.join(options.datapath, 'vac', options.release, 'zcat', os.environ['SPECPROD'], options.redshift_version, 'zall-pix-{release}-vac.fits'.format(release=options.release))
+        ztile_file = os.path.join(options.datapath, 'vac', options.release, 'zcat', os.environ['SPECPROD'], options.redshift_version, 'zall-tilecumulative-{release}-vac.fits'.format(release=options.release))
     loaders = {'exposures': [{'filepaths': os.path.join(options.datapath, 'spectro', 'redux', os.environ['SPECPROD'], 'tiles-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
                               'tcls': Tile,
                               'hdu': 'TILE_COMPLETENESS',
@@ -1542,7 +1563,7 @@ def main():
                            'chunksize': options.chunksize,
                            'maxrows': options.maxrows
                            }],
-               'redshift': [{'filepaths': os.path.join(options.datapath, 'spectro', 'redux', os.environ['SPECPROD'], 'zcatalog', 'zall-pix-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
+               'redshift': [{'filepaths': zpix_file,
                              'tcls': Zpix,
                              'hdu': 'ZCATALOG',
                              'preload': _survey_program,
@@ -1553,7 +1574,7 @@ def main():
                              'chunksize': options.chunksize,
                              'maxrows': options.maxrows
                              },
-                            {'filepaths': os.path.join(options.datapath, 'spectro', 'redux', os.environ['SPECPROD'], 'zcatalog', 'zall-tilecumulative-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
+                            {'filepaths': ztile_file,
                              'tcls': Ztile,
                              'hdu': 'ZCATALOG',
                              'preload': _survey_program,
@@ -1625,6 +1646,8 @@ def main():
                     Version(package='astropy', version=astropy_version),
                     Version(package='sqlalchemy', version=sqlalchemy_version),
                     Version(package='desiutil', version=desiutil_version)]
+        if options.redshift_version is not None:
+            versions.append(Version(package='zcat', version=options.redshift_version))
         dbSession.add_all(versions)
         dbSession.commit()
         log.info("Completed loading version metadata.")
@@ -1640,7 +1663,7 @@ def main():
             log.info("Loading %s from %s.", tn, str(l['filepaths']))
             load_file(**l)
             log.info("Finished loading %s.", tn)
-    if options.load == 'fiberassign':
+    if options.redshift_version is not None and options.load == 'fiberassign':
         #
         # Fiberassign table has to be loaded for this step.
         #
