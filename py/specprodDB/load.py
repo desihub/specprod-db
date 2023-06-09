@@ -569,15 +569,15 @@ class Zpix(SchemaMixin, Base):
     coadd_exptime = Column(REAL, nullable=False)
     coadd_numnight = Column(SmallInteger, nullable=False)
     coadd_numtile = Column(SmallInteger, nullable=False)
-    # mean_delta_x = Column(REAL, nullable=False)
-    # rms_delta_x = Column(REAL, nullable=False)
-    # mean_delta_y = Column(REAL, nullable=False)
-    # rms_delta_y = Column(REAL, nullable=False)
-    # mean_fiber_ra = Column(DOUBLE_PRECISION, nullable=False)
-    # std_fiber_ra = Column(REAL, nullable=False)
-    # mean_fiber_dec = Column(DOUBLE_PRECISION, nullable=False)
-    # std_fiber_dec = Column(REAL, nullable=False)
-    # mean_psf_to_fiber_specflux = Column(REAL, nullable=False)
+    mean_delta_x = Column(REAL, nullable=False)
+    rms_delta_x = Column(REAL, nullable=False)
+    mean_delta_y = Column(REAL, nullable=False)
+    rms_delta_y = Column(REAL, nullable=False)
+    mean_fiber_ra = Column(DOUBLE_PRECISION, nullable=False)
+    std_fiber_ra = Column(REAL, nullable=False)
+    mean_fiber_dec = Column(DOUBLE_PRECISION, nullable=False)
+    std_fiber_dec = Column(REAL, nullable=False)
+    mean_psf_to_fiber_specflux = Column(REAL, nullable=False)
     tsnr2_gpbdark_b = Column(REAL, nullable=False)
     tsnr2_elg_b = Column(REAL, nullable=False)
     tsnr2_gpbbright_b = Column(REAL, nullable=False)
@@ -616,6 +616,11 @@ class Zpix(SchemaMixin, Base):
     main_primary = Column(Boolean, nullable=False)
     zcat_nspec = Column(SmallInteger, nullable=False)
     zcat_primary = Column(Boolean, nullable=False)
+    firstnight = Column(Integer, nullable=False)
+    lastnight = Column(Integer, nullable=False)
+    min_mjd = Column(DOUBLE_PRECISION, nullable=False)
+    mean_mjd = Column(DOUBLE_PRECISION, nullable=False)
+    max_mjd = Column(DOUBLE_PRECISION, nullable=False)
 
     photometry = relationship("Photometry", back_populates="zpix_redshifts")
 
@@ -666,15 +671,17 @@ class Ztile(SchemaMixin, Base):
     coadd_exptime = Column(REAL, nullable=False)
     coadd_numnight = Column(SmallInteger, nullable=False)
     coadd_numtile = Column(SmallInteger, nullable=False)
-    # mean_delta_x = Column(REAL, nullable=False)
-    # rms_delta_x = Column(REAL, nullable=False)
-    # mean_delta_y = Column(REAL, nullable=False)
-    # rms_delta_y = Column(REAL, nullable=False)
-    # mean_fiber_ra = Column(DOUBLE_PRECISION, nullable=False)
-    # std_fiber_ra = Column(REAL, nullable=False)
-    # mean_fiber_dec = Column(DOUBLE_PRECISION, nullable=False)
-    # std_fiber_dec = Column(REAL, nullable=False)
-    # mean_psf_to_fiber_specflux = Column(REAL, nullable=False)
+    mean_delta_x = Column(REAL, nullable=False)
+    rms_delta_x = Column(REAL, nullable=False)
+    mean_delta_y = Column(REAL, nullable=False)
+    rms_delta_y = Column(REAL, nullable=False)
+    mean_fiber_ra = Column(DOUBLE_PRECISION, nullable=False)
+    std_fiber_ra = Column(REAL, nullable=False)
+    mean_fiber_dec = Column(DOUBLE_PRECISION, nullable=False)
+    std_fiber_dec = Column(REAL, nullable=False)
+    mean_psf_to_fiber_specflux = Column(REAL, nullable=False)
+    mean_fiber_x = Column(REAL, nullable=False)
+    mean_fiber_y = Column(REAL, nullable=False)
     tsnr2_gpbdark_b = Column(REAL, nullable=False)
     tsnr2_elg_b = Column(REAL, nullable=False)
     tsnr2_gpbbright_b = Column(REAL, nullable=False)
@@ -713,6 +720,11 @@ class Ztile(SchemaMixin, Base):
     main_primary = Column(Boolean, nullable=False)
     zcat_nspec = Column(SmallInteger, nullable=False)
     zcat_primary = Column(Boolean, nullable=False)
+    firstnight = Column(Integer, nullable=False)
+    lastnight = Column(Integer, nullable=False)
+    min_mjd = Column(DOUBLE_PRECISION, nullable=False)
+    mean_mjd = Column(DOUBLE_PRECISION, nullable=False)
+    max_mjd = Column(DOUBLE_PRECISION, nullable=False)
 
     photometry = relationship("Photometry", back_populates="ztile_redshifts")
     tile = relationship("Tile", back_populates="ztile_redshifts")
@@ -1449,7 +1461,7 @@ def get_options():
     prsr.add_argument('-v', '--verbose', action='store_true', dest='verbose',
                       help='Print extra information.')
     prsr.add_argument('-z', '--redshift-version', action='store', dest='redshift_version',
-                      metavar='VESRSION',
+                      metavar='VERSION',
                       help='Load redshift data from VAC VERSION')
     prsr.add_argument('datapath', metavar='DIR', help='Load the data in DIR.')
     options = prsr.parse_args()
@@ -1561,19 +1573,19 @@ def main():
                              'rowfilter': lambda x: (x['TARGETID'] > 0) & ((x['TARGETID'] & 2**59) == 0),
                              'chunksize': options.chunksize,
                              'maxrows': options.maxrows
-                             },
-                            {'filepaths': ztile_file,
-                             'tcls': Ztile,
-                             'hdu': 'ZCATALOG',
-                             'preload': _survey_program,
-                             'expand': {'COEFF': ('coeff_0', 'coeff_1', 'coeff_2', 'coeff_3', 'coeff_4',
-                                                  'coeff_5', 'coeff_6', 'coeff_7', 'coeff_8', 'coeff_9',)},
-                             'convert': {'id': lambda x: x[0] << 64 | x[1],
-                                         'targetphotid': lambda x: x[0] << 64 | x[1]},
-                             'rowfilter': lambda x: (x['TARGETID'] > 0) & ((x['TARGETID'] & 2**59) == 0),
-                             'chunksize': options.chunksize,
-                             'maxrows': options.maxrows
-                             }],
+                             },],
+                            # {'filepaths': ztile_file,
+                            #  'tcls': Ztile,
+                            #  'hdu': 'ZCATALOG',
+                            #  'preload': _survey_program,
+                            #  'expand': {'COEFF': ('coeff_0', 'coeff_1', 'coeff_2', 'coeff_3', 'coeff_4',
+                            #                       'coeff_5', 'coeff_6', 'coeff_7', 'coeff_8', 'coeff_9',)},
+                            #  'convert': {'id': lambda x: x[0] << 64 | x[1],
+                            #              'targetphotid': lambda x: x[0] << 64 | x[1]},
+                            #  'rowfilter': lambda x: (x['TARGETID'] > 0) & ((x['TARGETID'] & 2**59) == 0),
+                            #  'chunksize': options.chunksize,
+                            #  'maxrows': options.maxrows
+                            #  }],
                'fiberassign': [{'filepaths': None,
                                 'tcls': Fiberassign,
                                 'hdu': 'FIBERASSIGN',
