@@ -37,8 +37,9 @@ class TestLoad(unittest.TestCase):
         """Test parsing of command-line options.
         """
         options = get_options()
-        self.assertEqual(options.hostname, 'specprod-db.desi.lbl.gov')
+        self.assertEqual(options.dbfile, 'specprod.db')
         self.assertFalse(options.verbose)
+        self.assertFalse(options.overwrite)
         self.assertEqual(options.load, 'exposures')
 
     @patch('specprodDB.load.dbSession')
