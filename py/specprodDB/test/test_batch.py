@@ -31,7 +31,7 @@ class TestBatch(unittest.TestCase):
         """
         options = get_options()
         self.assertTrue(options.csh)
-        self.assertEqual(options.hostname, 'specprod-db.desi.lbl.gov')
+        self.assertEqual(options.root, '/global/cfs/cdirs/desi')
 
     @patch('sys.argv', ['prepare_batch_specprod_db', '--csh', '--schema', 'fuji', 'foo@example.com', '/global/cfs/cdirs/desi'])
     def test_prepare_template_csh(self):
@@ -42,7 +42,7 @@ class TestBatch(unittest.TestCase):
             scripts = prepare_template(options)
         self.assertIn('load_specprod_db_fuji_exposures.csh', scripts)
 
-    @patch('sys.argv', ['prepare_batch_specprod_db', '--schema', 'fuji', 'foo@example.com', '/global/cfs/cdirs/desi'])
+    @patch('sys.argv', ['prepare_batch_specprod_db', '--swap', '--schema', 'fuji', 'foo@example.com', '/global/cfs/cdirs/desi'])
     def test_prepare_template_bash(self):
         """Test conversion of options to scripts with bash.
         """
@@ -50,6 +50,7 @@ class TestBatch(unittest.TestCase):
             options = get_options()
             scripts = prepare_template(options)
         self.assertIn('load_specprod_db_fuji_exposures.sh', scripts)
+        self.assertIn('module swap', scripts['load_specprod_db_fuji_exposures.sh'])
 
     @patch('sys.argv', ['prepare_batch_specprod_db', '--qos', 'bigmem', '--constraint', 'haswell', '--schema', 'fuji', 'foo@example.com', '/global/cfs/cdirs/desi'])
     def test_prepare_template_bash_qos(self):
@@ -70,7 +71,6 @@ module load specprod-db/main
 export DESI_ROOT=/global/cfs/cdirs/desi
 export SPECPROD=fuji
 srun --ntasks=1 load_specprod_db --overwrite \\
-    --hostname specprod-db.desi.lbl.gov --username desi_admin \\
     --load exposures --schema ${SPECPROD} ${DESI_ROOT}
 """
         photometry = """#!/bin/bash
@@ -88,7 +88,6 @@ module load specprod-db/main
 export DESI_ROOT=/global/cfs/cdirs/desi
 export SPECPROD=fuji
 srun --ntasks=1 load_specprod_db  \\
-    --hostname specprod-db.desi.lbl.gov --username desi_admin \\
     --load photometry --schema ${SPECPROD} ${DESI_ROOT}
 """
         with patch('os.environ', {'HOME': '/home/test'}):
