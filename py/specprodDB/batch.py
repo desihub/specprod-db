@@ -22,11 +22,10 @@ template = """#!/bin/{shell}
 #SBATCH --account=desi
 #SBATCH --mail-type=end,fail
 #SBATCH --mail-user={email}
-module load specprod-db/main
+module {load} specprod-db/main
 {export_root}
 {export_specprod}
 srun --ntasks=1 load_specprod_db {overwrite} \\
-    --hostname {hostname} --username {username} \\
     --load {stage} --schema ${{SPECPROD}} ${{DESI_ROOT}}
 """
 
@@ -49,9 +48,9 @@ def get_options():
     prsr.add_argument('-C', '--constraint', action='store', dest='constraint',
                       metavar='CONSTRAINT', default='cpu',
                       help='Run jobs with CONSTRAINT (default "%(default)s").')
-    prsr.add_argument('-H', '--hostname', action='store', dest='hostname',
-                      metavar='HOSTNAME', default='specprod-db.desi.lbl.gov',
-                      help='If specified, connect to a PostgreSQL database on HOSTNAME (default "%(default)s").')
+    # prsr.add_argument('-H', '--hostname', action='store', dest='hostname',
+    #                   metavar='HOSTNAME', default='specprod-db.desi.lbl.gov',
+    #                   help='If specified, connect to a PostgreSQL database on HOSTNAME (default "%(default)s").')
     prsr.add_argument('-j', '--job-dir', action='store', dest='job_dir', metavar='DIR',
                       default=os.path.join(os.environ['HOME'], 'Documents', 'Jobs'),
                       help='Write batch job files to DIR (default "%(default)s").')
@@ -66,13 +65,15 @@ def get_options():
     prsr.add_argument('-s', '--schema', action='store', dest='schema',
                       metavar='SCHEMA',
                       help='Set the schema name in the PostgreSQL database.')
+    prsr.add_argument('-S', '--swap', action='store_true', dest='swap',
+                      help='Perform "module swap" instead of "module load".')
     # prsr.add_argument('-t', '--tiles-path', action='store', dest='tilespath', metavar='PATH',
     #                   help="Load fiberassign data from PATH.")
     # prsr.add_argument('-T', '--target-path', action='store', dest='targetpath', metavar='PATH',
     #                   help="Load target photometry data from PATH.")
-    prsr.add_argument('-U', '--username', action='store', dest='username',
-                      metavar='USERNAME', default='desi_admin',
-                      help='If specified, connect to a PostgreSQL database with USERNAME (default "%(default)s").')
+    # prsr.add_argument('-U', '--username', action='store', dest='username',
+    #                   metavar='USERNAME', default='desi_admin',
+    #                   help='If specified, connect to a PostgreSQL database with USERNAME (default "%(default)s").')
     # prsr.add_argument('-v', '--verbose', action='store_true', dest='verbose',
     #                   help='Print extra information.')
     prsr.add_argument('email', metavar='EMAIL', help='Send batch messages to EMAIL.')
@@ -105,6 +106,9 @@ def prepare_template(options):
         export_root = f'export DESI_ROOT={options.root}'
         export_specprod = f'export SPECPROD={options.schema}'
     scripts = dict()
+    load = 'load'
+    if options.swap:
+        load = 'swap'
     for stage in ('exposures', 'photometry', 'targetphot', 'target', 'redshift', 'fiberassign'):
         if stage == 'exposures':
             overwrite = '--overwrite'
@@ -119,15 +123,14 @@ def prepare_template(options):
              'qos': options.qos,
              'constraint': options.constraint,
              'time': wall_time,
+             'load': load,
              'schema': options.schema,
              'stage': stage,
              'job_dir': options.job_dir,
              'email': options.email,
              'export_root': export_root,
              'export_specprod': export_specprod,
-             'overwrite': overwrite,
-             'hostname': options.hostname,
-             'username': options.username}
+             'overwrite': overwrite}
         scripts[script_name] = template.format(**t)
     return scripts
 
