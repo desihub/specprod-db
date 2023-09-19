@@ -899,11 +899,18 @@ def _deduplicate_targetid(data):
     # Find TARGETIDs that do not exist in Photometry
     #
     j = join(data['TARGETID', 'RELEASE'], loaded_targetid, join_type='left', keys='TARGETID')
-    load_targetids = j['TARGETID'][j['LS_ID'].mask]
     load_rows = np.zeros((len(data),), dtype=bool)
-    unique_targetid, targetid_index = np.unique(data['TARGETID'].data, return_index=True)
-    for t in load_targetids:
-        load_rows[targetid_index[unique_targetid == t]] = True
+    try:
+        load_targetids = j['TARGETID'][j['LS_ID'].mask]
+    except AttributeError:
+        #
+        # This means *every* TARGETID is already loaded.
+        #
+        pass
+    else:
+        unique_targetid, targetid_index = np.unique(data['TARGETID'].data, return_index=True)
+        for t in load_targetids:
+            load_rows[targetid_index[unique_targetid == t]] = True
     return load_rows
 
 
@@ -1058,6 +1065,9 @@ def load_file(filepaths, tcls, hdu=1, preload=None, expand=None, insert=None, co
             good_rows = np.ones((mr,), dtype=bool)
         else:
             good_rows = rowfilter(data[0:mr])
+        if good_rows.sum() == 0:
+            log.info("Row filter removed all data rows, skipping %s.", filepath)
+            continue
         log.info("Row filter applied on %s; %d rows remain.", tn, good_rows.sum())
         data_list = list()
         for col in colnames:
