@@ -1518,11 +1518,16 @@ def main():
     #
     release = config[specprod]['release']
     photometry_version = config[specprod]['photometry']
+    target_summary = config[specprod].getboolean('target_summary')
     rsv = config[specprod]['redshift'].split('/')
     if len(rsv) == 2:
         redshift_type, redshift_version = rsv[0], rsv[1]
     else:
         redshift_type, redshift_version = rsv[0], 'v0'
+    if target_summary:
+        target_files = os.path.join(options.datapath, 'vac', release, 'lsdr9-photometry', specprod, photometry_version, 'potential-targets', f'targetphot-potential-{specprod}.fits')
+    else:
+        target_files = glob.glob(os.path.join(options.datapath, 'vac', release, 'lsdr9-photometry', specprod, photometry_version, 'potential-targets', f'targetphot-potential-*-{specprod}.fits'))
     if redshift_type == 'base' or redshift_type == 'patch':
         redshift_dir = os.path.join(options.datapath, 'spectro', 'redux', specprod, 'zcatalog')
         if redshift_type == 'base':
@@ -1582,7 +1587,7 @@ def main():
                # This stage loads targets, and such photometry as they have, that did not
                # successfully match to a known LS DR9 object.
                #
-               'targetphot': [{'filepaths': os.path.join(options.datapath, 'vac', release, 'lsdr9-photometry', specprod, photometry_version, 'potential-targets', f'targetphot-potential-{specprod}.fits'),
+               'targetphot': [{'filepaths': target_files,
                                'tcls': Photometry,
                                'hdu': 'TARGETPHOT',
                                'preload': _add_ls_id,
@@ -1593,7 +1598,7 @@ def main():
                                'chunksize': chunksize,
                                'maxrows': maxrows
                                }],
-               'target': [{'filepaths': os.path.join(options.datapath, 'vac', release, 'lsdr9-photometry', specprod, photometry_version, 'potential-targets', f'targetphot-potential-{specprod}.fits'),
+               'target': [{'filepaths': target_files,
                            'tcls': Target,
                            'hdu': 'TARGETPHOT',
                            'preload': _target_unique_id,
