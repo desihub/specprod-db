@@ -1706,9 +1706,10 @@ def main():
             log.info("Loading %s from %s.", tn, str(l['filepaths']))
             load_file(**l)
             log.info("Finished loading %s.", tn)
-    if redshift_type != 'zcat' and options.load == 'fiberassign':
+    if options.load == 'fiberassign' and redshift_type not in ('patch', 'zcat'):
         #
         # Fiberassign table has to be loaded for this step.
+        # Eventually we want to eliminate this entirely.
         #
         log.info("Applying target bitmask corrections for %s to zpix table.",
                  specprod)
