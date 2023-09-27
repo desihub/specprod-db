@@ -815,6 +815,12 @@ def _survey_program(data):
             data.add_column(np.array([val]*len(data)), name=key, index=i+1)
     # objid, brickid, release, mock, sky, gaiadr = decode_targetid(data['TARGETID'])
     # data.add_column(sky, name='SKY', index=0)
+    if 'FIRSTNIGHT' not in data.colnames:
+        log.info("Adding FIRSTNIGHT column")
+        data.add_column(np.array([0]*len(data), dtype=np.int32), name='FIRSTNIGHT', index=data.colnames.index('PROGRAM')+1)
+    if 'LASTNIGHT' not in data.colnames:
+        log.info("Adding LASTNIGHT column")
+        data.add_column(np.array([0]*len(data), dtype=np.int32), name='LASTNIGHT', index=data.colnames.index('PROGRAM')+2)
     if 'MAIN_NSPEC' not in data.colnames:
         data.add_column(np.array([0]*len(data), dtype=np.int16), name='MAIN_NSPEC', index=data.colnames.index('SV_PRIMARY')+1)
         data.add_column(np.array([False]*len(data), dtype=np.int16), name='MAIN_PRIMARY', index=data.colnames.index('MAIN_NSPEC')+1)
@@ -831,8 +837,8 @@ def _survey_program(data):
     mask_index = data.colnames.index('NUMOBS_INIT') + 1
     for mask in masks:
         if mask.upper() not in data.colnames:
-            data.add_column(np.array([0]*len(data), dtype=np.int64), name=mask.upper(), index=mask_index)
             log.info("Adding %s at index %d.", mask.upper(), mask_index)
+            data.add_column(np.array([0]*len(data), dtype=np.int64), name=mask.upper(), index=mask_index)
         mask_index += 1
     if 'TILEID' in data.colnames:
         data.add_column(np.array(['cumulative']*len(data)), name='SPGRP', index=data.colnames.index('PROGRAM')+1)
