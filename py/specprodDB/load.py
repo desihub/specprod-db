@@ -821,6 +821,19 @@ def _survey_program(data):
     if 'SV_NSPEC' not in data.colnames:
         data.add_column(np.array([0]*len(data), dtype=np.int16), name='SV_NSPEC', index=data.colnames.index('TSNR2_LRG')+1)
         data.add_column(np.array([False]*len(data), dtype=np.int16), name='SV_PRIMARY', index=data.colnames.index('SV_NSPEC')+1)
+    #
+    # Reductions like guadalupe may not have the full set of target bitmasks
+    #
+    surveys = ('', 'sv1', 'sv2', 'sv3')
+    programs = ('desi', 'bgs', 'mws', 'scnd')
+    masks = ['cmx_target'] + [('_'.join(p) if p[0] else p[1]) + '_target'
+                              for p in itertools.product(surveys, programs)]
+    mask_index = data.colnames.index('NUMOBS_INIT') + 1
+    for mask in masks:
+        if mask.upper() not in data.colnames:
+            data.add_column(np.array([0]*len(data), dtype=np.int64), name=mask.upper(), index=mask_index)
+            log.info("Adding %s at index %d.", mask.upper(), mask_index)
+        mask_index += 1
     if 'TILEID' in data.colnames:
         data.add_column(np.array(['cumulative']*len(data)), name='SPGRP', index=data.colnames.index('PROGRAM')+1)
         data = _target_unique_id(data)
