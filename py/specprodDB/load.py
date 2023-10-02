@@ -1189,7 +1189,7 @@ def q3c_index(table, ra='ra'):
 
 
 def zpix_target(specprod):
-    """Replace targeting bitmasks in `table`.
+    """Replace targeting bitmasks in the redshift tables for `specprod`.
 
     Parameters
     ----------
