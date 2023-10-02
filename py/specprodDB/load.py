@@ -1176,7 +1176,7 @@ def q3c_index(table, ra='ra'):
         If the RA, Dec columns are called something besides "ra" and "dec",
         set its name.  For example, ``ra='target_ra'``.
     """
-    q3c_sql = """CREATE INDEX ix_{table}_q3c_ang2ipix ON {schema}.{table} (q3c_ang2ipix({ra}, {dec}));
+    q3c_sql = """CREATE INDEX IF NOT EXISTS ix_{table}_q3c_ang2ipix ON {schema}.{table} (q3c_ang2ipix({ra}, {dec}));
     CLUSTER {schema}.{table} USING ix_{table}_q3c_ang2ipix;
     ANALYZE {schema}.{table};
     """.format(ra=ra, dec=ra.lower().replace('ra', 'dec'),
