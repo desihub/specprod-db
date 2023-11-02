@@ -9,6 +9,7 @@ Generate batch scripts for loading the database.
 import os
 from sys import argv
 from argparse import ArgumentParser
+from . import __version__ as specprod_db_version
 
 
 template = """#!/bin/{shell}
@@ -16,17 +17,17 @@ template = """#!/bin/{shell}
 #SBATCH --constraint={constraint}
 #SBATCH --nodes=1
 #SBATCH --time={time}
-#SBATCH --job-name=load_specprod_db_{schema}_{stage}
+#SBATCH --job-name=load_specprod_db_{script_schema}_{stage}
 #SBATCH --output={job_dir}/%x-%j.log
 #SBATCH --licenses=SCRATCH,cfs
 #SBATCH --account=desi
 #SBATCH --mail-type=end,fail
 #SBATCH --mail-user={email}
-module {load} specprod-db/main
+module {load} specprod-db/{load_version}
 {export_root}
 {export_specprod}
 srun --ntasks=1 load_specprod_db {overwrite} \\
-    --load {stage} --schema ${{SPECPROD}} ${{DESI_ROOT}}
+    --load {stage} --schema {schema} ${{DESI_ROOT}}
 """
 
 times = {'exposures': '00:10:00',
@@ -63,8 +64,8 @@ def get_options():
     #                   type=int, default=50000, metavar='N',
     #                   help="Load N rows at a time (default %(default)s).")
     prsr.add_argument('-s', '--schema', action='store', dest='schema',
-                      metavar='SCHEMA',
-                      help='Set the schema name in the PostgreSQL database.')
+                      metavar='SCHEMA', default='${SPECPROD}',
+                      help='Set the schema name in the PostgreSQL database (default "%(default)s").')
     prsr.add_argument('-S', '--swap', action='store_true', dest='swap',
                       help='Perform "module swap" instead of "module load".')
     # prsr.add_argument('-t', '--tiles-path', action='store', dest='tilespath', metavar='PATH',
@@ -74,10 +75,11 @@ def get_options():
     # prsr.add_argument('-U', '--username', action='store', dest='username',
     #                   metavar='USERNAME', default='desi_admin',
     #                   help='If specified, connect to a PostgreSQL database with USERNAME (default "%(default)s").')
-    # prsr.add_argument('-v', '--verbose', action='store_true', dest='verbose',
-    #                   help='Print extra information.')
+    prsr.add_argument('-v', '--specprod-version', metavar='VERSION', dest='specprod_version',
+                      help='Set the specprod-db version to VERSION.')
     prsr.add_argument('email', metavar='EMAIL', help='Send batch messages to EMAIL.')
     prsr.add_argument('root', metavar='DIR', help='Load the data in DIR.')
+    prsr.add_argument('specprod', metavar='SPECPROD', help='Set the value of SPECPROD, which may be different from the schema name.')
     options = prsr.parse_args()
     return options
 
@@ -99,22 +101,30 @@ def prepare_template(options):
         extension = 'csh'
         shell = 'tcsh'
         export_root = f'setenv DESI_ROOT {options.root}'
-        export_specprod = f'setenv SPECPROD {options.schema}'
+        export_specprod = f'setenv SPECPROD {options.specprod}'
     else:
         extension = 'sh'
         shell = 'bash'
         export_root = f'export DESI_ROOT={options.root}'
-        export_specprod = f'export SPECPROD={options.schema}'
+        export_specprod = f'export SPECPROD={options.specprod}'
     scripts = dict()
     load = 'load'
     if options.swap:
         load = 'swap'
+    if options.specprod_version is None:
+        load_version = specprod_db_version
+    else:
+        load_version = options.specprod_version
     for stage in ('exposures', 'photometry', 'targetphot', 'target', 'redshift', 'fiberassign'):
         if stage == 'exposures':
             overwrite = '--overwrite'
         else:
             overwrite = ''
-        script_name = 'load_specprod_db_{schema}_{stage}.{extension}'.format(schema=options.schema, stage=stage, extension=extension)
+        if options.schema == '${SPECPROD}':
+            script_schema = options.specprod
+        else:
+            script_schema = options.schema
+        script_name = 'load_specprod_db_{schema}_{stage}.{extension}'.format(schema=script_schema, stage=stage, extension=extension)
         try:
             wall_time = times[stage]
         except KeyError:
@@ -123,11 +133,13 @@ def prepare_template(options):
              'qos': options.qos,
              'constraint': options.constraint,
              'time': wall_time,
+             'script_schema': script_schema,
              'load': load,
              'schema': options.schema,
              'stage': stage,
              'job_dir': options.job_dir,
              'email': options.email,
+             'load_version': load_version,
              'export_root': export_root,
              'export_specprod': export_specprod,
              'overwrite': overwrite}

@@ -1750,4 +1750,11 @@ def main():
             return 1
         log.info("Finished target bitmask corrections for %s zpix table.",
                  specprod)
+    if options.load == 'fiberassign':
+        #
+        # Automatically VACUUM.
+        #
+        log.info("Issuing VACUUM command.")
+        dbSession.execute("VACUUM FULL VERBOSE ANALYZE;")
+        log.info("Finished with VACUUM command.")
     return 0
