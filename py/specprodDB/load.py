@@ -22,9 +22,8 @@ import os
 import glob
 import itertools
 # import sys
+import importlib.resources as ir
 from configparser import SafeConfigParser
-
-from pkg_resources import resource_filename
 
 import numpy as np
 from astropy import __version__ as astropy_version
@@ -91,7 +90,7 @@ class Photometry(SchemaMixin, Base):
 
     This table is deliberately designed so that ``TARGETID`` can serve as a
     primary key. Any quantities created or modified by desitarget are
-    defined in the :class:`~specprodTarget` class.
+    defined in the :class:`~specprodDB.load.Target` class.
 
     However we *avoid* the use of the term "tractor" for this table,
     because not every target will have *tractor* photometry,
@@ -515,6 +514,7 @@ class Zpix(SchemaMixin, Base):
 
     id = Column(Numeric(39), primary_key=True, autoincrement=False)
     targetid = Column(BigInteger, ForeignKey('photometry.targetid'), nullable=False, index=True)
+    desiname = Column(String(22), nullable=False, index=True)
     survey = Column(String(7), nullable=False, index=True)
     program = Column(String(6), nullable=False, index=True)
     spgrp = Column(String(10), nullable=False, index=True)
@@ -642,6 +642,7 @@ class Ztile(SchemaMixin, Base):
     id = Column(Numeric(39), primary_key=True, autoincrement=False)
     targetphotid = Column(Numeric(39), ForeignKey("target.id"), nullable=False, index=True)
     targetid = Column(BigInteger, ForeignKey('photometry.targetid'), nullable=False, index=True)
+    desiname = Column(String(22), nullable=False, index=True)
     survey = Column(String(7), nullable=False, index=True)
     program = Column(String(6), nullable=False, index=True)
     spgrp = Column(String, nullable=False, index=True)
@@ -1447,7 +1448,7 @@ def get_options():
     prsr = ArgumentParser(description=("Load redshift data into a database."),
                           prog=os.path.basename(argv[0]))
     prsr.add_argument('-c', '--config', action='store', dest='config', metavar='FILE',
-                      default=resource_filename('specprodDB', 'data/load_specprod_db.ini'),
+                      default=str(ir.files('specprodDB') / 'data' / 'load_specprod_db.ini'),
                       help="Override the default configuration file.")
     # prsr.add_argument('-d', '--data-release', action='store', dest='release',
     #                   default='edr', metavar='RELEASE',
