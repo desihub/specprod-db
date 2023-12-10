@@ -1753,9 +1753,11 @@ def main():
                  specprod)
     if options.load == 'fiberassign':
         #
-        # Automatically VACUUM.
+        # Automatically VACUUM. The system detects this as still inside a
+        # transaction block, & VACUUM can't be run in that.
         #
-        log.info("Issuing VACUUM command.")
-        dbSession.execute("VACUUM FULL VERBOSE ANALYZE;")
-        log.info("Finished with VACUUM command.")
+        # log.info("Issuing VACUUM command.")
+        # dbSession.execute("VACUUM FULL VERBOSE ANALYZE;")
+        # log.info("Finished with VACUUM command.")
+        pass
     return 0
