@@ -37,8 +37,9 @@ class TestLoad(unittest.TestCase):
         """Test parsing of command-line options.
         """
         options = get_options()
-        self.assertEqual(options.hostname, 'specprod-db.desi.lbl.gov')
+        self.assertEqual(options.dbfile, 'specprod.db')
         self.assertFalse(options.verbose)
+        self.assertFalse(options.overwrite)
         self.assertEqual(options.load, 'exposures')
 
     @patch('specprodDB.load.dbSession')
@@ -48,6 +49,6 @@ class TestLoad(unittest.TestCase):
         """
         with patch('specprodDB.load.schemaname', 'fuji'):
             q3c_index('target', ra='tile_ra')
-        mock_session.execute.assert_called_once_with('CREATE INDEX ix_target_q3c_ang2ipix ON fuji.target (q3c_ang2ipix(tile_ra, tile_dec));\n    CLUSTER fuji.target USING ix_target_q3c_ang2ipix;\n    ANALYZE fuji.target;\n    ')
+        mock_session.execute.assert_called_once_with('CREATE INDEX IF NOT EXISTS ix_target_q3c_ang2ipix ON fuji.target (q3c_ang2ipix(tile_ra, tile_dec));\n    CLUSTER fuji.target USING ix_target_q3c_ang2ipix;\n    ANALYZE fuji.target;\n    ')
         mock_log.info.assert_has_calls([call("Creating q3c index on %s.%s.", 'fuji', 'target'),
                                         call("Finished q3c index on %s.%s.", 'fuji', 'target')])

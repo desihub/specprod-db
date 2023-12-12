@@ -4,9 +4,8 @@
 """
 import unittest
 from unittest.mock import patch, call
-# import os
-from datetime import datetime
-from pkg_resources import resource_filename
+import importlib.resources as ir
+
 from pytz import utc
 from ..util import (cameraid, frameid, surveyid, decode_surveyid, programid,
                     spgrpid, targetphotid, decode_targetphotid, zpixid, ztileid,
@@ -167,7 +166,7 @@ class TestUtil(unittest.TestCase):
     def test_parse_pgpass(self, mock_expand):
         """Test specprodDB.util.parse_pgpass.
         """
-        mock_expand.return_value = resource_filename('specprodDB.test', "t/test.pgpass")
+        mock_expand.return_value = str(ir.files('specprodDB.test') / 't' / "test.pgpass")
         self.assertEqual(parse_pgpass('server.example.com', 'user'),
                          'postgresql://user:password@server.example.com:5432/database')
 
@@ -182,12 +181,12 @@ class TestUtil(unittest.TestCase):
     def test_parse_pgpass_missing_hostname(self, mock_expand):
         """Test specprodDB.util.parse_pgpass with missing hostname.
         """
-        mock_expand.return_value = resource_filename('specprodDB.test', "t/test.pgpass")
+        mock_expand.return_value = str(ir.files('specprodDB.test') / 't' / "test.pgpass")
         self.assertIsNone(parse_pgpass('none.example.com', 'user'))
 
     @patch('specprodDB.util.expanduser')
     def test_parse_pgpass_missing_username(self, mock_expand):
         """Test specprodDB.util.parse_pgpass with missing username.
         """
-        mock_expand.return_value = resource_filename('specprodDB.test', "t/test.pgpass")
+        mock_expand.return_value = str(ir.files('specprodDB.test') / 't' / "test.pgpass")
         self.assertIsNone(parse_pgpass('server.example.com', 'nobody'))

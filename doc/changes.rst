@@ -2,12 +2,23 @@
 Change Log
 ==========
 
+1.3.0 (unreleaded)
+------------------
+
+*Planned*: Support loading ongoing daily reductions.
+
 1.2.0 (unreleased)
 ------------------
 
-*Planned*: This release will correspond to loading the ``iron`` spectroscopic
-production. A known change is that potential photometry and target data
-will be split into several files instead of a monolithic file.
+This release corresponds to loading the ``guadalupe`` and ``iron`` spectroscopic
+productions in preparation for DR1. See also PR `#12`_. Some specific changes:
+
+* Photometry and target data are split among several files instead of a monolithic file.
+* Add ``DESINAME`` column to redshift tabled.
+* Move version configuration to a configuration file.
+* Default values for targeting bits when they are absent from target files.
+
+.. _`#12`: https://github.com/desihub/specprod-db/pull/12
 
 1.1.0 (2023-06-09)
 ------------------

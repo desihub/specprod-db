@@ -22,6 +22,8 @@ import os
 import glob
 import itertools
 # import sys
+import importlib.resources as ir
+from configparser import SafeConfigParser
 
 import numpy as np
 from astropy import __version__ as astropy_version
@@ -88,7 +90,7 @@ class Photometry(SchemaMixin, Base):
 
     This table is deliberately designed so that ``TARGETID`` can serve as a
     primary key. Any quantities created or modified by desitarget are
-    defined in the :class:`~specprodTarget` class.
+    defined in the :class:`~specprodDB.load.Target` class.
 
     However we *avoid* the use of the term "tractor" for this table,
     because not every target will have *tractor* photometry,
@@ -222,23 +224,23 @@ class Target(SchemaMixin, Base):
     priority_init = Column(BigInteger, nullable=False)  # fiberassign
     numobs_init = Column(BigInteger, nullable=False)  # fiberassign
     hpxpixel = Column(BigInteger, nullable=False, index=True)
-    cmx_target = Column(BigInteger, nullable=False)
-    desi_target = Column(BigInteger, nullable=False)
-    bgs_target = Column(BigInteger, nullable=False)
-    mws_target = Column(BigInteger, nullable=False)
-    sv1_desi_target = Column(BigInteger, nullable=False)
-    sv1_bgs_target = Column(BigInteger, nullable=False)
-    sv1_mws_target = Column(BigInteger, nullable=False)
-    sv2_desi_target = Column(BigInteger, nullable=False)
-    sv2_bgs_target = Column(BigInteger, nullable=False)
-    sv2_mws_target = Column(BigInteger, nullable=False)
-    sv3_desi_target = Column(BigInteger, nullable=False)
-    sv3_bgs_target = Column(BigInteger, nullable=False)
-    sv3_mws_target = Column(BigInteger, nullable=False)
-    scnd_target = Column(BigInteger, nullable=False)
-    sv1_scnd_target = Column(BigInteger, nullable=False)
-    sv2_scnd_target = Column(BigInteger, nullable=False)
-    sv3_scnd_target = Column(BigInteger, nullable=False)
+    cmx_target = Column(BigInteger, nullable=False, default=0)
+    desi_target = Column(BigInteger, nullable=False, default=0)
+    bgs_target = Column(BigInteger, nullable=False, default=0)
+    mws_target = Column(BigInteger, nullable=False, default=0)
+    sv1_desi_target = Column(BigInteger, nullable=False, default=0)
+    sv1_bgs_target = Column(BigInteger, nullable=False, default=0)
+    sv1_mws_target = Column(BigInteger, nullable=False, default=0)
+    sv2_desi_target = Column(BigInteger, nullable=False, default=0)
+    sv2_bgs_target = Column(BigInteger, nullable=False, default=0)
+    sv2_mws_target = Column(BigInteger, nullable=False, default=0)
+    sv3_desi_target = Column(BigInteger, nullable=False, default=0)
+    sv3_bgs_target = Column(BigInteger, nullable=False, default=0)
+    sv3_mws_target = Column(BigInteger, nullable=False, default=0)
+    scnd_target = Column(BigInteger, nullable=False, default=0)
+    sv1_scnd_target = Column(BigInteger, nullable=False, default=0)
+    sv2_scnd_target = Column(BigInteger, nullable=False, default=0)
+    sv3_scnd_target = Column(BigInteger, nullable=False, default=0)
     survey = Column(String(7), nullable=False, index=True)
     program = Column(String(6), nullable=False, index=True)
     tileid = Column(Integer, ForeignKey('tile.tileid'), nullable=False, index=True)  # fiberassign
@@ -512,6 +514,7 @@ class Zpix(SchemaMixin, Base):
 
     id = Column(Numeric(39), primary_key=True, autoincrement=False)
     targetid = Column(BigInteger, ForeignKey('photometry.targetid'), nullable=False, index=True)
+    desiname = Column(String(22), nullable=False, index=True)
     survey = Column(String(7), nullable=False, index=True)
     program = Column(String(6), nullable=False, index=True)
     spgrp = Column(String(10), nullable=False, index=True)
@@ -545,23 +548,23 @@ class Zpix(SchemaMixin, Base):
     # after the fact with values from the bitwise-or of
     # values in the target table.
     #
-    cmx_target = Column(BigInteger, nullable=False)
-    desi_target = Column(BigInteger, nullable=False)
-    bgs_target = Column(BigInteger, nullable=False)
-    mws_target = Column(BigInteger, nullable=False)
-    scnd_target = Column(BigInteger, nullable=False)
-    sv1_desi_target = Column(BigInteger, nullable=False)
-    sv1_bgs_target = Column(BigInteger, nullable=False)
-    sv1_mws_target = Column(BigInteger, nullable=False)
-    sv1_scnd_target = Column(BigInteger, nullable=False)
-    sv2_desi_target = Column(BigInteger, nullable=False)
-    sv2_bgs_target = Column(BigInteger, nullable=False)
-    sv2_mws_target = Column(BigInteger, nullable=False)
-    sv2_scnd_target = Column(BigInteger, nullable=False)
-    sv3_desi_target = Column(BigInteger, nullable=False)
-    sv3_bgs_target = Column(BigInteger, nullable=False)
-    sv3_mws_target = Column(BigInteger, nullable=False)
-    sv3_scnd_target = Column(BigInteger, nullable=False)
+    cmx_target = Column(BigInteger, nullable=False, default=0)
+    desi_target = Column(BigInteger, nullable=False, default=0)
+    bgs_target = Column(BigInteger, nullable=False, default=0)
+    mws_target = Column(BigInteger, nullable=False, default=0)
+    scnd_target = Column(BigInteger, nullable=False, default=0)
+    sv1_desi_target = Column(BigInteger, nullable=False, default=0)
+    sv1_bgs_target = Column(BigInteger, nullable=False, default=0)
+    sv1_mws_target = Column(BigInteger, nullable=False, default=0)
+    sv1_scnd_target = Column(BigInteger, nullable=False, default=0)
+    sv2_desi_target = Column(BigInteger, nullable=False, default=0)
+    sv2_bgs_target = Column(BigInteger, nullable=False, default=0)
+    sv2_mws_target = Column(BigInteger, nullable=False, default=0)
+    sv2_scnd_target = Column(BigInteger, nullable=False, default=0)
+    sv3_desi_target = Column(BigInteger, nullable=False, default=0)
+    sv3_bgs_target = Column(BigInteger, nullable=False, default=0)
+    sv3_mws_target = Column(BigInteger, nullable=False, default=0)
+    sv3_scnd_target = Column(BigInteger, nullable=False, default=0)
     #
     # Skipping columns that are in other tables.
     #
@@ -616,8 +619,8 @@ class Zpix(SchemaMixin, Base):
     main_primary = Column(Boolean, nullable=False)
     zcat_nspec = Column(SmallInteger, nullable=False)
     zcat_primary = Column(Boolean, nullable=False)
-    firstnight = Column(Integer, nullable=False)
-    lastnight = Column(Integer, nullable=False)
+    # firstnight = Column(Integer, nullable=False)
+    # lastnight = Column(Integer, nullable=False)
     min_mjd = Column(DOUBLE_PRECISION, nullable=False)
     mean_mjd = Column(DOUBLE_PRECISION, nullable=False)
     max_mjd = Column(DOUBLE_PRECISION, nullable=False)
@@ -639,6 +642,7 @@ class Ztile(SchemaMixin, Base):
     id = Column(Numeric(39), primary_key=True, autoincrement=False)
     targetphotid = Column(Numeric(39), ForeignKey("target.id"), nullable=False, index=True)
     targetid = Column(BigInteger, ForeignKey('photometry.targetid'), nullable=False, index=True)
+    desiname = Column(String(22), nullable=False, index=True)
     survey = Column(String(7), nullable=False, index=True)
     program = Column(String(6), nullable=False, index=True)
     spgrp = Column(String, nullable=False, index=True)
@@ -812,12 +816,31 @@ def _survey_program(data):
             data.add_column(np.array([val]*len(data)), name=key, index=i+1)
     # objid, brickid, release, mock, sky, gaiadr = decode_targetid(data['TARGETID'])
     # data.add_column(sky, name='SKY', index=0)
+    if 'FIRSTNIGHT' not in data.colnames:
+        log.info("Adding FIRSTNIGHT column")
+        data.add_column(np.array([0]*len(data), dtype=np.int32), name='FIRSTNIGHT', index=data.colnames.index('PROGRAM')+1)
+    if 'LASTNIGHT' not in data.colnames:
+        log.info("Adding LASTNIGHT column")
+        data.add_column(np.array([0]*len(data), dtype=np.int32), name='LASTNIGHT', index=data.colnames.index('PROGRAM')+2)
     if 'MAIN_NSPEC' not in data.colnames:
         data.add_column(np.array([0]*len(data), dtype=np.int16), name='MAIN_NSPEC', index=data.colnames.index('SV_PRIMARY')+1)
         data.add_column(np.array([False]*len(data), dtype=np.int16), name='MAIN_PRIMARY', index=data.colnames.index('MAIN_NSPEC')+1)
     if 'SV_NSPEC' not in data.colnames:
         data.add_column(np.array([0]*len(data), dtype=np.int16), name='SV_NSPEC', index=data.colnames.index('TSNR2_LRG')+1)
         data.add_column(np.array([False]*len(data), dtype=np.int16), name='SV_PRIMARY', index=data.colnames.index('SV_NSPEC')+1)
+    #
+    # Reductions like guadalupe may not have the full set of target bitmasks
+    #
+    surveys = ('', 'sv1', 'sv2', 'sv3')
+    programs = ('desi', 'bgs', 'mws', 'scnd')
+    masks = ['cmx_target'] + [('_'.join(p) if p[0] else p[1]) + '_target'
+                              for p in itertools.product(surveys, programs)]
+    mask_index = data.colnames.index('NUMOBS_INIT') + 1
+    for mask in masks:
+        if mask.upper() not in data.colnames:
+            log.info("Adding %s at index %d.", mask.upper(), mask_index)
+            data.add_column(np.array([0]*len(data), dtype=np.int64), name=mask.upper(), index=mask_index)
+        mask_index += 1
     if 'TILEID' in data.colnames:
         data.add_column(np.array(['cumulative']*len(data)), name='SPGRP', index=data.colnames.index('PROGRAM')+1)
         data = _target_unique_id(data)
@@ -896,11 +919,18 @@ def _deduplicate_targetid(data):
     # Find TARGETIDs that do not exist in Photometry
     #
     j = join(data['TARGETID', 'RELEASE'], loaded_targetid, join_type='left', keys='TARGETID')
-    load_targetids = j['TARGETID'][j['LS_ID'].mask]
     load_rows = np.zeros((len(data),), dtype=bool)
-    unique_targetid, targetid_index = np.unique(data['TARGETID'].data, return_index=True)
-    for t in load_targetids:
-        load_rows[targetid_index[unique_targetid == t]] = True
+    try:
+        load_targetids = j['TARGETID'][j['LS_ID'].mask]
+    except AttributeError:
+        #
+        # This means *every* TARGETID is already loaded.
+        #
+        pass
+    else:
+        unique_targetid, targetid_index = np.unique(data['TARGETID'].data, return_index=True)
+        for t in load_targetids:
+            load_rows[targetid_index[unique_targetid == t]] = True
     return load_rows
 
 
@@ -1055,6 +1085,9 @@ def load_file(filepaths, tcls, hdu=1, preload=None, expand=None, insert=None, co
             good_rows = np.ones((mr,), dtype=bool)
         else:
             good_rows = rowfilter(data[0:mr])
+        if good_rows.sum() == 0:
+            log.info("Row filter removed all data rows, skipping %s.", filepath)
+            continue
         log.info("Row filter applied on %s; %d rows remain.", tn, good_rows.sum())
         data_list = list()
         for col in colnames:
@@ -1144,7 +1177,7 @@ def q3c_index(table, ra='ra'):
         If the RA, Dec columns are called something besides "ra" and "dec",
         set its name.  For example, ``ra='target_ra'``.
     """
-    q3c_sql = """CREATE INDEX ix_{table}_q3c_ang2ipix ON {schema}.{table} (q3c_ang2ipix({ra}, {dec}));
+    q3c_sql = """CREATE INDEX IF NOT EXISTS ix_{table}_q3c_ang2ipix ON {schema}.{table} (q3c_ang2ipix({ra}, {dec}));
     CLUSTER {schema}.{table} USING ix_{table}_q3c_ang2ipix;
     ANALYZE {schema}.{table};
     """.format(ra=ra, dec=ra.lower().replace('ra', 'dec'),
@@ -1157,7 +1190,7 @@ def q3c_index(table, ra='ra'):
 
 
 def zpix_target(specprod):
-    """Replace targeting bitmasks in `table`.
+    """Replace targeting bitmasks in the redshift tables for `specprod`.
 
     Parameters
     ----------
@@ -1313,17 +1346,28 @@ def zpix_target(specprod):
     return
 
 
-def setup_db(options=None, **kwargs):
+def setup_db(dbfile='specprod.db', hostname=None, username='desi_admin',
+             schema=None, overwrite=False, public=False, verbose=False):
     """Initialize the database connection.
 
     Parameters
     ----------
-    options : :class:`argparse.Namespace`
-        Parsed command-line options.
-    kwargs : keywords
-        If present, use these instead of `options`.  This is more
-        user-friendly than setting up a :class:`~argparse.Namespace`
-        object in, *e.g.* a Jupyter Notebook.
+    dbfile : :class:`str`, optional
+        Name of a SQLite file for output (default ``specprod.db``).
+        If no path is specified in the file name, the current working
+        directory will be used.
+    hostname : :class:`str`, optional
+        Name of a PostgreSQL server for output.
+    username : :class:`str`, optional
+        Username on a PostgreSQL server for database connection.
+    schema : :class:`str`, optional
+        Name of database schema that will contain output tables.
+    overwrite : :class:`bool`, optional
+        If ``True``, overwrite any existing schema or table.
+    public : :class:`bool`, optional
+        If ``True``, allow public access to the database or schema.
+    verbose : :class:`bool`, optional
+        If ``True``, Print extra debugging information for SQL queries.
 
     Returns
     -------
@@ -1339,25 +1383,6 @@ def setup_db(options=None, **kwargs):
     #
     # Schema creation
     #
-    if options is None:
-        if len(kwargs) > 0:
-            dbfile = kwargs.get('dbfile', 'specprod.db')
-            hostname = kwargs.get('hostname', None)
-            overwrite = kwargs.get('overwrite', False)
-            schema = kwargs.get('schema', None)
-            public = kwargs.get('public', False)
-            username = kwargs.get('username', 'desi_admin')
-            verbose = kwargs.get('verbose', False)
-        else:
-            raise ValueError("No options specified!")
-    else:
-        dbfile = options.dbfile
-        hostname = options.hostname
-        overwrite = options.overwrite
-        schema = options.schema
-        public = options.public
-        username = options.username
-        verbose = options.verbose
     if schema:
         schemaname = schema
         # event.listen(Base.metadata, 'before_create', CreateSchema(schemaname))
@@ -1379,9 +1404,7 @@ GRANT SELECT ON ALL SEQUENCES IN SCHEMA {schema} TO desi_public;
     #
     # Create the file.
     #
-    postgresql = False
     if hostname:
-        postgresql = True
         db_connection = parse_pgpass(hostname=hostname,
                                      username=username)
         if db_connection is None:
@@ -1389,13 +1412,13 @@ GRANT SELECT ON ALL SEQUENCES IN SCHEMA {schema} TO desi_public;
             raise RuntimeError("Could not load database information!")
     else:
         if os.path.basename(dbfile) == dbfile:
-            db_file = os.path.join(options.datapath, dbfile)
+            db_file = os.path.join(os.path.abspath('.'), dbfile)
         else:
             db_file = dbfile
         if overwrite and os.path.exists(db_file):
             log.info("Removing file: %s.", db_file)
             os.remove(db_file)
-        db_connection = 'sqlite:///'+db_file
+        db_connection = 'sqlite://'+db_file
     #
     # SQLAlchemy stuff.
     #
@@ -1409,7 +1432,7 @@ GRANT SELECT ON ALL SEQUENCES IN SCHEMA {schema} TO desi_public;
         Base.metadata.drop_all(engine)
         Base.metadata.create_all(engine)
         log.info("Finished creating tables.")
-    return postgresql
+    return hostname is not None
 
 
 def get_options():
@@ -1424,45 +1447,48 @@ def get_options():
     from argparse import ArgumentParser
     prsr = ArgumentParser(description=("Load redshift data into a database."),
                           prog=os.path.basename(argv[0]))
-    prsr.add_argument('-d', '--data-release', action='store', dest='release',
-                      default='edr', metavar='RELEASE',
-                      help='Use data release RELEASE (default "%(default)s").')
+    prsr.add_argument('-c', '--config', action='store', dest='config', metavar='FILE',
+                      default=str(ir.files('specprodDB') / 'data' / 'load_specprod_db.ini'),
+                      help="Override the default configuration file.")
+    # prsr.add_argument('-d', '--data-release', action='store', dest='release',
+    #                   default='edr', metavar='RELEASE',
+    #                   help='Use data release RELEASE (default "%(default)s").')
     prsr.add_argument('-f', '--filename', action='store', dest='dbfile',
                       default='specprod.db', metavar='FILE',
                       help='Store data in FILE (default "%(default)s").')
-    prsr.add_argument('-H', '--hostname', action='store', dest='hostname',
-                      metavar='HOSTNAME', default='specprod-db.desi.lbl.gov',
-                      help='If specified, connect to a PostgreSQL database on HOSTNAME (default "%(default)s").')
+    # prsr.add_argument('-H', '--hostname', action='store', dest='hostname',
+    #                   metavar='HOSTNAME', default='specprod-db.desi.lbl.gov',
+    #                   help='If specified, connect to a PostgreSQL database on HOSTNAME (default "%(default)s").')
     prsr.add_argument('-l', '--load', action='store', dest='load',
                       default='exposures', metavar='STAGE',
                       help='Load the set of files associated with STAGE (default "%(default)s").')
-    prsr.add_argument('-m', '--max-rows', action='store', dest='maxrows',
-                      type=int, default=0, metavar='M',
-                      help="Load up to M rows in the tables (default is all rows).")
+    # prsr.add_argument('-m', '--max-rows', action='store', dest='maxrows',
+    #                   type=int, default=0, metavar='M',
+    #                   help="Load up to M rows in the tables (default is all rows).")
     prsr.add_argument('-o', '--overwrite', action='store_true', dest='overwrite',
                       help='Delete any existing files or tables before loading.')
     prsr.add_argument('-P', '--public', action='store_true', dest='public',
                       help='GRANT access to the schema to the public database user.')
-    prsr.add_argument('-p', '--photometry-version', action='store', dest='photometry_version',
-                      metavar='VERSION', default='v2.1',
-                      help='Load target photometry data from VERSION (default "%(default)s").')
-    prsr.add_argument('-r', '--rows', action='store', dest='chunksize',
-                      type=int, default=50000, metavar='N',
-                      help="Load N rows at a time (default %(default)s).")
+    # prsr.add_argument('-p', '--photometry-version', action='store', dest='photometry_version',
+    #                   metavar='VERSION', default='v2.1',
+    #                   help='Load target photometry data from VERSION (default "%(default)s").')
+    # prsr.add_argument('-r', '--rows', action='store', dest='chunksize',
+    #                   type=int, default=50000, metavar='N',
+    #                   help="Load N rows at a time (default %(default)s).")
     prsr.add_argument('-s', '--schema', action='store', dest='schema',
                       metavar='SCHEMA',
                       help='Set the schema name in the PostgreSQL database.')
-    prsr.add_argument('-t', '--tiles-version', action='store', dest='tiles_version',
-                      metavar='VERSION', default='0.5',
-                      help='Load fiberassign data from VERSION (default "%(default)s").')
-    prsr.add_argument('-U', '--username', action='store', dest='username',
-                      metavar='USERNAME', default='desi_admin',
-                      help='If specified, connect to a PostgreSQL database with USERNAME (default "%(default)s").')
+    # prsr.add_argument('-t', '--tiles-version', action='store', dest='tiles_version',
+    #                   metavar='VERSION', default='0.5',
+    #                   help='Load fiberassign data from VERSION (default "%(default)s").')
+    # prsr.add_argument('-U', '--username', action='store', dest='username',
+    #                   metavar='USERNAME', default='desi_admin',
+    #                   help='If specified, connect to a PostgreSQL database with USERNAME (default "%(default)s").')
     prsr.add_argument('-v', '--verbose', action='store_true', dest='verbose',
                       help='Print extra information.')
-    prsr.add_argument('-z', '--redshift-version', action='store', dest='redshift_version',
-                      metavar='VERSION',
-                      help='Load redshift data from VAC VERSION')
+    # prsr.add_argument('-z', '--redshift-version', action='store', dest='redshift_version',
+    #                   metavar='VERSION',
+    #                   help='Load redshift data from VAC VERSION')
     prsr.add_argument('datapath', metavar='DIR', help='Load the data in DIR.')
     options = prsr.parse_args()
     return options
@@ -1490,60 +1516,108 @@ def main():
     else:
         log = get_logger(INFO, timestamp=True)
     #
+    # Cache specprod value.
+    #
+    try:
+        specprod = os.environ['SPECPROD']
+    except KeyError:
+        log.critical("Environment variable SPECPROD is not defined!")
+        return 1
+    #
+    # Read configuration file.
+    #
+    config = SafeConfigParser()
+    r = config.read(options.config)
+    if not (r and r[0] == options.config):
+        log.critical("Failed to read configuration file: %s!", options.config)
+        return 1
+    if specprod not in config:
+        log.critical("Configuration has no section for '%s'!", specprod)
+        return 1
+    #
     # Initialize DB
     #
-    postgresql = setup_db(options)
+    postgresql = setup_db(hostname=config[specprod]['hostname'],
+                          username=config[specprod]['username'],
+                          schema=options.schema,
+                          overwrite=options.overwrite,
+                          public=options.public,
+                          verbose=options.verbose)
     #
     # Load configuration
     #
-    if options.redshift_version is None:
-        zpix_file = os.path.join(options.datapath, 'spectro', 'redux', os.environ['SPECPROD'], 'zcatalog', 'zall-pix-{specprod}.fits'.format(specprod=os.environ['SPECPROD']))
-        ztile_file = os.path.join(options.datapath, 'spectro', 'redux', os.environ['SPECPROD'], 'zcatalog', 'zall-tilecumulative-{specprod}.fits'.format(specprod=os.environ['SPECPROD']))
+    release = config[specprod]['release']
+    photometry_version = config[specprod]['photometry']
+    target_summary = config[specprod].getboolean('target_summary')
+    rsv = config[specprod]['redshift'].split('/')
+    if len(rsv) == 2:
+        redshift_type, redshift_version = rsv[0], rsv[1]
     else:
-        zpix_file = os.path.join(options.datapath, 'vac', options.release, 'zcat', os.environ['SPECPROD'], options.redshift_version, 'zall-pix-{release}-vac.fits'.format(release=options.release))
-        ztile_file = os.path.join(options.datapath, 'vac', options.release, 'zcat', os.environ['SPECPROD'], options.redshift_version, 'zall-tilecumulative-{release}-vac.fits'.format(release=options.release))
-    loaders = {'exposures': [{'filepaths': os.path.join(options.datapath, 'spectro', 'redux', os.environ['SPECPROD'], 'tiles-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
+        redshift_type, redshift_version = rsv[0], 'v0'
+    if target_summary:
+        target_files = os.path.join(options.datapath, 'vac', release, 'lsdr9-photometry', specprod, photometry_version, 'potential-targets', f'targetphot-potential-{specprod}.fits')
+    else:
+        target_files = glob.glob(os.path.join(options.datapath, 'vac', release, 'lsdr9-photometry', specprod, photometry_version, 'potential-targets', f'targetphot-potential-*-{specprod}.fits'))
+    if redshift_type == 'base' or redshift_type == 'patch':
+        redshift_dir = os.path.join(options.datapath, 'spectro', 'redux', specprod, 'zcatalog')
+        if redshift_type == 'base':
+            zpix_file = os.path.join(redshift_dir, f'zall-pix-{specprod}.fits')
+            ztile_file = os.path.join(redshift_dir, f'zall-tilecumulative-{specprod}.fits')
+        else:
+            zpix_file = os.path.join(redshift_dir, redshift_version, f'zall-pix-{specprod}.fits')
+            ztile_file = os.path.join(redshift_dir, redshift_version, f'zall-tilecumulative-{specprod}.fits')
+    elif redshift_type == 'zcat':
+        redshift_dir = os.path.join(options.datapath, 'vac', release, 'zcat', specprod)
+        zpix_file = os.path.join(redshift_dir, redshift_version, f'zall-pix-{release}-vac.fits')
+        ztile_file = os.path.join(redshift_dir, redshift_version, f'zall-tilecumulative-{release}-vac.fits')
+    else:
+        log.critical("Unsupported redshift catalog type: '%s'!", redshift_type)
+        return 1
+    tiles_version = config[specprod]['tiles']
+    chunksize = config[specprod].getint('chunksize')
+    maxrows = config[specprod].getint('maxrows')
+    loaders = {'exposures': [{'filepaths': os.path.join(options.datapath, 'spectro', 'redux', specprod, 'tiles-{specprod}.fits'.format(specprod=specprod)),
                               'tcls': Tile,
                               'hdu': 'TILE_COMPLETENESS',
                               'q3c': 'tilera',
-                              'chunksize': options.chunksize,
-                              'maxrows': options.maxrows
+                              'chunksize': chunksize,
+                              'maxrows': maxrows
                               },
-                             {'filepaths': os.path.join(options.datapath, 'spectro', 'redux', os.environ['SPECPROD'], 'exposures-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
+                             {'filepaths': os.path.join(options.datapath, 'spectro', 'redux', specprod, f'exposures-{specprod}.fits'),
                               'tcls': Exposure,
                               'hdu': 'EXPOSURES',
                               'insert': {'mjd': ('date_obs',)},
                               'convert': {'date_obs': lambda x: Time(x, format='mjd').to_value('datetime').replace(tzinfo=utc)},
                               'q3c': 'tilera',
-                              'chunksize': options.chunksize,
-                              'maxrows': options.maxrows
+                              'chunksize': chunksize,
+                              'maxrows': maxrows
                               },
-                             {'filepaths': os.path.join(options.datapath, 'spectro', 'redux', os.environ['SPECPROD'], 'exposures-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
+                             {'filepaths': os.path.join(options.datapath, 'spectro', 'redux', specprod, f'exposures-{specprod}.fits'),
                               'tcls': Frame,
                               'hdu': 'FRAMES',
                               'preload': _frameid,
-                              'chunksize': options.chunksize,
-                              'maxrows': options.maxrows
+                              'chunksize': chunksize,
+                              'maxrows': maxrows
                               }],
                #
                # The potential targets are supposed to include data for all targets.
                # In other words, every actual target is also a potential target.
                #
-               'photometry': [{'filepaths': glob.glob(os.path.join(options.datapath, 'vac', options.release, 'lsdr9-photometry', os.environ['SPECPROD'], options.photometry_version, 'potential-targets', 'tractorphot', 'tractorphot*.fits')),
+               'photometry': [{'filepaths': glob.glob(os.path.join(options.datapath, 'vac', release, 'lsdr9-photometry', specprod, photometry_version, 'potential-targets', 'tractorphot', 'tractorphot*.fits')),
                                'tcls': Photometry,
                                'hdu': 'TRACTORPHOT',
                                'expand': {'DCHISQ': ('dchisq_psf', 'dchisq_rex', 'dchisq_dev', 'dchisq_exp', 'dchisq_ser',),
                                           'OBJID': 'brick_objid',
                                           'TYPE': 'morphtype'},
                                # 'rowfilter': _remove_loaded_targetid,
-                               'chunksize': options.chunksize,
-                               'maxrows': options.maxrows
+                               'chunksize': chunksize,
+                               'maxrows': maxrows
                                }],
                #
                # This stage loads targets, and such photometry as they have, that did not
                # successfully match to a known LS DR9 object.
                #
-               'targetphot': [{'filepaths': os.path.join(options.datapath, 'vac', options.release, 'lsdr9-photometry', os.environ['SPECPROD'], options.photometry_version, 'potential-targets', 'targetphot-potential-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
+               'targetphot': [{'filepaths': target_files,
                                'tcls': Photometry,
                                'hdu': 'TARGETPHOT',
                                'preload': _add_ls_id,
@@ -1551,17 +1625,17 @@ def main():
                                'convert': {'gaia_astrometric_params_solved': lambda x: int(x)},
                                'rowfilter': _deduplicate_targetid,
                                'q3c': 'ra',
-                               'chunksize': options.chunksize,
-                               'maxrows': options.maxrows
+                               'chunksize': chunksize,
+                               'maxrows': maxrows
                                }],
-               'target': [{'filepaths': os.path.join(options.datapath, 'vac', options.release, 'lsdr9-photometry', os.environ['SPECPROD'], options.photometry_version, 'potential-targets', 'targetphot-potential-{specprod}.fits'.format(specprod=os.environ['SPECPROD'])),
+               'target': [{'filepaths': target_files,
                            'tcls': Target,
                            'hdu': 'TARGETPHOT',
                            'preload': _target_unique_id,
                            'convert': {'id': lambda x: x[0] << 64 | x[1]},
                            # 'rowfilter': _remove_loaded_unique_id,
-                           'chunksize': options.chunksize,
-                           'maxrows': options.maxrows
+                           'chunksize': chunksize,
+                           'maxrows': maxrows
                            }],
                'redshift': [{'filepaths': zpix_file,
                              'tcls': Zpix,
@@ -1571,8 +1645,8 @@ def main():
                                                   'coeff_5', 'coeff_6', 'coeff_7', 'coeff_8', 'coeff_9',)},
                              'convert': {'id': lambda x: x[0] << 64 | x[1]},
                              'rowfilter': lambda x: (x['TARGETID'] > 0) & ((x['TARGETID'] & 2**59) == 0),
-                             'chunksize': options.chunksize,
-                             'maxrows': options.maxrows
+                             'chunksize': chunksize,
+                             'maxrows': maxrows
                              },
                             {'filepaths': ztile_file,
                              'tcls': Ztile,
@@ -1583,8 +1657,8 @@ def main():
                              'convert': {'id': lambda x: x[0] << 64 | x[1],
                                          'targetphotid': lambda x: x[0] << 64 | x[1]},
                              'rowfilter': lambda x: (x['TARGETID'] > 0) & ((x['TARGETID'] & 2**59) == 0),
-                             'chunksize': options.chunksize,
-                             'maxrows': options.maxrows
+                             'chunksize': chunksize,
+                             'maxrows': maxrows
                              }],
                'fiberassign': [{'filepaths': None,
                                 'tcls': Fiberassign,
@@ -1593,8 +1667,8 @@ def main():
                                 'convert': {'id': lambda x: x[0] << 64 | x[1]},
                                 'rowfilter': lambda x: (x['TARGETID'] > 0) & ((x['TARGETID'] & 2**59) == 0),
                                 'q3c': 'target_ra',
-                                'chunksize': options.chunksize,
-                                'maxrows': options.maxrows
+                                'chunksize': chunksize,
+                                'maxrows': maxrows
                                 },
                                {'filepaths': None,
                                 'tcls': Potential,
@@ -1602,8 +1676,8 @@ def main():
                                 'preload': _tileid,
                                 'convert': {'id': lambda x: x[0] << 64 | x[1]},
                                 'rowfilter': lambda x: (x['TARGETID'] > 0) & ((x['TARGETID'] & 2**59) == 0),
-                                'chunksize': options.chunksize,
-                                'maxrows': options.maxrows
+                                'chunksize': chunksize,
+                                'maxrows': maxrows
                                 }]}
     try:
         loader = loaders[options.load]
@@ -1614,11 +1688,11 @@ def main():
     # Find the tiles that need to be loaded. Not all fiberassign files are compressed!
     #
     if options.load == 'fiberassign':
-        fiberassign_search_dirs = [os.path.join(options.datapath, 'target', 'fiberassign', 'tiles', 'tags', options.tiles_version),
-                                   os.path.join(options.datapath, 'target', 'fiberassign', 'tiles', options.tiles_version),
-                                   os.path.join('/global/cfs/cdirs/desi', 'target', 'fiberassign', 'tiles', 'tags', options.tiles_version),
-                                   os.path.join('/global/cfs/cdirs/desi', 'target', 'fiberassign', 'tiles', options.tiles_version),
-                                   os.path.join('/global/cfs/cdirs/desi', 'target', 'fiberassign', 'tiles', 'branches', options.tiles_version)]
+        fiberassign_search_dirs = [os.path.join(options.datapath, 'target', 'fiberassign', 'tiles', 'tags', tiles_version),
+                                   os.path.join(options.datapath, 'target', 'fiberassign', 'tiles', tiles_version),
+                                   os.path.join('/global/cfs/cdirs/desi', 'target', 'fiberassign', 'tiles', 'tags', tiles_version),
+                                   os.path.join('/global/cfs/cdirs/desi', 'target', 'fiberassign', 'tiles', tiles_version),
+                                   os.path.join('/global/cfs/cdirs/desi', 'target', 'fiberassign', 'tiles', 'branches', tiles_version)]
         for d in fiberassign_search_dirs:
             if os.path.isdir(d):
                 fiberassign_dir = d
@@ -1639,15 +1713,14 @@ def main():
     if options.load == 'exposures' and options.overwrite:
         log.info("Loading version metadata.")
         versions = [Version(package='specprod-db', version=specprodDB_version),
-                    Version(package='lsdr9-photometry', version=options.photometry_version),
-                    Version(package='tiles', version=options.tiles_version),
-                    Version(package='specprod', version=os.environ['SPECPROD']),
+                    Version(package='lsdr9-photometry', version=photometry_version),
+                    Version(package='redshift', version=rsv),
+                    Version(package='tiles', version=tiles_version),
+                    Version(package='specprod', version=specprod),
                     Version(package='numpy', version=np.__version__),
                     Version(package='astropy', version=astropy_version),
                     Version(package='sqlalchemy', version=sqlalchemy_version),
                     Version(package='desiutil', version=desiutil_version)]
-        if options.redshift_version is not None:
-            versions.append(Version(package='zcat', version=options.redshift_version))
         dbSession.add_all(versions)
         dbSession.commit()
         log.info("Completed loading version metadata.")
@@ -1663,18 +1736,28 @@ def main():
             log.info("Loading %s from %s.", tn, str(l['filepaths']))
             load_file(**l)
             log.info("Finished loading %s.", tn)
-    if options.redshift_version is not None and options.load == 'fiberassign':
+    if options.load == 'fiberassign' and redshift_type not in ('patch', 'zcat'):
         #
         # Fiberassign table has to be loaded for this step.
+        # Eventually we want to eliminate this entirely.
         #
         log.info("Applying target bitmask corrections for %s to zpix table.",
-                 os.environ['SPECPROD'])
+                 specprod)
         try:
-            zpix_target(os.environ['SPECPROD'])
+            zpix_target(specprod)
         except ProgrammingError:
             log.critical("Failed target bitmask corrections for %s!",
-                         os.environ['SPECPROD'])
+                         specprod)
             return 1
         log.info("Finished target bitmask corrections for %s zpix table.",
-                 os.environ['SPECPROD'])
+                 specprod)
+    if options.load == 'fiberassign':
+        #
+        # Automatically VACUUM. The system detects this as still inside a
+        # transaction block, & VACUUM can't be run in that.
+        #
+        # log.info("Issuing VACUUM command.")
+        # dbSession.execute("VACUUM FULL VERBOSE ANALYZE;")
+        # log.info("Finished with VACUUM command.")
+        pass
     return 0
