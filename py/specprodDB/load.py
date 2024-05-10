@@ -1714,7 +1714,7 @@ def main():
         log.info("Loading version metadata.")
         versions = [Version(package='specprod-db', version=specprodDB_version),
                     Version(package='lsdr9-photometry', version=photometry_version),
-                    Version(package='redshift', version=rsv),
+                    Version(package='redshift', version=f"{redshift_type}/{redshift_version}"),
                     Version(package='tiles', version=tiles_version),
                     Version(package='specprod', version=specprod),
                     Version(package='numpy', version=np.__version__),
