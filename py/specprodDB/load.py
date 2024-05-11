@@ -35,7 +35,7 @@ from pytz import utc
 from sqlalchemy import __version__ as sqlalchemy_version
 from sqlalchemy import (create_engine, event, ForeignKey, Column, DDL,
                         BigInteger, Boolean, Integer, String, Float, DateTime,
-                        SmallInteger, bindparam, Numeric, and_)
+                        SmallInteger, bindparam, Numeric, and_, text)
 from sqlalchemy.sql import func
 from sqlalchemy.exc import IntegrityError, ProgrammingError
 from sqlalchemy.orm import (declarative_base, declarative_mixin, declared_attr,
@@ -1146,7 +1146,7 @@ def load_file(filepaths, tcls, hdu=1, preload=None, expand=None, insert=None, co
         with engine.connect() as connection:
             for k in range(n_chunks):
                 data_chunk = [dict(zip(data_names, row))
-                            for row in data_rows[k*chunksize:(k+1)*chunksize]]
+                              for row in data_rows[k*chunksize:(k+1)*chunksize]]
                 if len(data_chunk) > 0:
                     loaded_rows += len(data_chunk)
                     connection.execute(tcls.__table__.insert(), data_chunk)
@@ -1177,7 +1177,7 @@ def q3c_index(table, ra='ra'):
     """.format(ra=ra, dec=ra.lower().replace('ra', 'dec'),
                schema=schemaname, table=table)
     log.info("Creating q3c index on %s.%s.", schemaname, table)
-    dbSession.execute(q3c_sql)
+    dbSession.execute(text(q3c_sql))
     log.info("Finished q3c index on %s.%s.", schemaname, table)
     dbSession.commit()
     return
