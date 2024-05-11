@@ -1151,7 +1151,7 @@ def load_file(filepaths, tcls, hdu=1, preload=None, expand=None, insert=None, co
                     loaded_rows += len(data_chunk)
                     connection.execute(tcls.__table__.insert(), data_chunk)
                     log.info("Inserted %d rows in %s.",
-                            min((k+1)*chunksize, finalrows), tn)
+                             min((k+1)*chunksize, finalrows), tn)
                 else:
                     log.error("Detected empty data chunk in %s!", tn)
             connection.commit()
