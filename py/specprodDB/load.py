@@ -1143,24 +1143,18 @@ def load_file(filepaths, tcls, hdu=1, preload=None, expand=None, insert=None, co
         n_chunks = finalrows//chunksize
         if finalrows % chunksize:
             n_chunks += 1
-        for k in range(n_chunks):
-            data_chunk = [dict(zip(data_names, row))
-                          for row in data_rows[k*chunksize:(k+1)*chunksize]]
-            if len(data_chunk) > 0:
-                loaded_rows += len(data_chunk)
-                engine.execute(tcls.__table__.insert(), data_chunk)
-                log.info("Inserted %d rows in %s.",
-                         min((k+1)*chunksize, finalrows), tn)
-            else:
-                log.error("Detected empty data chunk in %s!", tn)
-        # for k in range(finalrows//chunksize + 1):
-        #     data_insert = [dict([(col, data_list[i].pop(0))
-        #                          for i, col in enumerate(data_names)])
-        #                    for j in range(chunksize)]
-        #     session.bulk_insert_mappings(tcls, data_insert)
-        #     log.info("Inserted %d rows in %s..",
-        #              min((k+1)*chunksize, finalrows), tn)
-        dbSession.commit()
+        with engine.connect() as connection:
+            for k in range(n_chunks):
+                data_chunk = [dict(zip(data_names, row))
+                            for row in data_rows[k*chunksize:(k+1)*chunksize]]
+                if len(data_chunk) > 0:
+                    loaded_rows += len(data_chunk)
+                    connection.execute(tcls.__table__.insert(), data_chunk)
+                    log.info("Inserted %d rows in %s.",
+                            min((k+1)*chunksize, finalrows), tn)
+                else:
+                    log.error("Detected empty data chunk in %s!", tn)
+            connection.commit()
     if q3c is not None:
         q3c_index(tn, ra=q3c)
     return loaded_rows
