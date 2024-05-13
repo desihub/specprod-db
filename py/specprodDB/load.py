@@ -1564,6 +1564,10 @@ def main():
         redshift_dir = os.path.join(options.datapath, 'vac', release, 'zcat', specprod)
         zpix_file = os.path.join(redshift_dir, redshift_version, f'zall-pix-{release}-vac.fits')
         ztile_file = os.path.join(redshift_dir, redshift_version, f'zall-tilecumulative-{release}-vac.fits')
+    elif redshift_type == 'daily':
+        redshift_dir = os.path.join(options.datapath, 'spectro', 'redux', specprod)
+        zpix_file = 'Need to search for these.'
+        ztile_file = 'Need to search for these.'
     else:
         log.critical("Unsupported redshift catalog type: '%s'!", redshift_type)
         return 1
