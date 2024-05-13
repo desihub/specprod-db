@@ -1566,17 +1566,21 @@ def main():
         ztile_file = os.path.join(redshift_dir, redshift_version, f'zall-tilecumulative-{release}-vac.fits')
     elif redshift_type == 'daily':
         redshift_dir = os.path.join(options.datapath, 'spectro', 'redux', specprod)
-        zpix_file = 'Need to search for these.'
-        ztile_file = 'Need to search for these.'
+        zpix_file = 'Daily loads are not meant to include Healpix redshifts.'
+        ztile_file = 'Only cumulative redshifts are needed for daily loads.'
     else:
         log.critical("Unsupported redshift catalog type: '%s'!", redshift_type)
         return 1
+    if specprod == 'daily':
+        tiles_type = 'csv'
+    else:
+        tiles_type = 'fits'
     tiles_version = config[specprod]['tiles']
     chunksize = config[specprod].getint('chunksize')
     maxrows = config[specprod].getint('maxrows')
-    loaders = {'exposures': [{'filepaths': os.path.join(options.datapath, 'spectro', 'redux', specprod, 'tiles-{specprod}.fits'.format(specprod=specprod)),
+    loaders = {'exposures': [{'filepaths': os.path.join(options.datapath, 'spectro', 'redux', specprod, f'tiles-{specprod}.{tiles_type}'),
                               'tcls': Tile,
-                              'hdu': 'TILE_COMPLETENESS',
+                              'hdu': 'TILE_COMPLETENESS',  # Ignored for CSV files.
                               'q3c': 'tilera',
                               'chunksize': chunksize,
                               'maxrows': maxrows
