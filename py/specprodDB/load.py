@@ -1738,10 +1738,11 @@ def main():
             log.info("Loading %s from %s.", tn, str(l['filepaths']))
             load_file(**l)
             log.info("Finished loading %s.", tn)
-    if options.load == 'fiberassign' and redshift_type not in ('patch', 'zcat'):
+    if options.load == 'fiberassign' and redshift_type not in ('daily', 'patch', 'zcat'):
         #
         # Fiberassign table has to be loaded for this step.
         # Eventually we want to eliminate this entirely.
+        # Daily reductions don't load Zpix anyway, so zpix_target is not needed.
         #
         log.info("Applying target bitmask corrections for %s to zpix table.",
                  specprod)
