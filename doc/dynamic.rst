@@ -19,8 +19,10 @@ Daily Database Loading Requirements
   be generated in daily reductions.
 * Compute target and photometry data based on the objects being loaded rather
   than reading all at once. See further discussion below.
+* For further discussion see `#13`_.
 
 .. _`desihub/desispec#2251`: https://github.com/desihub/desispec/issues/2251
+.. _`#13`: https://github.com/desihub/specprod-db/issues/13
 
 Possible Load Scenario
 ----------------------
@@ -41,6 +43,8 @@ Automated Extraction of Targeting and Photometry
 * Both are thin wrappers on ``desispec.io.photo.gather_(tractor|target)phot()``.
 * But the ``gather`` functions don't necessarily add ``DESINAME`` or fix ``NaN``
   values for ``PMRA`` or ``PMDEC``. Make sure inputs and outputs match.
+* In the *database*, ``desiname`` is attached to the redshift tables, not the
+  photometry or target tables. So it should be added at that stage, presumably.
 
 Other Notes
 -----------
