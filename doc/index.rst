@@ -13,6 +13,7 @@ Contents
 .. toctree::
     :maxdepth: 1
 
+    dynamic.rst
     api.rst
     changes.rst
 

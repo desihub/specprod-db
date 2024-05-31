@@ -6,16 +6,6 @@ specprodDB.load
 
 Code for loading a spectroscopic production database. This includes both
 targeting and redshift data.
-
-Notes
------
-
-- Plan for how to support fuji+guadalupe combined analysis.  May need to look
-  into cross-schema views, or daughter tables that inherit from both schemas.
-- Plan for loading daily reductions, in addition to static reductions.
-- Anticipate loading afterburners and VACs into the database.
-- Load redshifts from all redrock files in ``tiles/cumulative``, rather than
-  from the ``ztile-*-cumulative.fits`` summary file.
 """
 import os
 # import re
