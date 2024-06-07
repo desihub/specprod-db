@@ -29,10 +29,11 @@ Possible Load Scenario
 
 1. Read ``tiles-daily``, find changes. Update ``daily.tile``.
 2. Find corresponding exposures. Update ``daily.exposure``, ``daily.frame``.
-3. Find any *new* fiberassign files and obtain the list of new targets and potentials.
-4. Obtain the targeting and tractor data for new targets and potentials. Update ``daily.photometry`` and ``daily.target``.
-5. Update ``daily.fiberassign``, ``daily.potential``.
-6. Read corresponding ``tiles/cumulative`` redshift files. Update ``daily.ztile``.
+3. Find any *new* fiberassign files and obtain the list of new potentials (because potentials include observed targets).
+4. Obtain the targeting and tractor data for new potentials. Update ``daily.photometry`` and ``daily.target``. Take care to check for existing entries.
+5. Make sure to perform the equivalent of the ``targetphot`` stage, *i.e.* fill in photometric data from targeting data.
+6. Update ``daily.fiberassign``, ``daily.potential``.
+7. Read corresponding ``tiles/cumulative`` redshift files. Update ``daily.ztile``.
 
 Automated Extraction of Targeting and Photometry
 ------------------------------------------------
