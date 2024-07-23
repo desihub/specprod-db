@@ -11,6 +11,7 @@ In particular, this code loads the spectroscopic production database.
 It does *not* include:
 
 #. Pipeline processing status database.
-#. Imaging and targeting databases.
+#. The full imaging and targeting databases, but only the imaging and
+   targeting associated with a spectroscopic production.
 """
 from ._version import __version__

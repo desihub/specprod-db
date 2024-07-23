@@ -53,3 +53,4 @@ Other Notes
 - Plan for how to support fuji+guadalupe combined analysis.  May need to look
   into cross-schema views, or daughter tables that inherit from both schemas.
 - Anticipate loading afterburners and VACs into the database.
+- How do q3c indexes work with dynamic loading?
