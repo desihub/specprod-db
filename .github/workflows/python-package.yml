@@ -17,21 +17,23 @@ jobs:
             fail-fast: true
             matrix:
                 os: [ubuntu-latest]
-                python-version: ['3.9', '3.10']
-                numpy-version: ['<1.23']
-                astropy-version: ['<5.1', '<6.0']
+                python-version: ['3.10', '3.11']
+                numpy-version: ['<1.23', '<2.0']
+                astropy-version: ['<6.1', '<7.0']
 
         env:
-            DESIUTIL_VERSION: '3.3.0'
-            DESISPEC_VERSION: '0.56.2'
+            # Versions correspond to desimodules/24.4
+            DESIUTIL_VERSION: '3.4.2'
+            DESISPEC_VERSION: '0.63.0'
+            DESITARGET_VERSION: '2.7.0'
 
         steps:
             - name: Checkout code
-              uses: actions/checkout@v2
+              uses: actions/checkout@v4
               with:
                 fetch-depth: 0
             - name: Set up Python ${{ matrix.python-version }}
-              uses: actions/setup-python@v2
+              uses: actions/setup-python@v5
               with:
                 python-version: ${{ matrix.python-version }}
             - name: Install Python dependencies
@@ -39,6 +41,7 @@ jobs:
                 python -m pip install --upgrade pip setuptools wheel
                 python -m pip install git+https://github.com/desihub/desiutil.git@${DESIUTIL_VERSION}#egg=desiutil
                 python -m pip install git+https://github.com/desihub/desispec.git@${DESISPEC_VERSION}#egg=desispec
+                python -m pip install git+https://github.com/desihub/desitarget.git@${DESITARGET_VERSION}#egg=desispec
                 python -m pip install --upgrade "numpy${{ matrix.numpy-version }}"
                 python -m pip install --upgrade "astropy${{ matrix.astropy-version }}"
                 python -m pip install --editable .[test]
@@ -54,19 +57,20 @@ jobs:
                 os: [ubuntu-latest]
                 python-version: ['3.10']
                 numpy-version: ['<1.23']
-                astropy-version: ['<5.1']
+                astropy-version: ['<6.1']
 
         env:
-            DESIUTIL_VERSION: '3.3.0'
-            DESISPEC_VERSION: '0.56.2'
+            DESIUTIL_VERSION: '3.4.2'
+            DESISPEC_VERSION: '0.63.0'
+            DESITARGET_VERSION: '2.7.0'
 
         steps:
             - name: Checkout code
-              uses: actions/checkout@v2
+              uses: actions/checkout@v4
               with:
                 fetch-depth: 0
             - name: Set up Python ${{ matrix.python-version }}
-              uses: actions/setup-python@v2
+              uses: actions/setup-python@v5
               with:
                 python-version: ${{ matrix.python-version }}
             - name: Install Python dependencies
@@ -74,6 +78,7 @@ jobs:
                 python -m pip install --upgrade pip setuptools wheel
                 python -m pip install git+https://github.com/desihub/desiutil.git@${DESIUTIL_VERSION}#egg=desiutil
                 python -m pip install git+https://github.com/desihub/desispec.git@${DESISPEC_VERSION}#egg=desispec
+                python -m pip install git+https://github.com/desihub/desitarget.git@${DESITARGET_VERSION}#egg=desispec
                 python -m pip install --upgrade "numpy${{ matrix.numpy-version }}"
                 python -m pip install --upgrade "astropy${{ matrix.astropy-version }}"
                 python -m pip install --editable .[coverage]
@@ -96,11 +101,11 @@ jobs:
 
         steps:
             - name: Checkout code
-              uses: actions/checkout@v2
+              uses: actions/checkout@v4
               with:
                 fetch-depth: 0
             - name: Set up Python ${{ matrix.python-version }}
-              uses: actions/setup-python@v2
+              uses: actions/setup-python@v5
               with:
                 python-version: ${{ matrix.python-version }}
             - name: Install Python dependencies
@@ -117,15 +122,15 @@ jobs:
                 os: [ubuntu-latest]
                 python-version: ['3.10']
         env:
-            DESIUTIL_VERSION: '3.3.0'
+            DESIUTIL_VERSION: '3.4.2'
 
         steps:
             - name: Checkout code
-              uses: actions/checkout@v2
+              uses: actions/checkout@v4
               with:
                 fetch-depth: 0
             - name: Set up Python ${{ matrix.python-version }}
-              uses: actions/setup-python@v2
+              uses: actions/setup-python@v5
               with:
                 python-version: ${{ matrix.python-version }}
             - name: Install Python dependencies
@@ -148,11 +153,11 @@ jobs:
 
         steps:
             - name: Checkout code
-              uses: actions/checkout@v2
+              uses: actions/checkout@v4
               with:
                 fetch-depth: 0
             - name: Set up Python ${{ matrix.python-version }}
-              uses: actions/setup-python@v2
+              uses: actions/setup-python@v5
               with:
                 python-version: ${{ matrix.python-version }}
             - name: Install Python dependencies
