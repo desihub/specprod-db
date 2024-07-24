@@ -41,7 +41,7 @@ jobs:
                 python -m pip install --upgrade pip setuptools wheel
                 python -m pip install git+https://github.com/desihub/desiutil.git@${DESIUTIL_VERSION}#egg=desiutil
                 python -m pip install git+https://github.com/desihub/desispec.git@${DESISPEC_VERSION}#egg=desispec
-                python -m pip install git+https://github.com/desihub/desitarget.git@${DESITARGET_VERSION}#egg=desispec
+                python -m pip install git+https://github.com/desihub/desitarget.git@${DESITARGET_VERSION}#egg=desitarget
                 python -m pip install --upgrade "numpy${{ matrix.numpy-version }}"
                 python -m pip install --upgrade "astropy${{ matrix.astropy-version }}"
                 python -m pip install --editable .[test]
@@ -78,7 +78,7 @@ jobs:
                 python -m pip install --upgrade pip setuptools wheel
                 python -m pip install git+https://github.com/desihub/desiutil.git@${DESIUTIL_VERSION}#egg=desiutil
                 python -m pip install git+https://github.com/desihub/desispec.git@${DESISPEC_VERSION}#egg=desispec
-                python -m pip install git+https://github.com/desihub/desitarget.git@${DESITARGET_VERSION}#egg=desispec
+                python -m pip install git+https://github.com/desihub/desitarget.git@${DESITARGET_VERSION}#egg=desitarget
                 python -m pip install --upgrade "numpy${{ matrix.numpy-version }}"
                 python -m pip install --upgrade "astropy${{ matrix.astropy-version }}"
                 python -m pip install --editable .[coverage]
