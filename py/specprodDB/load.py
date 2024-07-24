@@ -28,7 +28,7 @@ from sqlalchemy import (create_engine, event, ForeignKey, Column, DDL,
                         SmallInteger, bindparam, Numeric, and_, text)
 from sqlalchemy.sql import func
 from sqlalchemy.exc import IntegrityError, ProgrammingError
-from sqlalchemy.orm import (declarative_base, declarative_mixin, declared_attr,
+from sqlalchemy.orm import (DeclarativeBase, declarative_mixin, declared_attr,
                             scoped_session, sessionmaker, relationship)
 from sqlalchemy.schema import CreateSchema, Index
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, REAL
@@ -44,11 +44,17 @@ from .util import (convert_dateobs, parse_pgpass, cameraid, surveyid, programid,
                    spgrpid, checkgzip, no_sky)
 
 
-Base = declarative_base()
+# Base = declarative_base()
 engine = None
 dbSession = scoped_session(sessionmaker())
 schemaname = None
 log = None
+
+
+class Base(DeclarativeBase):
+    """SQLAlchemy 2.0 replacement for ``Base = declarative_base()``.
+    """
+    pass
 
 
 @declarative_mixin
@@ -57,11 +63,11 @@ class SchemaMixin(object):
     automatically sets the table name.
     """
 
-    @declared_attr
+    @declared_attr.directive
     def __tablename__(cls):
         return cls.__name__.lower()
 
-    @declared_attr
+    @declared_attr.directive
     def __table_args__(cls):
         return {'schema': schemaname}
 
@@ -203,7 +209,7 @@ class Target(SchemaMixin, Base):
     """Representation of the pure-desitarget quantities in the
     ``TARGETPHOT`` table in the targetphot files.
     """
-    @declared_attr
+    @declared_attr.directive
     def __table_args__(cls):
         return (Index(f'ix_{cls.__tablename__}_unique', "targetid", "survey", "tileid", unique=True),
                 SchemaMixin.__table_args__)
@@ -301,6 +307,31 @@ class Tile(SchemaMixin, Base):
 
     def __repr__(self):
         return "Tile(tileid={0.tileid:d})".format(self)
+
+    @classmethod
+    def convert(cls, data, row_index=None):
+        """Convert `data` into ORM objects ready for loading.
+
+        Parameters
+        ----------
+        data : :class:`~astropy.table.Table`
+            Data table to convert.
+        row_index: :class:`numpy.ndarray`, optional
+            Only convert the rows indexed by `row_index`. If not specified,
+            convert all rows.
+
+        Returns
+        -------
+        :class:`list`
+            A list of ORM objects.
+        """
+        if row_index is None:
+            row_index = np.arange(len(data))
+        data_columns = list()
+        for column in cls.__table__.columns:
+            data_columns.append(data[column.name.upper()][row_index].tolist())
+        data_rows = list(zip(*data_columns))
+        return [cls(**(dict([(col.name, dat) for col, dat in zip(cls.__table__.columns, row)]))) for row in data_rows]
 
 
 class Exposure(SchemaMixin, Base):
@@ -439,7 +470,7 @@ class Fiberassign(SchemaMixin, Base):
       be different if chromatic offsets in targeting positions were
       ever implemented.
     """
-    @declared_attr
+    @declared_attr.directive
     def __table_args__(cls):
         return (Index(f'ix_{cls.__tablename__}_unique', "tileid", "targetid", "location", unique=True),
                 SchemaMixin.__table_args__)
@@ -478,7 +509,7 @@ class Fiberassign(SchemaMixin, Base):
 class Potential(SchemaMixin, Base):
     """Representation of the POTENTIAL_ASSIGNMENTS table in a fiberassign file.
     """
-    @declared_attr
+    @declared_attr.directive
     def __table_args__(cls):
         return (Index(f'ix_{cls.__tablename__}_unique', "tileid", "targetid", "location", unique=True),
                 SchemaMixin.__table_args__)
@@ -499,7 +530,7 @@ class Potential(SchemaMixin, Base):
 class Zpix(SchemaMixin, Base):
     """Representation of the ``ZCATALOG`` table in zpix files.
     """
-    @declared_attr
+    @declared_attr.directive
     def __table_args__(cls):
         return (Index(f'ix_{cls.__tablename__}_unique', "targetid", "survey", "program", unique=True),
                 SchemaMixin.__table_args__)
@@ -626,7 +657,7 @@ class Zpix(SchemaMixin, Base):
 class Ztile(SchemaMixin, Base):
     """Representation of the ``ZCATALOG`` table in ztile files.
     """
-    @declared_attr
+    @declared_attr.directive
     def __table_args__(cls):
         return (Index(f'ix_{cls.__tablename__}_unique', "targetid", "spgrp", "spgrpval", "tileid", unique=True),
                 SchemaMixin.__table_args__)
