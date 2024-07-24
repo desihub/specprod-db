@@ -37,9 +37,11 @@ from desiutil import __version__ as desiutil_version
 from desiutil.iers import freeze_iers
 from desiutil.log import get_logger, DEBUG, INFO
 
+# from desispec.io.meta import findfile
+
 from . import __version__ as specprodDB_version
 from .util import (convert_dateobs, parse_pgpass, cameraid, surveyid, programid,
-                   spgrpid, checkgzip)
+                   spgrpid, checkgzip, no_sky)
 
 
 Base = declarative_base()
@@ -1636,7 +1638,8 @@ def main():
                              'expand': {'COEFF': ('coeff_0', 'coeff_1', 'coeff_2', 'coeff_3', 'coeff_4',
                                                   'coeff_5', 'coeff_6', 'coeff_7', 'coeff_8', 'coeff_9',)},
                              'convert': {'id': lambda x: x[0] << 64 | x[1]},
-                             'rowfilter': lambda x: (x['TARGETID'] > 0) & ((x['TARGETID'] & 2**59) == 0),
+                             # 'rowfilter': lambda x: (x['TARGETID'] > 0) & ((x['TARGETID'] & 2**59) == 0),
+                             'rowfilter': no_sky,
                              'chunksize': chunksize,
                              'maxrows': maxrows
                              },
@@ -1648,7 +1651,8 @@ def main():
                                                   'coeff_5', 'coeff_6', 'coeff_7', 'coeff_8', 'coeff_9',)},
                              'convert': {'id': lambda x: x[0] << 64 | x[1],
                                          'targetphotid': lambda x: x[0] << 64 | x[1]},
-                             'rowfilter': lambda x: (x['TARGETID'] > 0) & ((x['TARGETID'] & 2**59) == 0),
+                             # 'rowfilter': lambda x: (x['TARGETID'] > 0) & ((x['TARGETID'] & 2**59) == 0),
+                             'rowfilter': no_sky,
                              'chunksize': chunksize,
                              'maxrows': maxrows
                              }],
@@ -1657,7 +1661,8 @@ def main():
                                 'hdu': 'FIBERASSIGN',
                                 'preload': _tileid,
                                 'convert': {'id': lambda x: x[0] << 64 | x[1]},
-                                'rowfilter': lambda x: (x['TARGETID'] > 0) & ((x['TARGETID'] & 2**59) == 0),
+                                # 'rowfilter': lambda x: (x['TARGETID'] > 0) & ((x['TARGETID'] & 2**59) == 0),
+                                'rowfilter': no_sky,
                                 'q3c': 'target_ra',
                                 'chunksize': chunksize,
                                 'maxrows': maxrows
@@ -1667,7 +1672,8 @@ def main():
                                 'hdu': 'POTENTIAL_ASSIGNMENTS',
                                 'preload': _tileid,
                                 'convert': {'id': lambda x: x[0] << 64 | x[1]},
-                                'rowfilter': lambda x: (x['TARGETID'] > 0) & ((x['TARGETID'] & 2**59) == 0),
+                                # 'rowfilter': lambda x: (x['TARGETID'] > 0) & ((x['TARGETID'] & 2**59) == 0),
+                                'rowfilter': no_sky,
                                 'chunksize': chunksize,
                                 'maxrows': maxrows
                                 }]}

@@ -8,7 +8,8 @@ Classes and functions for use by all database code.
 """
 from datetime import datetime
 from os.path import expanduser, exists
-
+import numpy as np
+from desitarget.targets import decode_targetid
 
 _surveyid = {'cmx': 1, 'special': 2, 'sv1': 3, 'sv2': 4, 'sv3': 5, 'main': 6}
 _decode_surveyid = dict([(v, k) for k, v in _surveyid.items()])
@@ -280,6 +281,23 @@ def checkgzip(filename):
         return altfilename
     else:
         raise FileNotFoundError(f'Neither {filename} nor {altfilename} could be found!')
+
+
+def no_sky(catalog):
+    """Identify objects in `catalog` that are not sky targets.
+
+    Parameters
+    ----------
+    catalog : :class:`~astropy.table.Table`
+        Any Table containing a ``TARGETID`` column.
+
+    Returns
+    -------
+    :class:`numpy.ndarray`
+        The indexes of rows that are not sky targets.
+    """
+    _, _, _, _, sky, _ = decode_targetid(catalog['TARGETID'])
+    return np.where((sky == 0) & (catalog['TARGETID'] > 0))[0]
 
 
 def parse_pgpass(hostname='specprod-db.desi.lbl.gov', username='desi_admin'):
