@@ -228,9 +228,9 @@ class Photometry(SchemaMixin, Base):
         expand_dchisq = ('dchisq_psf', 'dchisq_rex', 'dchisq_dev', 'dchisq_exp', 'dchisq_ser',)
         data_columns = list()
         for column in cls.__table__.columns:
-            if column.name == 'brick_objid':
+            if column.name == 'brick_objid' and 'BRICK_OBJID' not in data.colnames:
                 data_column = data['OBJID'][row_index].tolist()
-            elif column.name == 'morphtype':
+            elif column.name == 'morphtype' and 'MORPHTYPE' not in data.colnames:
                 data_column = data['TYPE'][row_index].tolist()
             elif column.name == 'ls_id' and 'LS_ID' not in data.colnames:
                 data_column = ((data[row_index]['RELEASE'].data.astype(np.int64) << 40) |
