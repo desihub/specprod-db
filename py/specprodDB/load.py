@@ -204,6 +204,47 @@ class Photometry(SchemaMixin, Base):
     def __repr__(self):
         return "Photometry(targetid={0.targetid:d})".format(self)
 
+    @classmethod
+    def convert(cls, data, row_index=None):
+        """Convert `data` into ORM objects ready for loading.
+
+        Parameters
+        ----------
+        data : :class:`~astropy.table.Table`
+            Data table to convert.
+        row_index: :class:`numpy.ndarray`, optional
+            Only convert the rows indexed by `row_index`. If not specified,
+            convert all rows.
+
+        Returns
+        -------
+        :class:`list`
+            A list of ORM objects.
+        """
+        if row_index is None:
+            row_index = np.arange(len(data))
+        if len(row_index) == 0:
+            return []
+        expand_dchisq = ('dchisq_psf', 'dchisq_rex', 'dchisq_dev', 'dchisq_exp', 'dchisq_ser',)
+        data_columns = list()
+        for column in cls.__table__.columns:
+            if column.name == 'brick_objid':
+                data_column = data['OBJID'][row_index].tolist()
+            elif column.name == 'morphtype':
+                data_column = data['TYPE'][row_index].tolist()
+            elif column.name == 'ls_id' and 'LS_ID' not in data.colnames:
+                data_column = ((data[row_index]['RELEASE'].data.astype(np.int64) << 40) |
+                               (data[row_index]['BRICKID'].data.astype(np.int64) << 16) |
+                               (data[row_index]['BRICK_OBJID'].data.astype(np.int64))).tolist()
+            elif column.name in expand_dchisq:
+                j = expand_dchisq.index(column.name)
+                data_column = data['DCHISQ'][row_index, j].tolist()
+            else:
+                data_column = data[column.name.upper()][row_index].tolist()
+            data_columns.append(data_column)
+        data_rows = list(zip(*data_columns))
+        return [cls(**(dict([(col.name, dat) for col, dat in zip(cls.__table__.columns, row)]))) for row in data_rows]
+
 
 class Target(SchemaMixin, Base):
     """Representation of the pure-desitarget quantities in the
@@ -248,6 +289,42 @@ class Target(SchemaMixin, Base):
 
     def __repr__(self):
         return "Target(targetid={0.targetid:d}, tileid={0.tileid:d}, survey='{0.survey}')".format(self)
+
+    @classmethod
+    def convert(cls, data, survey, tileid, row_index=None):
+        """Convert `data` into ORM objects ready for loading.
+
+        Parameters
+        ----------
+        data : :class:`~astropy.table.Table`
+            Data table to convert.
+        survey : :class:`str`
+            Survey name.
+        tileid : :class:`int`
+            Tile ID number.
+        row_index: :class:`numpy.ndarray`, optional
+            Only convert the rows indexed by `row_index`. If not specified,
+            convert all rows.
+
+        Returns
+        -------
+        :class:`list`
+            A list of ORM objects.
+        """
+        if row_index is None:
+            row_index = np.arange(len(data))
+        if len(row_index) == 0:
+            return []
+        data_columns = list()
+        for column in cls.__table__.columns:
+            if column.name == 'id':
+                id0 = np.array([surveyid(survey) << 32 | tileid]*len(row_index), dtype=np.int64)
+                data_column = [i0 << 64 | i1 for i0, i1 in zip(id0.tolist(), data['TARGETID'].tolist())]
+            else:
+                data_column = data[column.name.upper()][row_index].tolist()
+            data_columns.append(data_column)
+        data_rows = list(zip(*data_columns))
+        return [cls(**(dict([(col.name, dat) for col, dat in zip(cls.__table__.columns, row)]))) for row in data_rows]
 
 
 class Tile(SchemaMixin, Base):
@@ -432,7 +509,6 @@ class Exposure(SchemaMixin, Base):
         return [cls(**(dict([(col.name, dat) for col, dat in zip(cls.__table__.columns, row)]))) for row in data_rows]
 
 
-
 class Frame(SchemaMixin, Base):
     """Representation of the FRAMES HDU in the exposures file.
 
@@ -572,6 +648,42 @@ class Fiberassign(SchemaMixin, Base):
     def __repr__(self):
         return "Fiberassign(tileid={0.tileid:d}, targetid={0.targetid:d}, location={0.location:d})".format(self)
 
+    @classmethod
+    def convert(cls, data, tileid, row_index=None):
+        """Convert `data` into ORM objects ready for loading.
+
+        Parameters
+        ----------
+        data : :class:`~astropy.table.Table`
+            Data table to convert.
+        tileid : :class:`int`
+            Tile ID number.
+        row_index: :class:`numpy.ndarray`, optional
+            Only convert the rows indexed by `row_index`. If not specified,
+            convert all rows.
+
+        Returns
+        -------
+        :class:`list`
+            A list of ORM objects.
+        """
+        if row_index is None:
+            row_index = np.arange(len(data))
+        if len(row_index) == 0:
+            return []
+        data_columns = list()
+        for column in cls.__table__.columns:
+            if column.name == 'id':
+                id0 = (data['LOCATION'][row_index].base.astype(np.int64) << 32) | tileid
+                data_column = [(i0 << 64) | i1 for i0, i1 in zip(id0.tolist(), data['TARGETID'][row_index].tolist())]
+            elif column.name == 'tileid':
+                data_column = [tileid]*len(row_index)
+            else:
+                data_column = data[column.name.upper()][row_index].tolist()
+            data_columns.append(data_column)
+        data_rows = list(zip(*data_columns))
+        return [cls(**(dict([(col.name, dat) for col, dat in zip(cls.__table__.columns, row)]))) for row in data_rows]
+
 
 class Potential(SchemaMixin, Base):
     """Representation of the POTENTIAL_ASSIGNMENTS table in a fiberassign file.
@@ -592,6 +704,42 @@ class Potential(SchemaMixin, Base):
 
     def __repr__(self):
         return "Potential(tileid={0.tileid:d}, targetid={0.targetid:d}, location={0.location:d})".format(self)
+
+    @classmethod
+    def convert(cls, data, tileid, row_index=None):
+        """Convert `data` into ORM objects ready for loading.
+
+        Parameters
+        ----------
+        data : :class:`~astropy.table.Table`
+            Data table to convert.
+        tileid : :class:`int`
+            Tile ID number.
+        row_index: :class:`numpy.ndarray`, optional
+            Only convert the rows indexed by `row_index`. If not specified,
+            convert all rows.
+
+        Returns
+        -------
+        :class:`list`
+            A list of ORM objects.
+        """
+        if row_index is None:
+            row_index = np.arange(len(data))
+        if len(row_index) == 0:
+            return []
+        data_columns = list()
+        for column in cls.__table__.columns:
+            if column.name == 'id':
+                id0 = (data['LOCATION'][row_index].base.astype(np.int64) << 32) | tileid
+                data_column = [(i0 << 64) | i1 for i0, i1 in zip(id0.tolist(), data['TARGETID'][row_index].tolist())]
+            elif column.name == 'tileid':
+                data_column = [tileid]*len(row_index)
+            else:
+                data_column = data[column.name.upper()][row_index].tolist()
+            data_columns.append(data_column)
+        data_rows = list(zip(*data_columns))
+        return [cls(**(dict([(col.name, dat) for col, dat in zip(cls.__table__.columns, row)]))) for row in data_rows]
 
 
 class Zpix(SchemaMixin, Base):
