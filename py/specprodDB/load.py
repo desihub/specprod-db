@@ -327,9 +327,12 @@ class Tile(SchemaMixin, Base):
         """
         if row_index is None:
             row_index = np.arange(len(data))
+        if len(row_index) == 0:
+            return []
         data_columns = list()
         for column in cls.__table__.columns:
-            data_columns.append(data[column.name.upper()][row_index].tolist())
+            data_column = data[column.name.upper()][row_index].tolist()
+            data_columns.append(data_column)
         data_rows = list(zip(*data_columns))
         return [cls(**(dict([(col.name, dat) for col, dat in zip(cls.__table__.columns, row)]))) for row in data_rows]
 
@@ -397,6 +400,38 @@ class Exposure(SchemaMixin, Base):
     def __repr__(self):
         return "Exposure(night={0.night:d}, expid={0.expid:d}, tileid={0.tileid:d})".format(self)
 
+    @classmethod
+    def convert(cls, data, row_index=None):
+        """Convert `data` into ORM objects ready for loading.
+
+        Parameters
+        ----------
+        data : :class:`~astropy.table.Table`
+            Data table to convert.
+        row_index: :class:`numpy.ndarray`, optional
+            Only convert the rows indexed by `row_index`. If not specified,
+            convert all rows.
+
+        Returns
+        -------
+        :class:`list`
+            A list of ORM objects.
+        """
+        if row_index is None:
+            row_index = np.arange(len(data))
+        if len(row_index) == 0:
+            return []
+        data_columns = list()
+        for column in cls.__table__.columns:
+            if column.name == 'date_obs':
+                data_column = list(map(utc.localize, Time(data[row_index]['MJD'], format='mjd').to_value('datetime').tolist()))
+            else:
+                data_column = data[column.name.upper()][row_index].tolist()
+            data_columns.append(data_column)
+        data_rows = list(zip(*data_columns))
+        return [cls(**(dict([(col.name, dat) for col, dat in zip(cls.__table__.columns, row)]))) for row in data_rows]
+
+
 
 class Frame(SchemaMixin, Base):
     """Representation of the FRAMES HDU in the exposures file.
@@ -455,6 +490,38 @@ class Frame(SchemaMixin, Base):
 
     def __repr__(self):
         return "Frame(expid={0.expid:d}, camera='{0.camera}')".format(self)
+
+    @classmethod
+    def convert(cls, data, row_index=None):
+        """Convert `data` into ORM objects ready for loading.
+
+        Parameters
+        ----------
+        data : :class:`~astropy.table.Table`
+            Data table to convert.
+        row_index: :class:`numpy.ndarray`, optional
+            Only convert the rows indexed by `row_index`. If not specified,
+            convert all rows.
+
+        Returns
+        -------
+        :class:`list`
+            A list of ORM objects.
+        """
+        if row_index is None:
+            row_index = np.arange(len(data))
+        if len(row_index) == 0:
+            return []
+        data_columns = list()
+        for column in cls.__table__.columns:
+            if column.name == 'frameid':
+                data_column = (100*data[row_index]['EXPID'] + np.array([cameraid(c) for c in data[row_index]['CAMERA']],
+                                                                       dtype=data[row_index]['EXPID'].dtype)).tolist()
+            else:
+                data_column = data[column.name.upper()][row_index].tolist()
+            data_columns.append(data_column)
+        data_rows = list(zip(*data_columns))
+        return [cls(**(dict([(col.name, dat) for col, dat in zip(cls.__table__.columns, row)]))) for row in data_rows]
 
 
 class Fiberassign(SchemaMixin, Base):
