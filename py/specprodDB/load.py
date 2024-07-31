@@ -35,6 +35,7 @@ from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, REAL
 
 from desiutil import __version__ as desiutil_version
 from desiutil.iers import freeze_iers
+from desiutil.names import radec_to_desiname
 from desiutil.log import get_logger, DEBUG, INFO
 
 # from desispec.io.meta import findfile
@@ -302,7 +303,7 @@ class Target(SchemaMixin, Base):
             Survey name.
         tileid : :class:`int`
             Tile ID number.
-        row_index: :class:`numpy.ndarray`, optional
+        row_index : :class:`numpy.ndarray`, optional
             Only convert the rows indexed by `row_index`. If not specified,
             convert all rows.
 
@@ -393,7 +394,7 @@ class Tile(SchemaMixin, Base):
         ----------
         data : :class:`~astropy.table.Table`
             Data table to convert.
-        row_index: :class:`numpy.ndarray`, optional
+        row_index : :class:`numpy.ndarray`, optional
             Only convert the rows indexed by `row_index`. If not specified,
             convert all rows.
 
@@ -485,7 +486,7 @@ class Exposure(SchemaMixin, Base):
         ----------
         data : :class:`~astropy.table.Table`
             Data table to convert.
-        row_index: :class:`numpy.ndarray`, optional
+        row_index : :class:`numpy.ndarray`, optional
             Only convert the rows indexed by `row_index`. If not specified,
             convert all rows.
 
@@ -575,7 +576,7 @@ class Frame(SchemaMixin, Base):
         ----------
         data : :class:`~astropy.table.Table`
             Data table to convert.
-        row_index: :class:`numpy.ndarray`, optional
+        row_index : :class:`numpy.ndarray`, optional
             Only convert the rows indexed by `row_index`. If not specified,
             convert all rows.
 
@@ -658,7 +659,7 @@ class Fiberassign(SchemaMixin, Base):
             Data table to convert.
         tileid : :class:`int`
             Tile ID number.
-        row_index: :class:`numpy.ndarray`, optional
+        row_index : :class:`numpy.ndarray`, optional
             Only convert the rows indexed by `row_index`. If not specified,
             convert all rows.
 
@@ -715,7 +716,7 @@ class Potential(SchemaMixin, Base):
             Data table to convert.
         tileid : :class:`int`
             Tile ID number.
-        row_index: :class:`numpy.ndarray`, optional
+        row_index : :class:`numpy.ndarray`, optional
             Only convert the rows indexed by `row_index`. If not specified,
             convert all rows.
 
@@ -973,6 +974,73 @@ class Ztile(SchemaMixin, Base):
 
     def __repr__(self):
         return "Ztile(targetid={0.targetid:d}, tileid={0.tileid:d}, spgrp='{0.spgrp}', spgrpval={0.spgrpval:d})".format(self)
+
+    @classmethod
+    def convert(cls, data, survey, program, tileid,
+                row_index=None, spgrp='cumulative'):
+        """Convert `data` into ORM objects ready for loading.
+
+        Parameters
+        ----------
+        data : :class:`~astropy.table.Table`
+            Data table to convert.
+        survey : :class:`str`
+            Survey name.
+        program : :class:`str`
+            Program name.
+        tileid : :class:`int`
+            Tile ID number.
+        row_index : :class:`numpy.ndarray`, optional
+            Only convert the rows indexed by `row_index`. If not specified,
+            convert all rows.
+        spgrp : :class:`str`, optional
+            Normally this will be set to the default value: 'cumulative'.
+
+        Returns
+        -------
+        :class:`list`
+            A list of ORM objects.
+        """
+        if row_index is None:
+            row_index = np.arange(len(data))
+        if len(row_index) == 0:
+            return []
+        data_columns = list()
+        expfibermap = Table()
+        default_columns = {'spgrp': spgrp, 'survey': survey, 'program': program,
+                           'sv_nspec': 0, 'main_nspec': 0, 'zcat_nspec': 0,
+                           'sv_primary': False, 'main_primary': False, 'zcat_primary': False}
+        for column in cls.__table__.columns:
+            if column.name == 'id':
+                id0 = spgrpid(spgrp) << 27 | data['SPGRPVAL'][row_index].base.astype(np.int64)
+                data_column = [(i0 << 64) | i1 for i0, i1 in zip(id0.tolist(), data['TARGETID'][row_index].tolist())]
+            elif column.name == 'targetphotid':
+                id0 = np.array([surveyid(survey) << 32 | tileid]*len(row_index), dtype=np.int64)
+                data_column = [(i0 << 64) | i1 for i0, i1 in zip(id0.tolist(), data['TARGETID'][row_index].tolist())]
+            elif column.name == 'desiname':
+                data_column = radec_to_desiname(data['TARGET_RA'][row_index], data['TARGET_DEC'][row_index]).tolist()
+            elif column.name == 'firstnight':
+                #
+                # Need expfibermap. Double-check logic, maybe a simpler input will work.
+                # For cumulative tiles: spgrpval == lastnight.
+                #
+                firstnight = np.zeros(len(data), dtype=np.int32)
+                for tilefm in Table(expfibermap[['TILEID', 'NIGHT']]).group_by('TILEID').groups:
+                    tileid = tilefm['TILEID'][0]
+                    iitile = data['TILEID'] == tileid
+                    firstnight[iitile] = np.min(tilefm['NIGHT'])
+                assert (firstnight != 0).all()
+                data_column = firstnight[row_index].tolist()
+            elif column.name in default_columns:
+                data_column = [default_columns[column.name]].tolist()
+            elif column.name.startswith('coeff_'):
+                coeff_index = int(column.name.split('_')[1])
+                data_column = data['COEFF'][row_index, coeff_index].tolist()
+            else:
+                data_column = data[column.name.upper()][row_index].tolist()
+            data_columns.append(data_column)
+        data_rows = list(zip(*data_columns))
+        return [cls(**(dict([(col.name, dat) for col, dat in zip(cls.__table__.columns, row)]))) for row in data_rows]
 
 
 def _frameid(data):

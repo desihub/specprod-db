@@ -162,7 +162,7 @@ jobs:
                 python-version: ${{ matrix.python-version }}
             - name: Install Python dependencies
               run: python -m pip install --upgrade pip setuptools wheel pycodestyle
-            - name: Test the style; failures are allowed
-              # This is equivalent to an allowed falure.
+            - name: Test the style
+              # Uncomment continue-on-error to allow failures.
               # continue-on-error: true
               run: pycodestyle --count py/specprodDB
