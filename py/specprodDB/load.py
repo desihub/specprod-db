@@ -976,7 +976,7 @@ class Ztile(SchemaMixin, Base):
         return "Ztile(targetid={0.targetid:d}, tileid={0.tileid:d}, spgrp='{0.spgrp}', spgrpval={0.spgrpval:d})".format(self)
 
     @classmethod
-    def convert(cls, data, survey, program, tileid,
+    def convert(cls, data, survey, program, tileid, night,
                 row_index=None, spgrp='cumulative'):
         """Convert `data` into ORM objects ready for loading.
 
@@ -990,6 +990,8 @@ class Ztile(SchemaMixin, Base):
             Program name.
         tileid : :class:`int`
             Tile ID number.
+        night : :class:`int`
+            Night number. This is loaded into the ``firstnight`` column.
         row_index : :class:`numpy.ndarray`, optional
             Only convert the rows indexed by `row_index`. If not specified,
             convert all rows.
@@ -1000,14 +1002,22 @@ class Ztile(SchemaMixin, Base):
         -------
         :class:`list`
             A list of ORM objects.
+
+        Notes
+        -----
+        * This method currently assumes that `data` comes from one and only one
+          tile, which is represented by `tileid`.
+        * The above has a secondary assumption that, at least for cumulative
+          tile-based spectra, the first night is the same for all spectra.
+        * `night` becomes ``firstnight``, while ``spgrpval`` is equivalent to
+          "lastnight" for cumulative tile-based spectra.
         """
         if row_index is None:
             row_index = np.arange(len(data))
         if len(row_index) == 0:
             return []
         data_columns = list()
-        expfibermap = Table()
-        default_columns = {'spgrp': spgrp, 'survey': survey, 'program': program,
+        default_columns = {'spgrp': spgrp, 'survey': survey, 'program': program, 'firstnight': night,
                            'sv_nspec': 0, 'main_nspec': 0, 'zcat_nspec': 0,
                            'sv_primary': False, 'main_primary': False, 'zcat_primary': False}
         for column in cls.__table__.columns:
@@ -1019,18 +1029,6 @@ class Ztile(SchemaMixin, Base):
                 data_column = [(i0 << 64) | i1 for i0, i1 in zip(id0.tolist(), data['TARGETID'][row_index].tolist())]
             elif column.name == 'desiname':
                 data_column = radec_to_desiname(data['TARGET_RA'][row_index], data['TARGET_DEC'][row_index]).tolist()
-            elif column.name == 'firstnight':
-                #
-                # Need expfibermap. Double-check logic, maybe a simpler input will work.
-                # For cumulative tiles: spgrpval == lastnight.
-                #
-                firstnight = np.zeros(len(data), dtype=np.int32)
-                for tilefm in Table(expfibermap[['TILEID', 'NIGHT']]).group_by('TILEID').groups:
-                    tileid = tilefm['TILEID'][0]
-                    iitile = data['TILEID'] == tileid
-                    firstnight[iitile] = np.min(tilefm['NIGHT'])
-                assert (firstnight != 0).all()
-                data_column = firstnight[row_index].tolist()
             elif column.name in default_columns:
                 data_column = [default_columns[column.name]].tolist()
             elif column.name.startswith('coeff_'):
