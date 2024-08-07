@@ -1517,6 +1517,7 @@ def q3c_index(table, ra='ra'):
     dbSession.commit()
     return
 
+
 def load_versions(photometry, redshift, release, specprod, tiles):
     """Load version metadata.
 
