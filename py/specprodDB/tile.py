@@ -74,7 +74,7 @@ def potential_targets(tileid):
     return potential_targets_table
 
 
-def potential_phototometry(tile, targets):
+def potential_photometry(tile, targets):
     """Assemble a Table of targets that will be used to find photometric data.
 
     `targets` is assumed to come from one tile that has not already been loaded.
