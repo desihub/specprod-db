@@ -17,7 +17,7 @@ from configparser import SafeConfigParser
 
 import numpy as np
 
-from astropy.table import Table
+from astropy.table import Table, join
 
 from desiutil.iers import freeze_iers
 # from desiutil.names import radec_to_desiname
@@ -155,9 +155,14 @@ def load_tile_photometry(photometry):
     """Insert the data in `photometry` into the database.
 
     Parameters
-    -------
+    ----------
     photometry : :class:`~astropy.table.Table`
         A Table containing the photometry data.
+
+    Returns
+    -------
+    :class:`list`
+        A list of :class:`~specprodDB.load.Photometry` objects loaded.
     """
     row_index = np.where(photometry['BRICKNAME'] != '')[0]
     load_photometry = db.Photometry.convert(photometry, row_index=row_index)
@@ -168,7 +173,89 @@ def load_tile_photometry(photometry):
         db.log.info("Loaded %d rows of Photometry data.", len(load_photometry))
     else:
         db.log.info("No Photometry data to load.")
-    return
+    return load_photometry
+
+
+def load_tile_targetphot(targetphot, loaded_photometry):
+    """Load the photometry, such as it is, for objects that do not have Tractor
+    photometry.
+
+    Parameters
+    ----------
+    targetphot : :class:`~astropy.table.Table`
+        A Table containing the targeting data.
+    loaded_photometry : :class:`list`
+        A list of :class:`~specprodDB.load.Photometry` objects already loaded.
+
+    Returns
+    -------
+    :class:`list`
+        A list of :class:`~specprodDB.load.Photometry` objects loaded.
+    """
+    #
+    # Find TARGETID not already *just* loaded.
+    #
+    load_rows = np.zeros((len(targetphot),), dtype=bool)
+    if len(loaded_photometry) > 0:
+        loaded_targetid = Table()
+        loaded_targetid['TARGETID'] = np.array([r.targetid for r in loaded_photometry])
+        loaded_targetid['LS_ID'] = np.array([r.ls_id for r in loaded_photometry])
+        j = join(targetphot['TARGETID', 'RELEASE'], loaded_targetid, join_type='left', keys='TARGETID')
+        try:
+            load_targetids = j['TARGETID'][j['LS_ID'].mask]
+        except AttributeError:
+            #
+            # This means *every* TARGETID is already loaded.
+            #
+            pass
+        else:
+            unique_targetid, targetid_index = np.unique(targetphot['TARGETID'].data, return_index=True)
+            for t in load_targetids:
+                load_rows[targetid_index[unique_targetid == t]] = True
+    #
+    # Find TARGETID not loaded in previous cycles.
+    #
+    targetphot_already_loaded = db.dbSession.query(db.Photometry.targetid).filter(db.Photometry.targetid.in_(targetphot[load_rows]['TARGETID'].tolist())).all()
+    targetphot_not_already_loaded = np.ones((len(targetphot),), dtype=bool)
+    for row in targetphot_already_loaded:
+        targetphot_not_already_loaded[targetphot['TARGETID'] == row[0]] = False
+
+    row_index = np.where(load_rows & targetphot_not_already_loaded)[0]
+    load_targetphot = db.Photometry.convert(targetphot, row_index=row_index)
+    if len(load_targetphot) > 0:
+        # db.dbSession.rollback()
+        db.dbSession.add_all(load_targetphot)
+        db.dbSession.commit()
+        db.log.info("Loaded %d rows of Photometry data (from targeting).", len(load_targetphot))
+    else:
+        db.log.info("No Photometry data (from targeting) to load.")
+    return load_targetphot
+
+
+def load_tile_target(tile, target):
+    """Load the targeting data associated with `tile`.
+
+    Parameters
+    ----------
+    tile : :class:`~specprodDB.load.Tile`
+        The tile associated with `targets`.
+    target : :class:`~astropy.table.Table`
+        Effectively a list of ``TARGETID``.
+
+    Returns
+    -------
+    :class:`list`
+        A list of :class:`~specprodDB.load.Target` objects loaded.
+    """
+    load_target = db.Target.convert(target, tile.survey, tile.tileid)
+    if len(load_target) > 0:
+        # db.dbSession.rollback()
+        db.dbSession.add_all(load_target)
+        db.dbSession.commit()
+        db.log.info("Loaded %d rows of Target data.", len(load_target))
+    else:
+        db.log.info("No Target data to load.")
+    return load_target
 
 
 def main():
@@ -179,7 +266,6 @@ def main():
     :class:`int`
         An integer suitable for passing to :func:`sys.exit`.
     """
-    # freeze_iers()
     #
     # command-line arguments
     #
@@ -211,6 +297,7 @@ def main():
     #
     # Initialize DB
     #
+    freeze_iers()
     postgresql = db.setup_db(hostname=config[specprod]['hostname'],
                              username=config[specprod]['username'],
                              schema=options.schema,
