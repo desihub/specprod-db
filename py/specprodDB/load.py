@@ -1857,6 +1857,8 @@ def get_options(description="Load redshift data into a specprod database."):
     # prsr.add_argument('-z', '--redshift-version', action='store', dest='redshift_version',
     #                   metavar='VERSION',
     #                   help='Load redshift data from VAC VERSION')
+    prsr.add_argument('-V', '--version', action='version',
+                      version='%(prog)s ' + specprodDB_version)
     prsr.add_argument('datapath', metavar='DIR', help='Load the data in DIR.')
     options = prsr.parse_args()
     return options

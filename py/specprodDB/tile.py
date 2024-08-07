@@ -25,6 +25,8 @@ from desiutil.log import get_logger, DEBUG, INFO
 
 from desispec.io.meta import findfile
 from desispec.io.photo import gather_targetphot, gather_tractorphot
+from desispec.scripts.zcatalog import read_redrock
+from desispec.zcatalog import find_primary_spectra
 
 from . import load as db
 from .util import no_sky
@@ -126,7 +128,8 @@ def targetphot(catalog):
     potential_targetphot['SURVEY'] = catalog['SURVEY']
     potential_targetphot['PROGRAM'] = catalog['PROGRAM']
     potential_targetphot['TILEID'] = catalog['TILEID']
-    inan = np.logical_or(np.isnan(potential_targetphot['PMRA']), np.isnan(potential_targetphot['PMDEC']))
+    inan = np.logical_or(np.isnan(potential_targetphot['PMRA']),
+                         np.isnan(potential_targetphot['PMDEC']))
     if np.any(inan):
         potential_targetphot['PMRA'][inan] = 0.0
         potential_targetphot['PMDEC'][inan] = 0.0
@@ -151,7 +154,7 @@ def tractorphot(catalog):
     return potential_tractorphot
 
 
-def load_tile_photometry(photometry):
+def load_photometry(photometry):
     """Insert the data in `photometry` into the database.
 
     Parameters
@@ -176,7 +179,7 @@ def load_tile_photometry(photometry):
     return load_photometry
 
 
-def load_tile_targetphot(targetphot, loaded_photometry):
+def load_targetphot(targetphot, loaded_photometry):
     """Load the photometry, such as it is, for objects that do not have Tractor
     photometry.
 
@@ -232,13 +235,13 @@ def load_tile_targetphot(targetphot, loaded_photometry):
     return load_targetphot
 
 
-def load_tile_target(tile, target):
+def load_target(tile, target):
     """Load the targeting data associated with `tile`.
 
     Parameters
     ----------
     tile : :class:`~specprodDB.load.Tile`
-        The tile associated with `targets`.
+        The tile associated with `target`.
     target : :class:`~astropy.table.Table`
         Effectively a list of ``TARGETID``.
 
@@ -256,6 +259,148 @@ def load_tile_target(tile, target):
     else:
         db.log.info("No Target data to load.")
     return load_target
+
+
+def load_redshift(tile, spgrp='cumulative'):
+    """Load redshift data associated with `tile`.
+
+    Parameters
+    ----------
+    tile : :class:`~specprodDB.load.Tile`
+        The tile with redshifts to load.
+    spgrp : :class:`str`, optional
+        The type of redshift data to load. Currently only 'cumulative' is supported.
+
+    Returns
+    -------
+    :class:`list`
+        A list of :class:`~specprodDB.load.Ztile` objects loaded.
+
+    Raises
+    ------
+    ValueError
+        If the value of `spgrp` is not supported.
+    """
+    if spgrp not in ('cumulative',):
+        msg = 'Unsupported spgrp value: "%s"!'
+        db.log.critical(msg, spgrp)
+        raise ValueError(msg % (spgrp,))
+    redrock_files = list()
+    for spectrograph in range(10):
+        redrock_file, redrock_exists = findfile('redrock_tile', groupname=spgrp,
+                                                tile=tile.tileid, spectrograph=spectrograph,
+                                                night=tile.lastnight,
+                                                readonly=True, return_exists=True)
+        if redrock_exists:
+            redrock_files.append(redrock_file)
+    if len(redrock_files) == 0:
+        db.log.warning("No %s redrock files found for tile %d!", spgrp, tile.tileid)
+        return []
+    load_ztile = list()
+    for rr in redrock_files:
+        redrock_table, expfibermap = read_redrock(rr, group=spgrp,
+                                                  recoadd_fibermap=True,
+                                                  pertile=True)
+        assert (expfibermap['TILEID'] == tile.tileid).all()
+        firstnight = np.unique(expfibermap['NIGHT']).tolist()
+        assert len(firstnight) == 1
+        row_index = no_sky(redrock_table)
+        load_ztile += db.Ztile.convert(redrock_table, tile.survey, tile.program,
+                                       tile.tileid, firstnight[0],
+                                       row_index=row_index)
+    if len(load_ztile) > 0:
+        db.dbSession.add_all(load_ztile)
+        db.dbSession.commit()
+        db.log.info("Loaded %d rows of Ztile data.", len(load_ztile))
+    else:
+        db.log.info("No Ztile data to load.")
+    return load_ztile
+
+
+def load_fiberassign(tile):
+    """Load the fiber assignments and potential assignments for `tile`.
+
+    Parameters
+    ----------
+    tile : :class:`~specprodDB.load.Tile`
+        The tile with fiber assignments to load.
+
+    Returns
+    -------
+    :class:`tuple`
+        A tuple containing the lists of :class:`~specprodDB.load.Fiberassign`
+        and :class:`~specprodDB.load.Potential` objects loaded.
+    """
+    fiberassign_table = Table.read(fiberassign_file(tile.tileid), format='fits', hdu='FIBERASSIGN')
+    potential_table = Table.read(fiberassign_file(tile.tileid), format='fits', hdu='POTENTIAL_ASSIGNMENTS')
+    row_index = no_sky(fiberassign_table)
+    load_fiberassign = db.Fiberassign.convert(fiberassign_table, tile.tileid, row_index=row_index)
+    if len(load_fiberassign) > 0:
+        db.dbSession.add_all(load_fiberassign)
+        db.dbSession.commit()
+        db.log.info("Loaded %d rows of Fiberassign data.", len(load_fiberassign))
+    else:
+        db.log.info("No Fiberassign data to load.")
+    row_index = no_sky(potential_table)
+    load_potential = db.Potential.convert(potential_table, tile.tileid, row_index=row_index)
+    if len(load_potential) > 0:
+        db.dbSession.add_all(load_potential)
+        db.dbSession.commit()
+        db.log.info("Loaded %d rows of Potential data.", len(load_potential))
+    else:
+        db.log.info("No Potential data to load.")
+    return (load_fiberassign, load_potential)
+
+
+def update_primary():
+    """Update the primary classification after some number of tiles has been loaded.
+    """
+    zall_tilecumulative = db.dbSession.query(db.Ztile).all()
+    zall_table = Table(list(zip(*[(z.targetid, z.zwarn, z.tsnr2_lrg) for z in zall_tilecumulative])),
+                       names=('TARGETID', 'ZWARN', 'TSNR2_LRG'))
+    nspec, primary = find_primary_spectra(zall_table)
+    zcat_nspec, zcat_primary = nspec.tolist(), primary.tolist()
+    for k, z in enumerate(zall_tilecumulative):
+        z.zcat_nspec = zcat_nspec[k]
+        z.zcat_primary = zcat_primary[k]
+    db.dbSession.commit()
+    db.log.info("Updated primary classification for %d Ztile objects.", len(zall_tilecumulative))
+    sv_tilecumulative = db.dbSession.query(db.Ztile).filter(db.Ztile.survey.in_(('sv1', 'sv2', 'sv3'))).all()
+    if len(sv_tilecumulative) > 0:
+        sv_table = Table(list(zip(*[(z.targetid, z.zwarn, z.tsnr2_lrg) for z in sv_tilecumulative])),
+                         names=('TARGETID', 'ZWARN', 'TSNR2_LRG'))
+        nspec, primary = find_primary_spectra(sv_table)
+        sv_nspec, sv_primary = nspec.tolist(), primary.tolist()
+        for k, z in enumerate(sv_tilecumulative):
+            z.sv_nspec = sv_nspec[k]
+            z.sv_primary = sv_primary[k]
+        db.dbSession.commit()
+        db.log.info("Updated primary classification for %d SV Ztile objects.", len(sv_tilecumulative))
+    else:
+        db.log.info("No SV Ztile objects to update.")
+    main_tilecumulative = db.dbSession.query(db.Ztile).filter(db.Ztile.survey.in_(('main', ))).all()
+    if len(main_tilecumulative) > 0:
+        main_table = Table(list(zip(*[(z.targetid, z.zwarn, z.tsnr2_lrg) for z in main_tilecumulative])), names=('TARGETID', 'ZWARN', 'TSNR2_LRG'))
+        nspec, primary = find_primary_spectra(main_table)
+        main_nspec, main_primary = nspec.tolist(), primary.tolist()
+        for k, z in enumerate(main_tilecumulative):
+            z.main_nspec = main_nspec[k]
+            z.main_primary = main_primary[k]
+        db.dbSession.commit()
+        db.log.info("Updated primary classification for %d Main Ztile objects.", len(main_tilecumulative))
+    else:
+        db.log.info("No Main Ztile objects to update.")
+    return
+
+
+def update_q3c():
+    """Update the q3c indexes after some number of tiles has been loaded.
+    """
+    q3c_updates = {'tile': 'tilera', 'exposure': 'tilera',
+                   'photometry': 'ra', 'fiberassign': 'target_ra'}
+    for table in q3c_updates:
+        db.q3c_index(table, ra=q3c_updates[table])
+    return
 
 
 def main():
