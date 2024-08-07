@@ -83,6 +83,37 @@ class Version(SchemaMixin, Base):
     def __repr__(self):
         return "Version(package='{0.package}', version='{0.version}')".format(self)
 
+    @classmethod
+    def convert(cls, data, row_index=None):
+        """Convert the inputs into ORM objects ready for loading.
+
+        Parameters
+        ----------
+        data : :class:`~astropy.table.Table`
+            Data table to convert.
+        row_index: :class:`numpy.ndarray`, optional
+            Only convert the rows indexed by `row_index`. If not specified,
+            convert all rows.
+
+        Returns
+        -------
+        :class:`list`
+            A list of ORM objects.
+        """
+        if row_index is None:
+            row_index = np.arange(len(data))
+        if len(row_index) == 0:
+            return []
+        data_columns = list()
+        for column in cls.__table__.columns:
+            if column.name == 'id':
+                data_column = (row_index + 1).tolist()
+            else:
+                data_column = data[column.name.upper()][row_index].tolist()
+            data_columns.append(data_column)
+        data_rows = list(zip(*data_columns))
+        return [cls(**(dict([(col.name, dat) for col, dat in zip(cls.__table__.columns, row)]))) for row in data_rows]
+
 
 class Photometry(SchemaMixin, Base):
     """Contains *only* photometric quantities associated with a ``TARGETID``.
@@ -1486,6 +1517,39 @@ def q3c_index(table, ra='ra'):
     dbSession.commit()
     return
 
+def load_versions(photometry, redshift, release, specprod, tiles):
+    """Load version metadata.
+
+    The inputs to this function are normally specified in the specprod
+    configuration file. Other necessary metadata are obtained at import time.
+
+    Parameters
+    ----------
+    photometry : :class:`str`
+        Photometry catalog.
+    redshift : :class:`str`
+        Redshift catalog version.
+    release : :class:`str`
+        Data release, *e.g.* 'edr', 'dr1'.
+    specprod : :class:`str`
+        The specprod version. Usually, but not always, the same as the schema name.
+    tiles : :class:`str`
+        The tiles (fiberassign file) version.
+    """
+    log.info("Loading version metadata.")
+    version_table = Table()
+    version_table['PACKAGE'] = np.array(['astropy', 'desiutil', 'lsd9-photometry',
+                                         'numpy', 'redshift', 'release', 'specprod',
+                                         'specprod-db', 'sqlalchemy', 'tiles'])
+    version_table['VERSION'] = np.array([astropy_version, desiutil_version, photometry,
+                                         np.__version__, redshift, release, specprod,
+                                         specprodDB_version, sqlalchemy_version, tiles])
+    versions = Version.convert(version_table)
+    dbSession.add_all(versions)
+    dbSession.commit()
+    log.info("Completed loading version metadata.")
+    return
+
 
 def zpix_target(specprod):
     """Replace targeting bitmasks in the redshift tables for `specprod`.
@@ -1733,8 +1797,13 @@ GRANT SELECT ON ALL SEQUENCES IN SCHEMA {schema} TO desi_public;
     return hostname is not None
 
 
-def get_options():
+def get_options(description="Load redshift data into a specprod database."):
     """Parse command-line options.
+
+    Parameters
+    ----------
+    description : :class:`str`, optional
+        Override the description in the command-line help.
 
     Returns
     -------
@@ -1743,7 +1812,7 @@ def get_options():
     """
     from sys import argv
     from argparse import ArgumentParser
-    prsr = ArgumentParser(description=("Load redshift data into a database."),
+    prsr = ArgumentParser(description=description,
                           prog=os.path.basename(argv[0]))
     prsr.add_argument('-c', '--config', action='store', dest='config', metavar='FILE',
                       default=str(ir.files('specprodDB') / 'data' / 'load_specprod_db.ini'),
@@ -2021,19 +2090,8 @@ def main():
     # Load the tables that correspond to a set of files.
     #
     if options.load == 'exposures' and options.overwrite:
-        log.info("Loading version metadata.")
-        versions = [Version(package='specprod-db', version=specprodDB_version),
-                    Version(package='lsdr9-photometry', version=photometry_version),
-                    Version(package='redshift', version=f"{redshift_type}/{redshift_version}"),
-                    Version(package='tiles', version=tiles_version),
-                    Version(package='specprod', version=specprod),
-                    Version(package='numpy', version=np.__version__),
-                    Version(package='astropy', version=astropy_version),
-                    Version(package='sqlalchemy', version=sqlalchemy_version),
-                    Version(package='desiutil', version=desiutil_version)]
-        dbSession.add_all(versions)
-        dbSession.commit()
-        log.info("Completed loading version metadata.")
+        load_versions(photometry_version, f"{redshift_type}/{redshift_version}",
+                      release, specprod, tiles_version)
     for l in loader:
         tn = l['tcls'].__tablename__
         loaded = dbSession.query(l['tcls']).count()
