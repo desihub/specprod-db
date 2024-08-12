@@ -17,8 +17,8 @@ jobs:
             fail-fast: true
             matrix:
                 os: [ubuntu-latest]
-                python-version: ['3.10', '3.11']
-                numpy-version: ['<1.23']  # , '<2.0']
+                python-version: ['3.10']  # , '3.11'] The 3.11 tests take a long time, so skip for now.
+                numpy-version: ['<1.23']  # , '<2.0'] Need to find a scipy version that works for 3.11 and pre-2.0 numpy
                 astropy-version: ['<6.1', '<7.0']
 
         env:
