@@ -41,7 +41,7 @@ from desiutil.log import get_logger, DEBUG, INFO
 # from desispec.io.meta import findfile
 
 from . import __version__ as specprodDB_version
-from .util import (convert_dateobs, parse_pgpass, cameraid, surveyid, programid,
+from .util import (common_options, parse_pgpass, cameraid, surveyid, programid,
                    spgrpid, checkgzip, no_sky)
 
 
@@ -1811,54 +1811,10 @@ def get_options(description="Load redshift data into a specprod database."):
     :class:`argparse.Namespace`
         The parsed options.
     """
-    from sys import argv
-    from argparse import ArgumentParser
-    prsr = ArgumentParser(description=description,
-                          prog=os.path.basename(argv[0]))
-    prsr.add_argument('-c', '--config', action='store', dest='config', metavar='FILE',
-                      default=str(ir.files('specprodDB') / 'data' / 'load_specprod_db.ini'),
-                      help="Override the default configuration file.")
-    # prsr.add_argument('-d', '--data-release', action='store', dest='release',
-    #                   default='edr', metavar='RELEASE',
-    #                   help='Use data release RELEASE (default "%(default)s").')
-    prsr.add_argument('-f', '--filename', action='store', dest='dbfile',
-                      default='specprod.db', metavar='FILE',
-                      help='Store data in FILE (default "%(default)s").')
-    # prsr.add_argument('-H', '--hostname', action='store', dest='hostname',
-    #                   metavar='HOSTNAME', default='specprod-db.desi.lbl.gov',
-    #                   help='If specified, connect to a PostgreSQL database on HOSTNAME (default "%(default)s").')
+    prsr = common_options(description)
     prsr.add_argument('-l', '--load', action='store', dest='load',
                       default='exposures', metavar='STAGE',
                       help='Load the set of files associated with STAGE (default "%(default)s").')
-    # prsr.add_argument('-m', '--max-rows', action='store', dest='maxrows',
-    #                   type=int, default=0, metavar='M',
-    #                   help="Load up to M rows in the tables (default is all rows).")
-    prsr.add_argument('-o', '--overwrite', action='store_true', dest='overwrite',
-                      help='Delete any existing files or tables before loading.')
-    prsr.add_argument('-P', '--public', action='store_true', dest='public',
-                      help='GRANT access to the schema to the public database user.')
-    # prsr.add_argument('-p', '--photometry-version', action='store', dest='photometry_version',
-    #                   metavar='VERSION', default='v2.1',
-    #                   help='Load target photometry data from VERSION (default "%(default)s").')
-    # prsr.add_argument('-r', '--rows', action='store', dest='chunksize',
-    #                   type=int, default=50000, metavar='N',
-    #                   help="Load N rows at a time (default %(default)s).")
-    prsr.add_argument('-s', '--schema', action='store', dest='schema',
-                      metavar='SCHEMA',
-                      help='Set the schema name in the PostgreSQL database.')
-    # prsr.add_argument('-t', '--tiles-version', action='store', dest='tiles_version',
-    #                   metavar='VERSION', default='0.5',
-    #                   help='Load fiberassign data from VERSION (default "%(default)s").')
-    # prsr.add_argument('-U', '--username', action='store', dest='username',
-    #                   metavar='USERNAME', default='desi_admin',
-    #                   help='If specified, connect to a PostgreSQL database with USERNAME (default "%(default)s").')
-    prsr.add_argument('-v', '--verbose', action='store_true', dest='verbose',
-                      help='Print extra information.')
-    # prsr.add_argument('-z', '--redshift-version', action='store', dest='redshift_version',
-    #                   metavar='VERSION',
-    #                   help='Load redshift data from VAC VERSION')
-    prsr.add_argument('-V', '--version', action='version',
-                      version='%(prog)s ' + specprodDB_version)
     prsr.add_argument('datapath', metavar='DIR', help='Load the data in DIR.')
     options = prsr.parse_args()
     return options

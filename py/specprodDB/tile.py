@@ -29,7 +29,7 @@ from desispec.scripts.zcatalog import read_redrock
 from desispec.zcatalog import find_primary_spectra
 
 from . import load as db
-from .util import no_sky
+from .util import no_sky, common_options
 
 
 _fiberassign_cache = dict()
@@ -403,6 +403,25 @@ def update_q3c():
     return
 
 
+def get_options(description="Load data for one tile into a specprod database."):
+    """Parse command-line options.
+
+    Parameters
+    ----------
+    description : :class:`str`, optional
+        Override the description in the command-line help.
+
+    Returns
+    -------
+    :class:`argparse.Namespace`
+        The parsed options.
+    """
+    prsr = common_options(description)
+    prsr.add_argument('tile', metavar='TILEID', type=int, help='Load TILEID.')
+    options = prsr.parse_args()
+    return options
+
+
 def main():
     """Entry point for command-line script.
 
@@ -414,7 +433,7 @@ def main():
     #
     # command-line arguments
     #
-    options = db.get_options("Load data for one tile into a specprod database.")
+    options = get_options("Load data for one tile into a specprod database.")
     #
     # Logging
     #
