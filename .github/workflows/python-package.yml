@@ -22,10 +22,11 @@ jobs:
                 astropy-version: ['<6.1', '<7.0']
 
         env:
-            # Versions correspond to desimodules/24.4
+            # Versions correspond to desimodules/24.6
             DESIUTIL_VERSION: '3.4.2'
-            DESISPEC_VERSION: '0.63.0'
+            DESISPEC_VERSION: '0.63.7'
             DESITARGET_VERSION: '2.7.0'
+            DESIMODEL_VERSION: '0.19.1'
 
         steps:
             - name: Checkout code
@@ -42,6 +43,7 @@ jobs:
                 python -m pip install git+https://github.com/desihub/desiutil.git@${DESIUTIL_VERSION}#egg=desiutil
                 python -m pip install git+https://github.com/desihub/desispec.git@${DESISPEC_VERSION}#egg=desispec
                 python -m pip install git+https://github.com/desihub/desitarget.git@${DESITARGET_VERSION}#egg=desitarget
+                python -m pip install git+https://github.com/desihub/desimodel.git@${DESIMODEL_VERSION}#egg=desimodel
                 python -m pip install --upgrade "numpy${{ matrix.numpy-version }}"
                 python -m pip install --upgrade "astropy${{ matrix.astropy-version }}" 'scipy<1.13' fitsio numba
                 python -m pip install --editable .[test]
@@ -61,8 +63,9 @@ jobs:
 
         env:
             DESIUTIL_VERSION: '3.4.2'
-            DESISPEC_VERSION: '0.63.0'
+            DESISPEC_VERSION: '0.63.7'
             DESITARGET_VERSION: '2.7.0'
+            DESIMODEL_VERSION: '0.19.1'
 
         steps:
             - name: Checkout code
@@ -79,6 +82,7 @@ jobs:
                 python -m pip install git+https://github.com/desihub/desiutil.git@${DESIUTIL_VERSION}#egg=desiutil
                 python -m pip install git+https://github.com/desihub/desispec.git@${DESISPEC_VERSION}#egg=desispec
                 python -m pip install git+https://github.com/desihub/desitarget.git@${DESITARGET_VERSION}#egg=desitarget
+                python -m pip install git+https://github.com/desihub/desimodel.git@${DESIMODEL_VERSION}#egg=desimodel
                 python -m pip install --upgrade "numpy${{ matrix.numpy-version }}"
                 python -m pip install --upgrade "astropy${{ matrix.astropy-version }}" 'scipy<1.13' fitsio numba
                 python -m pip install --editable .[coverage]
