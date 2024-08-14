@@ -19,6 +19,8 @@ import numpy as np
 
 from astropy.table import Table, join
 
+from sqlalchemy.exc import IntegrityError
+
 from desiutil.iers import freeze_iers
 # from desiutil.names import radec_to_desiname
 from desiutil.log import get_logger, DEBUG, INFO
@@ -417,6 +419,12 @@ def get_options(description="Load data for one tile into a specprod database."):
         The parsed options.
     """
     prsr = common_options(description)
+    prsr.add_argument('-e', '--exposures-file', action='store', dest='exposures_file', metavar='FILE',
+                      help='Override the top-level exposures file associated with a specprod.')
+    prsr.add_argument('-p', '--primary', action='store_true', dest='primary',
+                      help='Update primary redshift values and indexes for all tiles.')
+    prsr.add_argument('-t', '--tiles-file', action='store', dest='tiles_file', metavar='FILE',
+                      help='Override the top-level tiles file associated with a specprod.')
     prsr.add_argument('tile', metavar='TILEID', type=int, help='Load TILEID.')
     options = prsr.parse_args()
     return options
@@ -431,11 +439,11 @@ def main():
         An integer suitable for passing to :func:`sys.exit`.
     """
     #
-    # command-line arguments
+    # command-line arguments.
     #
     options = get_options("Load data for one tile into a specprod database.")
     #
-    # Logging
+    # Logging.
     #
     log_level = DEBUG if options.verbose else INFO
     db.log = get_logger(log_level, timestamp=True)
@@ -459,7 +467,7 @@ def main():
         db.log.critical("Configuration has no section for '%s'!", specprod)
         return 1
     #
-    # Initialize DB
+    # Initialize DB.
     #
     freeze_iers()
     postgresql = db.setup_db(hostname=config[specprod]['hostname'],
@@ -469,7 +477,7 @@ def main():
                              public=options.public,
                              verbose=options.verbose)
     #
-    # Load configuration
+    # Load configuration.
     #
     release = config[specprod]['release']
     photometry_version = config[specprod]['photometry']
@@ -481,9 +489,91 @@ def main():
         redshift_type, redshift_version = rsv[0], 'v0'
     tiles_version = config[specprod]['tiles']
     #
-    # Complete initialization
+    # Complete initialization.
     #
     if options.overwrite:
         db.load_versions(photometry_version, f"{redshift_type}/{redshift_version}",
                          release, specprod, tiles_version)
+    #
+    # Find the tile in the top-level tiles file.
+    #
+    if options.tiles_file is None:
+        tiles_file = findfile('tiles', readonly=True).replace('.fits', '.csv')
+    else:
+        tiles_file = options.tiles_file
+    tiles_table = Table.read(tiles_file, format='ascii.csv')
+    row_index = np.where(tiles_table['TILEID'] == options.tile)[0]
+    if len(row_index) == 1:
+        candidate_tiles = db.Tile.convert(tiles_table, row_index=row_index)
+    elif len(row_index) > 1:
+        db.log.critical("Multiple matching tiles found in %s for tile %d!",
+                        tiles_file, options.tile)
+        return 1
+    else:
+        db.log.critical("No matching tiles found in %s for tile %d!",
+                        tiles_file, options.tile)
+        return 1
+    #
+    # Find the associated exposures.
+    #
+    if options.exposures_file is None:
+        exposures_file = findfile('exposures', readonly=True)
+    else:
+        exposures_file = options.exposures_file
+    exposures_table = Table.read(exposures_file, format='fits', hdu='EXPOSURES')
+    row_index = np.where((exposures_table['TILEID'] == candidate_tiles[0].tileid) & (exposures_table['EFFTIME_SPEC'] > 0))[0]
+    if len(row_index) > 0:
+        load_exposures = db.Exposure.convert(exposures_table, row_index=row_index)
+    else:
+        db.log.critical("No valid exposures found for tile %d, even though EFFTIME_SPEC == %f!",
+                        candidate_tiles[0].tileid, candidate_tiles[0].efftime_spec)
+        return 1
+    frames_table = Table.read(exposures_file, format='fits', hdu='FRAMES')
+    load_frames = list()
+    for exposure in load_exposures:
+        row_index = np.where(frames_table['EXPID'] == exposure.expid)[0]
+        assert len(row_index) > 0
+        load_frames += db.Frame.convert(frames_table, row_index=row_index)
+    try:
+        db.dbSession.add_all(candidate_tiles)
+        db.dbSession.commit()
+    except IntegrityError:
+        db.log.critical("Tile %d has already been loaded!", candidate_tiles[0].tileid)
+        db.dbSession.rollback()
+        return 1
+    db.dbSession.add_all(load_exposures)
+    db.dbSession.commit()
+    db.dbSession.add_all(load_frames)
+    db.dbSession.commit()
+    #
+    # Load photometry.
+    #
+    new_tile = candidate_tiles[0]
+    potential_targets_table = potential_targets(new_tile.tileid)
+    potential_cat = potential_photometry(new_tile, potential_targets_table)
+    potential_targetphot = targetphot(potential_cat)
+    potential_tractorphot = tractorphot(potential_cat)
+    load_photometry = load_photometry(potential_tractorphot)
+    load_targetphot = load_targetphot(potential_targetphot, load_photometry)
+    #
+    # Load targeting table.
+    #
+    load_target = load_target(new_tile, potential_targetphot)
+    #
+    # Load tile/cumulative redshifts.
+    #
+    load_ztile = load_redshift(new_tile)
+    #
+    # Load fiberassign and potential.
+    #
+    load_fiberassign, load_potential = load_fiberassign(new_tile)
+    #
+    # Update global values, if requested.
+    #
+    if options.primary:
+        update_primary()
+        update_q3c()
+    #
+    # Clean up.
+    #
     return 0
