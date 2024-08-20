@@ -37,20 +37,16 @@ tile_template = """#!/bin/{shell}
 #SBATCH --constraint={constraint}
 #SBATCH --nodes=1
 #SBATCH --time={time}
-#SBATCH --job-name=load_specprod_tile_{tileid}
+#SBATCH --job-name=load_specprod_tile_{script_schema}_{tileid:d}
 #SBATCH --output={job_dir}/%x-%j.log
 #SBATCH --licenses=SCRATCH,cfs
 #SBATCH --account=desi
 #SBATCH --mail-type=end,fail
 #SBATCH --mail-user={email}
 module {load} specprod-db/{load_version}
-set patch_dir = /dvs_ro/cfs/cdirs/desicollab/users/${{USER}}
 {export_specprod}
-srun --ntasks=1 load_specprod_tile \\
-     --exposures-file ${{patch_dir}}/{exposures_file} \\
-     --tiles-file ${{patch_dir}}/{tiles_file} \\
-     --schema ${{SPECPROD}} {overwrite} --verbose \\
-     {tileid:d}
+srun --ntasks=1 load_specprod_tile {exposures_file} {tiles_file} \\
+     --schema ${{SPECPROD}} {overwrite} --verbose {tileid:d}
 """
 
 
@@ -81,6 +77,8 @@ def get_options():
     prsr.add_argument('-j', '--job-dir', action='store', dest='job_dir', metavar='DIR',
                       default=os.path.join(os.environ['HOME'], 'Documents', 'Jobs'),
                       help='Write batch job files to DIR (default "%(default)s").')
+    prsr.add_argument('-p', '--patch-tiles', action='store_true', dest='patch_tiles',
+                      help='If --tiles-file is set, --patch-tiles means the file is a patched version of the actual tile file.')
     # prsr.add_argument('-o', '--overwrite', action='store_true', dest='overwrite',
     #                   help='Delete any existing file(s) before loading.')
     prsr.add_argument('-q', '--qos', action='store', dest='qos',
@@ -169,6 +167,7 @@ def prepare_template(options):
                  'job_dir': options.job_dir,
                  'email': options.email,
                  'load_version': load_version,
+                 'export_root': export_root,
                  'export_specprod': export_specprod,
                  'overwrite': overwrite}
             scripts[script_name] = template.format(**t)
@@ -188,6 +187,15 @@ def prepare_template(options):
                 wall_time = '6:00:00'
             else:
                 wall_time = '1:00:00'
+            if options.patch_tiles:
+                tiles_file = '--tiles-file {0}'.format(options.tiles_file)
+                if options.exposures_file is None:
+                    exposures_file = ''
+                else:
+                    exposures_file = '--exposures-file {0}'.format(options.exposures_file)
+            else:
+                tiles_file = ''
+                exposures_file = ''
             script_name = 'load_specprod_tile_{schema}_{tileid:d}.{extension}'.format(schema=script_schema, tileid=tileid, extension=extension)
             t = {'shell': shell,
                  'qos': options.qos,
@@ -202,8 +210,8 @@ def prepare_template(options):
                  'load_version': load_version,
                  'export_root': export_root,
                  'export_specprod': export_specprod,
-                 'tiles_file': os.path.basename(options.tiles_file),
-                 'exposures_file': os.path.basename(options.exposures_file),
+                 'tiles_file': tiles_file,
+                 'exposures_file': exposures_file,
                  'overwrite': overwrite}
             scripts[script_name] = tile_template.format(**t)
     return scripts
