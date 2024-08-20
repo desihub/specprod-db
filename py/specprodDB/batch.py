@@ -30,6 +30,29 @@ srun --ntasks=1 load_specprod_db {overwrite} \\
     --load {stage} --schema {schema} ${{DESI_ROOT}}
 """
 
+
+tile_template = """#!/bin/{shell}
+#SBATCH --qos={qos}
+#SBATCH --constraint={constraint}
+#SBATCH --nodes=1
+#SBATCH --time={time}
+#SBATCH --job-name=load_specprod_tile_{tileid}
+#SBATCH --output={job_dir}/%x-%j.log
+#SBATCH --licenses=SCRATCH,cfs
+#SBATCH --account=desi
+#SBATCH --mail-type=end,fail
+#SBATCH --mail-user={email}
+module {load} specprod-db/{load_version}
+set patch_dir = /dvs_ro/cfs/cdirs/desicollab/users/${{USER}}
+{export_specprod}
+srun --ntasks=1 load_specprod_tile \\
+     --exposures-file ${{patch_dir}}/exposures-daily-patched-with-jura.fits \\
+     --tiles-file ${{patch_dir}}/tiles-daily-patched-with-jura.csv \\
+     --schema ${{SPECPROD}} {overwrite} --verbose \\
+     {tileid}
+"""
+
+
 times = {'exposures': '00:10:00',
          'photometry': '04:00:00'}
 
@@ -49,6 +72,8 @@ def get_options():
     prsr.add_argument('-C', '--constraint', action='store', dest='constraint',
                       metavar='CONSTRAINT', default='cpu',
                       help='Run jobs with CONSTRAINT (default "%(default)s").')
+    prsr.add_argument('-e', '--exposures-file', action='store', dest='exposures_file', metavar='FILE',
+                      help='Override the top-level exposures file associated with a specprod.')
     # prsr.add_argument('-H', '--hostname', action='store', dest='hostname',
     #                   metavar='HOSTNAME', default='specprod-db.desi.lbl.gov',
     #                   help='If specified, connect to a PostgreSQL database on HOSTNAME (default "%(default)s").')
@@ -68,6 +93,8 @@ def get_options():
                       help='Set the schema name in the PostgreSQL database (default "%(default)s").')
     prsr.add_argument('-S', '--swap', action='store_true', dest='swap',
                       help='Perform "module swap" instead of "module load".')
+    prsr.add_argument('-t', '--tiles-file', action='store', dest='tiles_file', metavar='FILE',
+                      help='Override the top-level tiles file associated with a specprod.')
     # prsr.add_argument('-t', '--tiles-path', action='store', dest='tilespath', metavar='PATH',
     #                   help="Load fiberassign data from PATH.")
     # prsr.add_argument('-T', '--target-path', action='store', dest='targetpath', metavar='PATH',
