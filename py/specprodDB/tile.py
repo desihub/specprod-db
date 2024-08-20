@@ -537,12 +537,25 @@ def main():
     try:
         db.dbSession.add_all(candidate_tiles)
         db.dbSession.commit()
-    except IntegrityError:
-        db.log.critical("Tile %d has already been loaded!", candidate_tiles[0].tileid)
+    except IntegrityError as exc:
+        #
+        # IntegrityError is thrown when a tile is already loaded, but also when
+        # a NOT NULL constraint is violated.
+        #
+        db.log.critical("Tile %d cannot be loaded!", candidate_tiles[0].tileid)
+        db.log.critical("Message was: %s", exc.args[0])
         db.dbSession.rollback()
         return 1
-    db.dbSession.add_all(load_exposures)
-    db.dbSession.commit()
+    try:
+        db.dbSession.add_all(load_exposures)
+        db.dbSession.commit()
+    except IntegrityError as exc:
+        db.log.critical("Exposures for tile %d cannot be loaded!", candidate_tiles[0].tileid)
+        db.log.critical("Message was: %s", exc.args[0])
+        db.dbSession.rollback()
+        db.dbSession.delete(candidate_tiles[0])
+        db.dbSession.commit()
+        return 1
     db.dbSession.add_all(load_frames)
     db.dbSession.commit()
     #
