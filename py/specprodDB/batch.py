@@ -29,6 +29,7 @@ module {load} specprod-db/{load_version}
 {export_specprod}
 srun --ntasks=1 load_specprod_db {overwrite} \\
     --load {stage} --schema {schema} ${{DESI_ROOT}}
+{move_script}
 """
 
 
@@ -47,6 +48,7 @@ module {load} specprod-db/{load_version}
 {export_specprod}
 srun --ntasks=1 load_specprod_tile {exposures_file} {tiles_file} \\
      --schema ${{SPECPROD}} {overwrite} --verbose {tileid:d}
+{move_script}
 """
 
 
@@ -128,11 +130,13 @@ def prepare_template(options):
         shell = 'tcsh'
         export_root = f'setenv DESI_ROOT {options.root}'
         export_specprod = f'setenv SPECPROD {options.specprod}'
+        move_script = 'if ( ${{status}} == 0 ) /bin/mv {job_dir}/{script_name} {job_dir}/done'
     else:
         extension = 'sh'
         shell = 'bash'
         export_root = f'export DESI_ROOT={options.root}'
         export_specprod = f'export SPECPROD={options.specprod}'
+        move_script = '[[ $? == 0 ]] && /bin/mv {job_dir}/{script_name} {job_dir}/done'
     scripts = dict()
     load = 'load'
     if options.swap:
@@ -169,7 +173,8 @@ def prepare_template(options):
                  'load_version': load_version,
                  'export_root': export_root,
                  'export_specprod': export_specprod,
-                 'overwrite': overwrite}
+                 'overwrite': overwrite,
+                 'move_script': move_script.format(job_dir=options.job_dir, script_name=script_name)}
             scripts[script_name] = template.format(**t)
     else:
         if options.tiles_file.endswith('.csv'):
@@ -212,7 +217,8 @@ def prepare_template(options):
                  'export_specprod': export_specprod,
                  'tiles_file': tiles_file,
                  'exposures_file': exposures_file,
-                 'overwrite': overwrite}
+                 'overwrite': overwrite,
+                 'move_script': move_script.format(job_dir=options.job_dir, script_name=script_name)}
             scripts[script_name] = tile_template.format(**t)
     return scripts
 
