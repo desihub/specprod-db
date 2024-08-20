@@ -9,6 +9,7 @@ Generate batch scripts for loading the database.
 import os
 from sys import argv
 from argparse import ArgumentParser
+from astropy.table import Table
 from . import __version__ as specprod_db_version
 
 
@@ -46,10 +47,10 @@ module {load} specprod-db/{load_version}
 set patch_dir = /dvs_ro/cfs/cdirs/desicollab/users/${{USER}}
 {export_specprod}
 srun --ntasks=1 load_specprod_tile \\
-     --exposures-file ${{patch_dir}}/exposures-daily-patched-with-jura.fits \\
-     --tiles-file ${{patch_dir}}/tiles-daily-patched-with-jura.csv \\
+     --exposures-file ${{patch_dir}}/{exposures_file} \\
+     --tiles-file ${{patch_dir}}/{tiles_file} \\
      --schema ${{SPECPROD}} {overwrite} --verbose \\
-     {tileid}
+     {tileid:d}
 """
 
 
@@ -142,35 +143,69 @@ def prepare_template(options):
         load_version = specprod_db_version
     else:
         load_version = options.specprod_version
-    for stage in ('exposures', 'photometry', 'targetphot', 'target', 'redshift', 'fiberassign'):
-        if stage == 'exposures':
-            overwrite = '--overwrite'
+    if options.schema == '${SPECPROD}':
+        script_schema = options.specprod
+    else:
+        script_schema = options.schema
+    if options.tiles_file is None:
+        for stage in ('exposures', 'photometry', 'targetphot', 'target', 'redshift', 'fiberassign'):
+            if stage == 'exposures':
+                overwrite = '--overwrite'
+            else:
+                overwrite = ''
+            try:
+                wall_time = times[stage]
+            except KeyError:
+                wall_time = '12:00:00'
+            script_name = 'load_specprod_db_{schema}_{stage}.{extension}'.format(schema=script_schema, stage=stage, extension=extension)
+            t = {'shell': shell,
+                 'qos': options.qos,
+                 'constraint': options.constraint,
+                 'time': wall_time,
+                 'script_schema': script_schema,
+                 'load': load,
+                 'schema': options.schema,
+                 'stage': stage,
+                 'job_dir': options.job_dir,
+                 'email': options.email,
+                 'load_version': load_version,
+                 'export_specprod': export_specprod,
+                 'overwrite': overwrite}
+            scripts[script_name] = template.format(**t)
+    else:
+        if options.tiles_file.endswith('.csv'):
+            tiles_table = Table.read(options.tiles_file, format='ascii.csv')
         else:
-            overwrite = ''
-        if options.schema == '${SPECPROD}':
-            script_schema = options.specprod
-        else:
-            script_schema = options.schema
-        script_name = 'load_specprod_db_{schema}_{stage}.{extension}'.format(schema=script_schema, stage=stage, extension=extension)
-        try:
-            wall_time = times[stage]
-        except KeyError:
-            wall_time = '12:00:00'
-        t = {'shell': shell,
-             'qos': options.qos,
-             'constraint': options.constraint,
-             'time': wall_time,
-             'script_schema': script_schema,
-             'load': load,
-             'schema': options.schema,
-             'stage': stage,
-             'job_dir': options.job_dir,
-             'email': options.email,
-             'load_version': load_version,
-             'export_root': export_root,
-             'export_specprod': export_specprod,
-             'overwrite': overwrite}
-        scripts[script_name] = template.format(**t)
+            tiles_table = Table.read(options.tiles_file, format='fits')
+        for tile_index, tileid in enumerate(tiles_table['TILEID'].tolist()):
+            if tile_index == 0:
+                overwrite = '--overwrite'
+            elif tile_index == len(tiles_table) - 1:
+                overwrite = '--primary'
+            else:
+                overwrite = ''
+            if overwrite == '--primary':
+                wall_time = '6:00:00'
+            else:
+                wall_time = '1:00:00'
+            script_name = 'load_specprod_tile_{schema}_{tileid:d}.{extension}'.format(schema=script_schema, tileid=tileid, extension=extension)
+            t = {'shell': shell,
+                 'qos': options.qos,
+                 'constraint': options.constraint,
+                 'time': wall_time,
+                 'script_schema': script_schema,
+                 'load': load,
+                 'schema': options.schema,
+                 'tileid': tileid,
+                 'job_dir': options.job_dir,
+                 'email': options.email,
+                 'load_version': load_version,
+                 'export_root': export_root,
+                 'export_specprod': export_specprod,
+                 'tiles_file': os.path.basename(options.tiles_file),
+                 'exposures_file': os.path.basename(options.exposures_file),
+                 'overwrite': overwrite}
+            scripts[script_name] = tile_template.format(**t)
     return scripts
 
 
