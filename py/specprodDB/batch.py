@@ -130,13 +130,13 @@ def prepare_template(options):
         shell = 'tcsh'
         export_root = f'setenv DESI_ROOT {options.root}'
         export_specprod = f'setenv SPECPROD {options.specprod}'
-        move_script = 'if ( ${{status}} == 0 ) /bin/mv {job_dir}/{script_name} {job_dir}/done'
+        move_script = 'if ( ${{status}} == 0 ) /bin/mv -v {job_dir}/{script_name} {job_dir}/done'
     else:
         extension = 'sh'
         shell = 'bash'
         export_root = f'export DESI_ROOT={options.root}'
         export_specprod = f'export SPECPROD={options.specprod}'
-        move_script = '[[ $? == 0 ]] && /bin/mv {job_dir}/{script_name} {job_dir}/done'
+        move_script = '[[ $? == 0 ]] && /bin/mv -v {job_dir}/{script_name} {job_dir}/done'
     scripts = dict()
     load = 'load'
     if options.swap:
@@ -181,7 +181,10 @@ def prepare_template(options):
             tiles_table = Table.read(options.tiles_file, format='ascii.csv')
         else:
             tiles_table = Table.read(options.tiles_file, format='fits')
-        for tile_index, tileid in enumerate(tiles_table['TILEID'].tolist()):
+        good_tiles = ((tiles_table['LASTNIGHT'] >= 20201214) &
+                      (tiles_table['EFFTIME_SPEC'] > 0) &
+                      (~tiles_table['PROGRAM'].mask))
+        for tile_index, tileid in enumerate(tiles_table[good_tiles]['TILEID'].tolist()):
             if tile_index == 0:
                 overwrite = '--overwrite'
             elif tile_index == len(tiles_table) - 1:

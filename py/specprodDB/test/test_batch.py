@@ -74,7 +74,7 @@ export DESI_ROOT=/global/cfs/cdirs/desi
 export SPECPROD=fuji
 srun --ntasks=1 load_specprod_db --overwrite \\
     --load exposures --schema ${{SPECPROD}} ${{DESI_ROOT}}
-[[ $? == 0 ]] && /bin/mv /home/test/Documents/Jobs/load_specprod_db_fuji_exposures.sh /home/test/Documents/Jobs/done
+[[ $? == 0 ]] && /bin/mv -v /home/test/Documents/Jobs/load_specprod_db_fuji_exposures.sh /home/test/Documents/Jobs/done
 """
         with patch('os.environ', {'HOME': '/home/test'}):
             options = get_options()
@@ -102,7 +102,7 @@ export DESI_ROOT=/global/cfs/cdirs/desi
 export SPECPROD=fuji
 srun --ntasks=1 load_specprod_db  \\
     --load photometry --schema fuji_test ${{DESI_ROOT}}
-[[ $? == 0 ]] && /bin/mv /home/test/Documents/Jobs/load_specprod_db_fuji_test_photometry.sh /home/test/Documents/Jobs/done
+[[ $? == 0 ]] && /bin/mv -v /home/test/Documents/Jobs/load_specprod_db_fuji_test_photometry.sh /home/test/Documents/Jobs/done
 """
         with patch('os.environ', {'HOME': '/home/test'}):
             options = get_options()
@@ -130,7 +130,7 @@ export DESI_ROOT=/global/cfs/cdirs/desi
 export SPECPROD=fuji
 srun --ntasks=1 load_specprod_db  \\
     --load photometry --schema ${{SPECPROD}} ${{DESI_ROOT}}
-[[ $? == 0 ]] && /bin/mv /home/test/Documents/Jobs/load_specprod_db_fuji_photometry.sh /home/test/Documents/Jobs/done
+[[ $? == 0 ]] && /bin/mv -v /home/test/Documents/Jobs/load_specprod_db_fuji_photometry.sh /home/test/Documents/Jobs/done
 """
         with patch('os.environ', {'HOME': '/home/test'}):
             options = get_options()
