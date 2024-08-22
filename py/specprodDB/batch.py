@@ -187,7 +187,7 @@ def prepare_template(options):
         for tile_index, tileid in enumerate(tiles_table[good_tiles]['TILEID'].tolist()):
             if tile_index == 0:
                 overwrite = '--overwrite'
-            elif tile_index == len(tiles_table) - 1:
+            elif tile_index == len(tiles_table[good_tiles]) - 1:
                 overwrite = '--primary'
             else:
                 overwrite = ''
