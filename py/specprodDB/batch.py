@@ -24,7 +24,7 @@ template = """#!/bin/{shell}
 #SBATCH --account=desi
 #SBATCH --mail-type=end,fail
 #SBATCH --mail-user={email}
-module {load} specprod-db/{load_version}
+module swap specprod-db/{load_version}
 {export_root}
 {export_specprod}
 srun --ntasks=1 load_specprod_db {overwrite} \\
@@ -46,7 +46,7 @@ tile_template = """#!/bin/{shell}
 #SBATCH --account=desi
 #SBATCH --mail-type=end,fail
 #SBATCH --mail-user={email}
-module {load} specprod-db/{load_version}
+module swap specprod-db/{load_version}
 {export_specprod}
 srun --ntasks=1 load_specprod_tile {exposures_file} {tiles_file} \\
      --schema ${{SPECPROD}} {overwrite} --verbose {tileid:d}
@@ -96,8 +96,8 @@ def get_options():
     prsr.add_argument('-s', '--schema', action='store', dest='schema',
                       metavar='SCHEMA', default='${SPECPROD}',
                       help='Set the schema name in the PostgreSQL database (default "%(default)s").')
-    prsr.add_argument('-S', '--swap', action='store_true', dest='swap',
-                      help='Perform "module swap" instead of "module load".')
+    # prsr.add_argument('-S', '--swap', action='store_true', dest='swap',
+    #                   help='Perform "module swap" instead of "module load".')
     prsr.add_argument('-t', '--tiles-file', action='store', dest='tiles_file', metavar='FILE',
                       help='Override the top-level tiles file associated with a specprod.')
     # prsr.add_argument('-t', '--tiles-path', action='store', dest='tilespath', metavar='PATH',
@@ -144,9 +144,6 @@ def prepare_template(options):
         save_status = 'load_status=$?'
         move_script = '[[ ${{load_status}} == 0 ]] && /bin/mv -v {job_dir}/{script_name} {job_dir}/done'
     scripts = dict()
-    load = 'load'
-    if options.swap:
-        load = 'swap'
     if options.specprod_version is None:
         load_version = specprod_db_version
     else:
@@ -171,7 +168,7 @@ def prepare_template(options):
                  'constraint': options.constraint,
                  'time': wall_time,
                  'script_schema': script_schema,
-                 'load': load,
+                 'load_version': load_version,
                  'schema': options.schema,
                  'stage': stage,
                  'job_dir': options.job_dir,
@@ -181,7 +178,7 @@ def prepare_template(options):
                  'export_specprod': export_specprod,
                  'overwrite': overwrite,
                  'save_status': save_status,
-                 'move_script': move_script.format(job_dir=options.job_dir, script_name=script_name),}
+                 'move_script': move_script.format(job_dir=options.job_dir, script_name=script_name)}
             scripts[script_name] = template.format(**t)
     else:
         if options.tiles_file.endswith('.csv'):
@@ -217,7 +214,7 @@ def prepare_template(options):
                  'constraint': options.constraint,
                  'time': wall_time,
                  'script_schema': script_schema,
-                 'load': load,
+                 'load_version': load_version,
                  'schema': options.schema,
                  'tileid': tileid,
                  'job_dir': options.job_dir,
@@ -229,7 +226,7 @@ def prepare_template(options):
                  'exposures_file': exposures_file,
                  'overwrite': overwrite,
                  'save_status': save_status,
-                 'move_script': move_script.format(job_dir=options.job_dir, script_name=script_name),}
+                 'move_script': move_script.format(job_dir=options.job_dir, script_name=script_name)}
             scripts[script_name] = tile_template.format(**t)
     return scripts
 
