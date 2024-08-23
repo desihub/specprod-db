@@ -5,10 +5,11 @@
 function usage() {
     local execName=$(basename $0)
     (
-        echo "${execName} [-s SHELL] [-t] [-v]"
+        echo "${execName} [-h] [-s SHELL] [-t] [-v]"
         echo ""
         echo "Submit load_specprod_tile jobs in sequence."
         echo ""
+        echo "       -h = Print help message and exit."
         echo " -s SHELL = Scripts have extension SHELL, default 'sh'."
         echo "       -t = Test mode.  Do not make any changes.  Implies -v."
         echo "       -v = Verbose mode. Print lots of extra information."
@@ -20,14 +21,16 @@ function usage() {
 shell=sh
 test=/usr/bin/false
 verbose=/usr/bin/false
-while getopts s:tv argname; do
+while getopts hs:tv argname; do
     case ${argname} in
+        h) usage; exit 0 ;;
         s) shell=${OPTARG} ;;
         t) test=/usr/bin/true; verbose=/usr/bin/true ;;
-        v) verbose=/usr/bin/true
+        v) verbose=/usr/bin/true ;;
         *) usage; exit 1 ;;
     esac
 done
+shift $((OPTIND - 1))
 #
 # Find the first tile and submit it.
 #
