@@ -567,7 +567,7 @@ def main():
     potential_targetphot = targetphot(potential_cat)
     potential_tractorphot = tractorphot(potential_cat)
     loaded_photometry = load_photometry(potential_tractorphot)
-    loaded_targetphot = load_targetphot(potential_targetphot, load_photometry)
+    loaded_targetphot = load_targetphot(potential_targetphot, loaded_photometry)
     #
     # Load targeting table.
     #
