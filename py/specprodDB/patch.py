@@ -10,6 +10,7 @@ to the ``daily`` specprod, but others could be patched, in principle.
 import os
 import datetime
 import sys
+from shutil import copy2
 from argparse import ArgumentParser
 import numpy as np
 from astropy.table import Table, join
@@ -271,13 +272,29 @@ def main():
     #
     # Write out data.
     #
-    for existing in (patched['tiles_file'], patched['exposures_file'], patched['exposures_file'].replace('.fits', '.csv')):
+    dst_original_tiles = os.path.join(options.output, os.path.basename(dst['tiles_file']).replace(f"tiles-{options.dst}", f"tiles-{options.dst}-original-{timestamp}"))
+    dst_original_exposures = os.path.join(options.output, os.path.basename(dst['exposures_file']).replace(f"exposures-{options.dst}", f"exposures-{options.dst}-original-{timestamp}"))
+    for existing in (patched['tiles_file'],
+                     patched['exposures_file'],
+                     patched['exposures_file'].replace('.fits', '.csv'),
+                     dst_original_tiles,
+                     dst_original_exposures):
         if os.path.exists(existing):
             if options.overwrite:
                 log.warning("%s exists and will be overwritten.", existing)
             else:
                 log.error("%s exists and --overwrite was not specified.", existing)
                 return 1
+    if os.path.exists(dst_original_exposures) and options.overwrite:
+        log.debug("os.remove('%s')", dst_original_exposures)
+        os.remove(dst_original_exposures)
+    log.debug("shutil.copy2('%s', '%s')", dst['exposures_file'], dst_original_exposures)
+    copy2(dst['exposures_file'], dst_original_exposures)
+    if os.path.exists(dst_original_tiles) and options.overwrite:
+        log.debug("os.remove('%s')", dst_original_tiles)
+        os.remove(dst_original_tiles)
+    log.debug("shutil.copy2('%s', '%s')", dst['tiles_file'], dst_original_tiles)
+    copy2(dst['tiles_file'], dst_original_tiles)
     patched['tiles'].write(patched['tiles_file'],
                            format='ascii.csv', overwrite=options.overwrite)
     patched['exposures'].write(patched['exposures_file'].replace('.fits', '.csv'),

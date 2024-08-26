@@ -5,7 +5,7 @@
 import os
 import unittest
 from unittest.mock import patch, mock_open, call
-from ..batch import get_options, get_data
+from ..patch import get_options, get_data
 # from .. import __version__ as specprod_db_version
 
 
