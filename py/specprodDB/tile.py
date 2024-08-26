@@ -566,20 +566,20 @@ def main():
     potential_cat = potential_photometry(new_tile, potential_targets_table)
     potential_targetphot = targetphot(potential_cat)
     potential_tractorphot = tractorphot(potential_cat)
-    load_photometry = load_photometry(potential_tractorphot)
-    load_targetphot = load_targetphot(potential_targetphot, load_photometry)
+    loaded_photometry = load_photometry(potential_tractorphot)
+    loaded_targetphot = load_targetphot(potential_targetphot, load_photometry)
     #
     # Load targeting table.
     #
-    load_target = load_target(new_tile, potential_targetphot)
+    loaded_target = load_target(new_tile, potential_targetphot)
     #
     # Load tile/cumulative redshifts.
     #
-    load_ztile = load_redshift(new_tile)
+    loaded_ztile = load_redshift(new_tile)
     #
     # Load fiberassign and potential.
     #
-    load_fiberassign, load_potential = load_fiberassign(new_tile)
+    loaded_fiberassign, loaded_potential = load_fiberassign(new_tile)
     #
     # Update global values, if requested.
     #
