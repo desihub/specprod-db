@@ -227,7 +227,7 @@ def get_options():
                       help='Use SOURCE_SPECPROD for the most correct data to apply in a patch (default "%(default)s").')
     prsr.add_argument('-d', '--destination', action='store', dest='dst', metavar='PATCH_SPECPROD', default='daily',
                       help='Apply data patches to PATCH_SPECPROD (default "%(default)s").')
-    prsr.add_argument('-o', '--overwrite', action='store_true', dst='overwrite',
+    prsr.add_argument('-o', '--overwrite', action='store_true', dest='overwrite',
                       help='Overwrite any existing files in the output directory.')
     prsr.add_argument('-v', '--verbose', action='store_true', dest='verbose',
                       help='Print extra information.')
