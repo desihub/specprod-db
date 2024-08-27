@@ -1061,7 +1061,7 @@ class Ztile(SchemaMixin, Base):
             elif column.name == 'desiname':
                 data_column = radec_to_desiname(data['TARGET_RA'][row_index], data['TARGET_DEC'][row_index]).tolist()
             elif column.name in default_columns:
-                data_column = [default_columns[column.name]].tolist()
+                data_column = [default_columns[column.name]]*len(row_index)
             elif column.name.startswith('coeff_'):
                 coeff_index = int(column.name.split('_')[1])
                 data_column = data['COEFF'][row_index, coeff_index].tolist()
