@@ -48,7 +48,8 @@ tile_template = """#!/bin/{shell}
 #SBATCH --mail-user={email}
 module swap specprod-db/{load_version}
 {export_specprod}
-srun --ntasks=1 load_specprod_tile {exposures_file} {tiles_file} \\
+srun --ntasks=1 load_specprod_tile {exposures_file} \\
+     {tiles_file} \\
      --schema ${{SPECPROD}} {overwrite} --verbose {tileid:d}
 {save_status}
 {move_script}
@@ -197,7 +198,7 @@ def prepare_template(options):
             if overwrite == '--primary':
                 wall_time = '6:00:00'
             else:
-                wall_time = '1:00:00'
+                wall_time = '00:30:00'
             if options.patch_tiles:
                 tiles_file = '--tiles-file {0}'.format(options.tiles_file)
                 if options.exposures_file is None:
