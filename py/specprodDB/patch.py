@@ -44,8 +44,10 @@ def patch_frames(src_frames, dst_frames):
     dst_frames_join['FRAMEID'] = np.array([100*row['EXPID'] + cameraid(row['CAMERA']) for row in dst_frames])
     dst_frames_join['DST_INDEX'] = np.arange(len(dst_frames))
     joined_frames = join(src_frames_join, dst_frames_join, join_type='outer', keys='FRAMEID')
-    src_frames_index = joined_frames[(~joined_frames['SRC_INDEX'].mask) & (~joined_frames['DST_INDEX'].mask)]['SRC_INDEX']
-    dst_frames_index = joined_frames[(~joined_frames['SRC_INDEX'].mask) & (~joined_frames['DST_INDEX'].mask)]['DST_INDEX']
+    src_frames_index = joined_frames[(~joined_frames['SRC_INDEX'].mask) &
+                                     (~joined_frames['DST_INDEX'].mask)]['SRC_INDEX']
+    dst_frames_index = joined_frames[(~joined_frames['SRC_INDEX'].mask) &
+                                     (~joined_frames['DST_INDEX'].mask)]['DST_INDEX']
     dst_frames_patched = dst_frames.copy()
     for column in dst_frames_patched.colnames:
         if hasattr(dst_frames_patched[column], 'mask') and not column.startswith('TSNR2_'):
@@ -87,8 +89,10 @@ def patch_exposures(src_exposures, dst_exposures, first_night=None):
     dst_exposures_join['EXPID'] = dst_exposures['EXPID']
     dst_exposures_join['DST_INDEX'] = np.arange(len(dst_exposures))
     joined_exposures = join(src_exposures_join, dst_exposures_join, join_type='outer', keys='EXPID')
-    src_exposures_index = joined_exposures[(~joined_exposures['SRC_INDEX'].mask) & (~joined_exposures['DST_INDEX'].mask)]['SRC_INDEX']
-    dst_exposures_index = joined_exposures[(~joined_exposures['SRC_INDEX'].mask) & (~joined_exposures['DST_INDEX'].mask)]['DST_INDEX']
+    src_exposures_index = joined_exposures[(~joined_exposures['SRC_INDEX'].mask) &
+                                           (~joined_exposures['DST_INDEX'].mask)]['SRC_INDEX']
+    dst_exposures_index = joined_exposures[(~joined_exposures['SRC_INDEX'].mask) &
+                                           (~joined_exposures['DST_INDEX'].mask)]['DST_INDEX']
     #
     # Apply patches from src_exposures.
     #
@@ -101,7 +105,8 @@ def patch_exposures(src_exposures, dst_exposures, first_night=None):
                  'FIBERFAC_GFA', 'FIBERFAC_ELG_GFA', 'FIBERFAC_BGS_GFA', 'AIRMASS_GFA',
                  'SKY_MAG_AB_GFA', 'EFFTIME_GFA', 'EFFTIME_DARK_GFA',
                  'EFFTIME_BRIGHT_GFA', 'EFFTIME_BACKUP_GFA')
-    for column in ['TILERA', 'TILEDEC', 'MJD', 'SURVEY'] + [c for c in dst_exposures_patched.colnames if hasattr(dst_exposures_patched[c], 'mask') and c in can_patch]:
+    for column in ['TILERA', 'TILEDEC', 'MJD', 'SURVEY'] + [c for c in dst_exposures_patched.colnames
+                                                            if hasattr(dst_exposures_patched[c], 'mask') and c in can_patch]:
         log.info("Patching exposures column %s.", column)
         if hasattr(src_exposures[column], 'mask'):
             if np.any(src_exposures[column].mask[src_exposures_index]):
@@ -197,10 +202,14 @@ def get_data(options):
         A tuple containing two dictionaries, each containing three
         :class:`~astropy.table.Table` objects, plus some metadata.
     """
-    src_tiles_file = os.path.join(os.environ['DESI_SPECTRO_REDUX'], options.src, f'tiles-{options.src}.csv')
-    src_exposures_file = os.path.join(os.environ['DESI_SPECTRO_REDUX'], options.src, f'exposures-{options.src}.fits')
-    dst_tiles_file = os.path.join(os.environ['DESI_SPECTRO_REDUX'], options.dst, f'tiles-{options.dst}.csv')
-    dst_exposures_file = os.path.join(os.environ['DESI_SPECTRO_REDUX'], options.dst, f'exposures-{options.dst}.fits')
+    src_tiles_file = os.path.join(os.environ['DESI_SPECTRO_REDUX'], options.src,
+                                  f'tiles-{options.src}.csv')
+    src_exposures_file = os.path.join(os.environ['DESI_SPECTRO_REDUX'], options.src,
+                                      f'exposures-{options.src}.fits')
+    dst_tiles_file = os.path.join(os.environ['DESI_SPECTRO_REDUX'], options.dst,
+                                  f'tiles-{options.dst}.csv')
+    dst_exposures_file = os.path.join(os.environ['DESI_SPECTRO_REDUX'], options.dst,
+                                      f'exposures-{options.dst}.fits')
     src = {'tiles': Table.read(src_tiles_file, format='ascii.csv'),
            'tiles_file': src_tiles_file,
            'exposures': Table.read(src_exposures_file, format='fits', hdu='EXPOSURES'),
@@ -245,7 +254,6 @@ def main():
     :class:`int`
         An integer suitable for passing to :func:`sys.exit`.
     """
-    global log
     #
     # command-line arguments.
     #
