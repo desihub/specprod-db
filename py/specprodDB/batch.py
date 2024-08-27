@@ -186,8 +186,7 @@ def prepare_template(options):
         else:
             tiles_table = Table.read(options.tiles_file, format='fits')
         good_tiles = ((tiles_table['LASTNIGHT'] >= 20201214) &
-                      (tiles_table['EFFTIME_SPEC'] > 0) &
-                      (~tiles_table['PROGRAM'].mask))
+                      (tiles_table['EFFTIME_SPEC'] > 0))
         for tile_index, tileid in enumerate(tiles_table[good_tiles]['TILEID'].tolist()):
             if tile_index == 0:
                 overwrite = '--overwrite'
