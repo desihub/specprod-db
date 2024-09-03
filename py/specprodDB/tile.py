@@ -295,8 +295,15 @@ def load_redshift(tile, spgrp='cumulative'):
                                                 readonly=True, return_exists=True)
         if redrock_exists:
             redrock_files.append(redrock_file)
+        else:
+            zbest_file = redrock_file.replace('redrock', 'zbest')
+            if os.path.exists(zbest_file):
+                db.log.info('Using %s instead of %s.',
+                            os.path.basename(zbest_file),
+                            os.path.basename(redrock_file))
+                redrock_files.append(zbest_file)
     if len(redrock_files) == 0:
-        db.log.warning("No %s redrock files found for tile %d!", spgrp, tile.tileid)
+        db.log.warning("No %s redrock or zbest files found for tile %d!", spgrp, tile.tileid)
         return []
     load_ztile = list()
     for rr in redrock_files:
@@ -304,11 +311,15 @@ def load_redshift(tile, spgrp='cumulative'):
                                                   recoadd_fibermap=True,
                                                   pertile=True)
         assert (expfibermap['TILEID'] == tile.tileid).all()
-        firstnight = np.unique(expfibermap['NIGHT']).tolist()
-        assert len(firstnight) == 1
+        #
+        # In non-daily specprod, firstnight is a minimum over all petals.
+        # However here, we are doing a minimum over one petal.
+        # Compare the FIRSTNIGHT calculation in desispec.scripts.zcatalog.
+        #
+        firstnight = np.min(expfibermap['NIGHT']).tolist()
         row_index = no_sky(redrock_table)
         load_ztile += db.Ztile.convert(redrock_table, tile.survey, tile.program,
-                                       tile.tileid, firstnight[0],
+                                       tile.tileid, firstnight,
                                        row_index=row_index)
     if len(load_ztile) > 0:
         db.dbSession.add_all(load_ztile)
