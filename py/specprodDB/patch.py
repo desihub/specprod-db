@@ -50,10 +50,25 @@ def patch_frames(src_frames, dst_frames):
                                      (~joined_frames['DST_INDEX'].mask)]['DST_INDEX']
     dst_frames_patched = dst_frames.copy()
     for column in dst_frames_patched.colnames:
+        if hasattr(src_frames[column], 'mask'):
+            if np.any(src_frames[column].mask[src_frames_index]):
+                #
+                # For simplicity, the code below replaces all masked values,
+                # but further cuts will restrict to the rows we care about.
+                #
+                log.info("Replacing masked values in src_frames column %s with zero.", column)
+                src_frames[column][src_frames[column].mask] = 0
+                src_frames[column].mask[src_frames[column].mask] = False
         if hasattr(dst_frames_patched[column], 'mask') and not column.startswith('TSNR2_'):
-            log.info("Patching frames column %s.", column)
-            dst_frames_patched[column][dst_frames_index] = src_frames[column][src_frames_index]
-            dst_frames_patched[column].mask[dst_frames_index] = False
+            if np.any(dst_frames_patched[column].mask[dst_frames_index]):
+                log.info("Patching dst_frames column %s.", column)
+                src_frames_matched = src_frames[column][src_frames_index]
+                dst_frames_matched = dst_frames_patched[column][dst_frames_index]
+                dst_frames_mask_matched = dst_frames_patched[column].mask[dst_frames_index]
+                dst_frames_matched[dst_frames_mask_matched] = src_frames_matched[dst_frames_mask_matched]
+                dst_frames_matched.mask[dst_frames_mask_matched] = False
+                # dst_frames_patched[column][dst_frames_index] = src_frames[column][src_frames_index]
+                # dst_frames_patched[column].mask[dst_frames_index] = False
     return dst_frames_patched
 
 
@@ -107,14 +122,45 @@ def patch_exposures(src_exposures, dst_exposures, first_night=None):
                  'EFFTIME_BRIGHT_GFA', 'EFFTIME_BACKUP_GFA')
     for column in ['TILERA', 'TILEDEC', 'MJD', 'SURVEY'] + [c for c in dst_exposures_patched.colnames
                                                             if hasattr(dst_exposures_patched[c], 'mask') and c in can_patch]:
-        log.info("Patching exposures column %s.", column)
         if hasattr(src_exposures[column], 'mask'):
             if np.any(src_exposures[column].mask[src_exposures_index]):
+                #
+                # For simplicity, the code below replaces all masked values,
+                # but further cuts will restrict to the rows we care about.
+                #
+                log.info("Replacing masked values in src_exposures column %s with zero.", column)
                 src_exposures[column][src_exposures[column].mask] = 0
                 src_exposures[column].mask[src_exposures[column].mask] = False
-        dst_exposures_patched[column][dst_exposures_index] = src_exposures[column][src_exposures_index]
+        #
+        # Some columns may not be masked, but we want to copy values from src_exposures anyway.
+        #
+        src_exposures_matched = src_exposures[column][src_exposures_index]
+        dst_exposures_matched = dst_exposures_patched[column][dst_exposures_index]
+        dst_exposures_mask_matched = np.zeros((len(dst_exposures_matched), ), dtype=bool)
         if hasattr(dst_exposures_patched[column], 'mask'):
-            dst_exposures_patched[column].mask[dst_exposures_index] = False
+            if np.any(dst_exposures_patched[column].mask[dst_exposures_index]):
+                dst_exposures_mask_matched = dst_exposures_patched[column].mask[dst_exposures_index]
+                # dst_exposures_patched[column][dst_exposures_index] = src_exposures[column][src_exposures_index]
+                # dst_exposures_patched[column].mask[dst_exposures_index] = False
+        else:
+            if column == 'TILERA' or column == 'TILEDEC':
+                dst_exposures_mask_matched = ((dst_exposures_patched['TILERA'][dst_exposures_index] == 0) &
+                                              (dst_exposures_patched['TILEDEC'][dst_exposures_index] == 0))
+            elif column == 'MJD':
+                dst_exposures_mask_matched = (dst_exposures_patched['MJD'][dst_exposures_index] < 50000)
+            else:
+                assert column == 'SURVEY'
+                dst_exposures_mask_matched = ((dst_exposures_patched['SURVEY'][dst_exposures_index] != 'cmx') &
+                                              (dst_exposures_patched['SURVEY'][dst_exposures_index] != 'sv1') &
+                                              (dst_exposures_patched['SURVEY'][dst_exposures_index] != 'sv2') &
+                                              (dst_exposures_patched['SURVEY'][dst_exposures_index] != 'sv3') &
+                                              (dst_exposures_patched['SURVEY'][dst_exposures_index] != 'main') &
+                                              (dst_exposures_patched['SURVEY'][dst_exposures_index] != 'special'))
+        if np.any(dst_exposures_mask_matched):
+            log.info("Patching dst_exposures column %s.", column)
+            dst_exposures_matched[dst_exposures_mask_matched] = src_exposures_matched[dst_exposures_mask_matched]
+            if hasattr(dst_exposures_patched[column], 'mask'):
+                dst_exposures_matched.mask[dst_exposures_mask_matched] = False
     #
     # QA checks.
     #
@@ -145,11 +191,12 @@ def patch_exposures(src_exposures, dst_exposures, first_night=None):
     #
     # Fill any remaining masked values with zero.
     #
-    for c in dst_exposures_patched.colnames:
-        if hasattr(dst_exposures_patched[c], 'mask'):
-            if dst_exposures_patched[c].mask.any():
-                dst_exposures_patched[c][dst_exposures_patched[c].mask] = 0
-                dst_exposures_patched[c].mask[dst_exposures_patched[c].mask] = False
+    for column in dst_exposures_patched.colnames:
+        if hasattr(dst_exposures_patched[column], 'mask'):
+            if dst_exposures_patched[column].mask.any():
+                log.info("Replacing masked values in dst_exposures column %s with zero.", column)
+                dst_exposures_patched[column][dst_exposures_patched[column].mask] = 0
+                dst_exposures_patched[column].mask[dst_exposures_patched[column].mask] = False
     return dst_exposures_patched
 
 
