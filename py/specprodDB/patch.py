@@ -62,7 +62,8 @@ def patch_frames(src_frames, dst_frames):
             src_frames[column].mask[src_frames[column].mask] = False
         if hasattr(dst_frames_patched[column], 'mask') and not column.startswith('TSNR2_'):
             if np.any(dst_frames_patched[column].mask[dst_frames_index]):
-                log.info("Patching dst_frames column %s.", column)
+                log.info("Patching %d rows in dst_frames column %s.",
+                         np.sum(dst_frames_patched[column].mask[dst_frames_index]), column)
                 src_frames_matched = src_frames[column][src_frames_index]
                 dst_frames_matched = dst_frames_patched[column][dst_frames_index]
                 dst_frames_mask_matched = dst_frames_patched[column].mask[dst_frames_index]
@@ -70,6 +71,7 @@ def patch_frames(src_frames, dst_frames):
                 dst_frames_matched.mask[dst_frames_mask_matched] = False
                 # dst_frames_patched[column][dst_frames_index] = src_frames[column][src_frames_index]
                 # dst_frames_patched[column].mask[dst_frames_index] = False
+                assert not (dst_frames_patched[column] == dst_frames[column]).all()
     return dst_frames_patched
 
 
@@ -159,7 +161,8 @@ def patch_exposures(src_exposures, dst_exposures, first_night=None):
                                               (dst_exposures_patched['SURVEY'][dst_exposures_index] != 'main') &
                                               (dst_exposures_patched['SURVEY'][dst_exposures_index] != 'special'))
         if np.any(dst_exposures_mask_matched):
-            log.info("Patching dst_exposures column %s.", column)
+            log.info("Patching %d rows in dst_exposures column %s.",
+                     np.sum(dst_exposures_mask_matched), column)
             dst_exposures_matched[dst_exposures_mask_matched] = src_exposures_matched[dst_exposures_mask_matched]
             if hasattr(dst_exposures_patched[column], 'mask'):
                 dst_exposures_matched.mask[dst_exposures_mask_matched] = False
