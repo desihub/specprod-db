@@ -68,8 +68,8 @@ def patch_frames(src_frames, dst_frames):
                 assert np.sum(dst_frames_mask_matched) == np.sum(dst_frames_patched[column].mask[dst_frames_index])
                 dst_frames_matched[dst_frames_mask_matched] = src_frames_matched[dst_frames_mask_matched]
                 dst_frames_matched.mask[dst_frames_mask_matched] = False
-                # dst_frames_patched[column][dst_frames_index] = dst_frames_matched
-                # dst_frames_patched[column].mask[dst_frames_index] = dst_frames_matched.mask
+                dst_frames_patched[column][dst_frames_index] = dst_frames_matched
+                dst_frames_patched[column].mask[dst_frames_index] = dst_frames_matched.mask
                 #
                 # Some values should have changed!
                 #
