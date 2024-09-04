@@ -69,8 +69,8 @@ def patch_frames(src_frames, dst_frames):
                 dst_frames_mask_matched = dst_frames_patched[column].mask[dst_frames_index]
                 dst_frames_matched[dst_frames_mask_matched] = src_frames_matched[dst_frames_mask_matched]
                 dst_frames_matched.mask[dst_frames_mask_matched] = False
-                # dst_frames_patched[column][dst_frames_index] = src_frames[column][src_frames_index]
-                # dst_frames_patched[column].mask[dst_frames_index] = False
+                dst_frames_patched[column][dst_frames_index] = dst_frames_matched
+                dst_frames_patched[column].mask[dst_frames_index] = dst_frames_matched.mask
                 assert not (dst_frames_patched[column] == dst_frames[column]).all()
     return dst_frames_patched
 
@@ -164,8 +164,10 @@ def patch_exposures(src_exposures, dst_exposures, first_night=None):
             log.info("Patching %d rows in dst_exposures column %s.",
                      np.sum(dst_exposures_mask_matched), column)
             dst_exposures_matched[dst_exposures_mask_matched] = src_exposures_matched[dst_exposures_mask_matched]
+            dst_exposures_patched[column][dst_exposures_index] = dst_exposures_matched
             if hasattr(dst_exposures_patched[column], 'mask'):
                 dst_exposures_matched.mask[dst_exposures_mask_matched] = False
+                dst_exposures_patched[column].mask[dst_exposures_index] = dst_exposures_matched.mask
     #
     # QA checks.
     #
