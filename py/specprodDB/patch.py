@@ -50,9 +50,7 @@ def patch_frames(src_frames, dst_frames):
                                      (~joined_frames['DST_INDEX'].mask)]['DST_INDEX']
     dst_frames_patched = dst_frames.copy()
     for column in dst_frames_patched.colnames:
-        if (column in src_frames.colnames and
-            hasattr(src_frames[column], 'mask') and
-            np.any(src_frames[column].mask[src_frames_index])):
+        if (column in src_frames.colnames and hasattr(src_frames[column], 'mask') and np.any(src_frames[column].mask[src_frames_index])):
             #
             # For simplicity, the code below replaces all masked values,
             # but further cuts will restrict to the rows we care about.
@@ -67,11 +65,15 @@ def patch_frames(src_frames, dst_frames):
                 src_frames_matched = src_frames[column][src_frames_index]
                 dst_frames_matched = dst_frames_patched[column][dst_frames_index]
                 dst_frames_mask_matched = dst_frames_patched[column].mask[dst_frames_index]
+                assert np.sum(dst_frames_mask_matched) == np.sum(dst_frames_patched[column].mask[dst_frames_index])
                 dst_frames_matched[dst_frames_mask_matched] = src_frames_matched[dst_frames_mask_matched]
                 dst_frames_matched.mask[dst_frames_mask_matched] = False
-                dst_frames_patched[column][dst_frames_index] = dst_frames_matched
-                dst_frames_patched[column].mask[dst_frames_index] = dst_frames_matched.mask
-                assert not (dst_frames_patched[column] == dst_frames[column]).all()
+                # dst_frames_patched[column][dst_frames_index] = dst_frames_matched
+                # dst_frames_patched[column].mask[dst_frames_index] = dst_frames_matched.mask
+                #
+                # Some values should have changed!
+                #
+                assert not (dst_frames_patched[column].data == dst_frames[column].data).all()
     return dst_frames_patched
 
 
@@ -125,9 +127,7 @@ def patch_exposures(src_exposures, dst_exposures, first_night=None):
                  'EFFTIME_BRIGHT_GFA', 'EFFTIME_BACKUP_GFA')
     for column in ['TILERA', 'TILEDEC', 'MJD', 'SURVEY'] + [c for c in dst_exposures_patched.colnames
                                                             if hasattr(dst_exposures_patched[c], 'mask') and c in can_patch]:
-        if (column in src_exposures.colnames and
-            hasattr(src_exposures[column], 'mask') and
-            np.any(src_exposures[column].mask[src_exposures_index])):
+        if (column in src_exposures.colnames and hasattr(src_exposures[column], 'mask') and np.any(src_exposures[column].mask[src_exposures_index])):
             #
             # For simplicity, the code below replaces all masked values,
             # but further cuts will restrict to the rows we care about.
