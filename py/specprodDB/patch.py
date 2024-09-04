@@ -50,15 +50,16 @@ def patch_frames(src_frames, dst_frames):
                                      (~joined_frames['DST_INDEX'].mask)]['DST_INDEX']
     dst_frames_patched = dst_frames.copy()
     for column in dst_frames_patched.colnames:
-        if hasattr(src_frames[column], 'mask'):
-            if np.any(src_frames[column].mask[src_frames_index]):
-                #
-                # For simplicity, the code below replaces all masked values,
-                # but further cuts will restrict to the rows we care about.
-                #
-                log.info("Replacing masked values in src_frames column %s with zero.", column)
-                src_frames[column][src_frames[column].mask] = 0
-                src_frames[column].mask[src_frames[column].mask] = False
+        if (column in src_frames.colnames and
+            hasattr(src_frames[column], 'mask') and
+            np.any(src_frames[column].mask[src_frames_index])):
+            #
+            # For simplicity, the code below replaces all masked values,
+            # but further cuts will restrict to the rows we care about.
+            #
+            log.info("Replacing masked values in src_frames column %s with zero.", column)
+            src_frames[column][src_frames[column].mask] = 0
+            src_frames[column].mask[src_frames[column].mask] = False
         if hasattr(dst_frames_patched[column], 'mask') and not column.startswith('TSNR2_'):
             if np.any(dst_frames_patched[column].mask[dst_frames_index]):
                 log.info("Patching dst_frames column %s.", column)
@@ -122,15 +123,16 @@ def patch_exposures(src_exposures, dst_exposures, first_night=None):
                  'EFFTIME_BRIGHT_GFA', 'EFFTIME_BACKUP_GFA')
     for column in ['TILERA', 'TILEDEC', 'MJD', 'SURVEY'] + [c for c in dst_exposures_patched.colnames
                                                             if hasattr(dst_exposures_patched[c], 'mask') and c in can_patch]:
-        if hasattr(src_exposures[column], 'mask'):
-            if np.any(src_exposures[column].mask[src_exposures_index]):
-                #
-                # For simplicity, the code below replaces all masked values,
-                # but further cuts will restrict to the rows we care about.
-                #
-                log.info("Replacing masked values in src_exposures column %s with zero.", column)
-                src_exposures[column][src_exposures[column].mask] = 0
-                src_exposures[column].mask[src_exposures[column].mask] = False
+        if (column in src_exposures.colnames and
+            hasattr(src_exposures[column], 'mask') and
+            np.any(src_exposures[column].mask[src_exposures_index])):
+            #
+            # For simplicity, the code below replaces all masked values,
+            # but further cuts will restrict to the rows we care about.
+            #
+            log.info("Replacing masked values in src_exposures column %s with zero.", column)
+            src_exposures[column][src_exposures[column].mask] = 0
+            src_exposures[column].mask[src_exposures[column].mask] = False
         #
         # Some columns may not be masked, but we want to copy values from src_exposures anyway.
         #
