@@ -237,7 +237,7 @@ def patch_tiles(src_tiles, dst_tiles):
     dst_tiles_join = Table()
     dst_tiles_join['TILEID'] = dst_tiles['TILEID']
     dst_tiles_join['DST_INDEX'] = np.arange(len(dst_tiles))
-    joined_tiles = join(src_tiles_join, dst_tiles_join, join_type='outer', keys='EXPID')
+    joined_tiles = join(src_tiles_join, dst_tiles_join, join_type='outer', keys='TILEID')
     src_tiles_index = joined_tiles[(~joined_tiles['SRC_INDEX'].mask) &
                                    (~joined_tiles['DST_INDEX'].mask)]['SRC_INDEX']
     dst_tiles_index = joined_tiles[(~joined_tiles['SRC_INDEX'].mask) &
