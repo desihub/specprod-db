@@ -141,16 +141,14 @@ def patch_exposures(src_exposures, dst_exposures, first_night=None):
         src_exposures_matched = src_exposures[column][src_exposures_index]
         dst_exposures_matched = dst_exposures_patched[column][dst_exposures_index]
         dst_exposures_mask_matched = np.zeros((len(dst_exposures_matched), ), dtype=bool)
+        dst_exposures_bad_coord = ((dst_exposures_patched['TILERA'][dst_exposures_index] == 0) &
+                                   (dst_exposures_patched['TILEDEC'][dst_exposures_index] == 0))
         if hasattr(dst_exposures_patched[column], 'mask'):
             if np.any(dst_exposures_patched[column].mask[dst_exposures_index]):
                 dst_exposures_mask_matched = dst_exposures_patched[column].mask[dst_exposures_index]
         else:
-            if column == 'TILERA':
-                dst_exposures_mask_matched = ((dst_exposures_patched['TILERA'][dst_exposures_index] == 0) &
-                                              (dst_exposures_patched['TILEDEC'][dst_exposures_index] == 0))
-            elif column == 'TILEDEC':
-                dst_exposures_mask_matched = ((dst_exposures_patched['TILERA'][dst_exposures_index] == 0) &
-                                              (dst_exposures_patched['TILEDEC'][dst_exposures_index] == 0))
+            if column == 'TILERA' or column == 'TILEDEC':
+                dst_exposures_mask_matched = dst_exposures_bad_coord
             elif column == 'MJD':
                 dst_exposures_mask_matched = (dst_exposures_patched['MJD'][dst_exposures_index] < 50000)
             else:
