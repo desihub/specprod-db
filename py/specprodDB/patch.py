@@ -194,9 +194,14 @@ def patch_exposures(src_exposures, dst_exposures, first_night=None):
     assert (dst_exposures_patched['FAPRGRM'] == dst_exposures['FAPRGRM']).all()
     assert (dst_exposures_patched['FAFLAVOR'] == dst_exposures['FAFLAVOR']).all()
     #
-    # Patch missing MJD.
+    # Patch missing MJD. We're only going to patch exposures that satisfy
+    # EFFTIME_SPEC > 0 and NIGHT >= first_src_night *because*, empirically,
+    # we know that we *can* obtain MJD from the raw data headers.
+    # Outside of that range, that is not necessarily the case.
     #
-    missing_mjd = (dst_exposures_patched['MJD'] < 50000)
+    missing_mjd = ((dst_exposures_patched['MJD'] < 50000) &
+                   (dst_exposures_patched['EFFTIME_SPEC'] > 0) &
+                   (dst_exposures_patched['NIGHT'] >= first_night))
     for row in dst_exposures_patched[missing_mjd]:
         raw_data_file = os.path.join(os.environ['DESI_SPECTRO_DATA'],
                                      "{0:08d}".format(row['NIGHT']),
