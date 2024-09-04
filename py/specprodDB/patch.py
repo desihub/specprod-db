@@ -239,10 +239,17 @@ def patch_tiles(src_tiles, dst_tiles):
     dst_tiles_join['TILEID'] = dst_tiles['TILEID']
     dst_tiles_join['DST_INDEX'] = np.arange(len(dst_tiles))
     joined_tiles = join(src_tiles_join, dst_tiles_join, join_type='outer', keys='TILEID')
-    src_tiles_index = joined_tiles[(~joined_tiles['SRC_INDEX'].mask) &
-                                   (~joined_tiles['DST_INDEX'].mask)]['SRC_INDEX']
-    dst_tiles_index = joined_tiles[(~joined_tiles['SRC_INDEX'].mask) &
-                                   (~joined_tiles['DST_INDEX'].mask)]['DST_INDEX']
+    #
+    # Sometimes every tile in src is also in dst.
+    #
+    if hasattr(joined_tiles['SRC_INDEX'], 'mask'):
+        good_join = (~joined_tiles['SRC_INDEX'].mask)
+    else:
+        good_join = (joined_tiles['SRC_INDEX'] >= 0)
+    if hasattr(joined_tiles['DST_INDEX'], 'mask'):
+        good_join = good_join & (~joined_tiles['SRC_INDEX'].mask)
+    src_tiles_index = joined_tiles[good_join]['SRC_INDEX']
+    dst_tiles_index = joined_tiles[good_join]['DST_INDEX']
     dst_tiles_mask_matched = ((dst_tiles['TILERA'][dst_tiles_index] == 0) &
                               (dst_tiles['TILEDEC'][dst_tiles_index] == 0))
     dst_tiles_patched = dst_tiles.copy()
