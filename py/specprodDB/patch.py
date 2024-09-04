@@ -204,7 +204,8 @@ def patch_exposures(src_exposures, dst_exposures, first_night=None):
     for column in dst_exposures_patched.colnames:
         if hasattr(dst_exposures_patched[column], 'mask'):
             if dst_exposures_patched[column].mask.any():
-                log.info("Replacing masked values in dst_exposures column %s with zero.", column)
+                log.info("Replacing %d masked values in dst_exposures column %s with zero.",
+                         np.sum(dst_exposures_patched[column].mask), column)
                 dst_exposures_patched[column][dst_exposures_patched[column].mask] = 0
                 dst_exposures_patched[column].mask[dst_exposures_patched[column].mask] = False
     return dst_exposures_patched
