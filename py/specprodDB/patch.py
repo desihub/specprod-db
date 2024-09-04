@@ -275,7 +275,7 @@ def patch_tiles(src_tiles, dst_tiles):
     return dst_tiles_patched
 
 
-def get_data(options):#
+def get_data(options):
     """Read in source and destination data.
 
     Parameters
