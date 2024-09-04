@@ -73,7 +73,7 @@ def patch_frames(src_frames, dst_frames):
                 #
                 # Some values should have changed!
                 #
-                assert not (dst_frames_patched[column].data == dst_frames[column].data).all()
+                assert not (dst_frames_patched[column].data.data == dst_frames[column].data.data).all()
     return dst_frames_patched
 
 
@@ -144,8 +144,6 @@ def patch_exposures(src_exposures, dst_exposures, first_night=None):
         if hasattr(dst_exposures_patched[column], 'mask'):
             if np.any(dst_exposures_patched[column].mask[dst_exposures_index]):
                 dst_exposures_mask_matched = dst_exposures_patched[column].mask[dst_exposures_index]
-                # dst_exposures_patched[column][dst_exposures_index] = src_exposures[column][src_exposures_index]
-                # dst_exposures_patched[column].mask[dst_exposures_index] = False
         else:
             if column == 'TILERA' or column == 'TILEDEC':
                 dst_exposures_mask_matched = ((dst_exposures_patched['TILERA'][dst_exposures_index] == 0) &
@@ -168,6 +166,10 @@ def patch_exposures(src_exposures, dst_exposures, first_night=None):
             if hasattr(dst_exposures_patched[column], 'mask'):
                 dst_exposures_matched.mask[dst_exposures_mask_matched] = False
                 dst_exposures_patched[column].mask[dst_exposures_index] = dst_exposures_matched.mask
+                #
+                # Some values should have changed!
+                #
+                assert not (dst_exposures_patched[column].data.data == dst_exposures[column].data.data).all()
     #
     # QA checks.
     #
@@ -222,8 +224,12 @@ def patch_tiles(src_tiles, dst_tiles):
     :class:`~astropy.table.Table`
         A *copy* of `dst_tiles` with data replaced from `src_tiles`.
     """
+    log = get_logger()
     assert (np.unique(src_tiles['TILEID']) == sorted(src_tiles['TILEID'])).all()
     assert (np.unique(dst_tiles['TILEID']) == sorted(dst_tiles['TILEID'])).all()
+    #
+    # Patch SURVEY and PROGRAM.
+    #
     dst_tiles_patched = dst_tiles.copy()
     dst_tiles_patched['PROGRAM'] = faflavor2program(dst_tiles_patched['FAFLAVOR'])
     oddball_survey = np.where((dst_tiles_patched['SURVEY'] != 'cmx') &
@@ -239,10 +245,34 @@ def patch_tiles(src_tiles, dst_tiles):
     assert (dst_tiles_patched['SURVEY'][oddball_survey] == 'unknown').all()
     assert len(oddball_program) == 0
     dst_tiles_patched['SURVEY'][oddball_survey] = 'cmx'
+    #
+    # Patch TILERA, TILEDEC.
+    #
+    src_tiles_join = Table()
+    src_tiles_join['TILEID'] = src_tiles['TILEID']
+    src_tiles_join['SRC_INDEX'] = np.arange(len(src_tiles))
+    dst_tiles_join = Table()
+    dst_tiles_join['TILEID'] = dst_tiles['TILEID']
+    dst_tiles_join['DST_INDEX'] = np.arange(len(dst_tiles))
+    joined_tiles = join(src_tiles_join, dst_tiles_join, join_type='outer', keys='EXPID')
+    src_tiles_index = joined_tiles[(~joined_tiles['SRC_INDEX'].mask) &
+                                   (~joined_tiles['DST_INDEX'].mask)]['SRC_INDEX']
+    dst_tiles_index = joined_tiles[(~joined_tiles['SRC_INDEX'].mask) &
+                                   (~joined_tiles['DST_INDEX'].mask)]['DST_INDEX']
+    for column in ('TILERA', 'TILEDEC'):
+        src_tiles_matched = src_tiles[column][src_tiles_index]
+        dst_tiles_matched = dst_tiles_patched[column][dst_tiles_index]
+        dst_tiles_mask_matched = ((dst_tiles_patched['TILERA'][dst_tiles_index] == 0) &
+                                  (dst_tiles_patched['TILEDEC'][dst_tiles_index] == 0))
+        if np.any(dst_tiles_mask_matched):
+            log.info("Patching %d rows in dst_tiles column %s.",
+                     np.sum(dst_tiles_mask_matched), column)
+            dst_tiles_matched[dst_tiles_mask_matched] = src_tiles_matched[dst_tiles_mask_matched]
+            dst_tiles_patched[column][dst_tiles_index] = dst_tiles_matched
     return dst_tiles_patched
 
 
-def get_data(options):
+def get_data(options):#
     """Read in source and destination data.
 
     Parameters
