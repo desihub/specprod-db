@@ -106,7 +106,7 @@ def patch_frames(src_frames, dst_frames):
             log.info("Replacing masked values in src_frames column %s with zero.", column)
             src_frames[column][src_frames[column].mask] = 0
             src_frames[column].mask[src_frames[column].mask] = False
-        if hasattr(dst_frames_patched[column], 'mask'):  #  and not column.startswith('TSNR2_'):
+        if hasattr(dst_frames_patched[column], 'mask') and column != 'TSNR2_ALPHA':
             if np.any(dst_frames_patched[column].mask[dst_frames_index]):
                 log.info("Patching %d rows in dst_frames column %s.",
                          np.sum(dst_frames_patched[column].mask[dst_frames_index]), column)
