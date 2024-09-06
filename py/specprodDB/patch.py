@@ -202,10 +202,10 @@ def patch_exposures(src_exposures, dst_exposures, first_night=None):
             log.info("Patching %d rows in dst_exposures column %s.",
                      np.sum(dst_exposures_mask_matched), column)
             dst_exposures_matched[dst_exposures_mask_matched] = src_exposures_matched[dst_exposures_mask_matched]
-            dst_exposures_patched[column][dst_exposures_index] = dst_exposures_matched
+            # dst_exposures_patched[column][dst_exposures_index] = dst_exposures_matched
             if hasattr(dst_exposures_patched[column], 'mask'):
                 dst_exposures_matched.mask[dst_exposures_mask_matched] = False
-                dst_exposures_patched[column].mask[dst_exposures_index] = dst_exposures_matched.mask
+                # dst_exposures_patched[column].mask[dst_exposures_index] = dst_exposures_matched.mask
                 #
                 # Some values should have changed!
                 #
@@ -247,6 +247,30 @@ def patch_exposures(src_exposures, dst_exposures, first_night=None):
     #
     dst_exposures_patched = zero_fill(dst_exposures_patched, 'exposures')
     return dst_exposures_patched
+
+
+def patch_missing_frames_mjd(exposures, frames):
+    """Update MJD values in `frames` after `exposures` has been patched.
+
+    Parameters
+    ----------
+    exposures : :class:`~astropy.table.Table`
+        Patched exposures table.
+    frames : :class:`~astropy.table.Table`
+        Patched frames table.
+
+    Returns
+    -------
+    :class:`~astropy.table.Table`
+        An updated version of `frames`.
+    """
+    exposures_index, frames_index = match_rows(exposures['EXPID'], frames['EXPID'])
+    exposures_mjd_matched = exposures['MJD'][exposures_index]
+    frames_mjd_matched = frames['MJD'][frames_index]
+    frames_missing_mjd = (exposures_mjd_matched != frames_mjd_matched) & (frames_mjd_matched < 50000)
+    frames_mjd_matched[frames_missing_mjd] = exposures_mjd_matched[frames_missing_mjd]
+    assert np.all(frames['MJD'] > 50000)
+    return frames
 
 
 def patch_tiles(src_tiles, dst_tiles):
@@ -391,6 +415,7 @@ def main():
     patched['exposures_file'] = os.path.join(options.output, f'exposures-{options.dst}-patched-with-{options.src}-{timestamp}.fits')
     patched['frames'] = patch_frames(src['frames'], dst['frames'])
     patched['exposures'] = patch_exposures(src['exposures'], dst['exposures'])
+    patched['frames'] = patch_missing_frames_mjd(patched['exposures'], patched['frames'])
     patched['tiles'] = patch_tiles(src['tiles'], dst['tiles'])
     #
     # Write out data.
