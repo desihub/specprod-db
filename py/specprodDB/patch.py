@@ -116,8 +116,8 @@ def patch_frames(src_frames, dst_frames):
                 assert np.sum(dst_frames_mask_matched) == np.sum(dst_frames_patched[column].mask[dst_frames_index])
                 dst_frames_matched[dst_frames_mask_matched] = src_frames_matched[dst_frames_mask_matched]
                 dst_frames_matched.mask[dst_frames_mask_matched] = False
-                # dst_frames_patched[column][dst_frames_index] = dst_frames_matched
-                # dst_frames_patched[column].mask[dst_frames_index] = dst_frames_matched.mask
+                dst_frames_patched[column][dst_frames_index] = dst_frames_matched
+                dst_frames_patched[column].mask[dst_frames_index] = dst_frames_matched.mask
                 #
                 # Some values should have changed!
                 #
@@ -202,10 +202,10 @@ def patch_exposures(src_exposures, dst_exposures, first_night=None):
             log.info("Patching %d rows in dst_exposures column %s.",
                      np.sum(dst_exposures_mask_matched), column)
             dst_exposures_matched[dst_exposures_mask_matched] = src_exposures_matched[dst_exposures_mask_matched]
-            # dst_exposures_patched[column][dst_exposures_index] = dst_exposures_matched
+            dst_exposures_patched[column][dst_exposures_index] = dst_exposures_matched
             if hasattr(dst_exposures_patched[column], 'mask'):
                 dst_exposures_matched.mask[dst_exposures_mask_matched] = False
-                # dst_exposures_patched[column].mask[dst_exposures_index] = dst_exposures_matched.mask
+                dst_exposures_patched[column].mask[dst_exposures_index] = dst_exposures_matched.mask
                 #
                 # Some values should have changed!
                 #
@@ -269,6 +269,7 @@ def patch_missing_frames_mjd(exposures, frames):
     frames_mjd_matched = frames['MJD'][frames_index]
     frames_missing_mjd = (exposures_mjd_matched != frames_mjd_matched) & (frames_mjd_matched < 50000)
     frames_mjd_matched[frames_missing_mjd] = exposures_mjd_matched[frames_missing_mjd]
+    frames['MJD'][frames_index] = frames_mjd_matched
     assert np.all(frames['MJD'] > 50000)
     return frames
 
