@@ -49,7 +49,33 @@ def match_rows(left, right):
         good_join = (joined['LEFT_INDEX'] >= 0)
     if hasattr(joined['RIGHT_INDEX'], 'mask'):
         good_join = good_join & (~joined['RIGHT_INDEX'].mask)
-    return (joined[good_join]['LEFT_INDEX'], joined[good_join]['RIGHT_INDEX'])
+    return (joined['LEFT_INDEX'][good_join], joined['RIGHT_INDEX'][good_join])
+
+
+def zero_fill(data, label):
+    """Fill any masked values in `data` with zero.
+
+    Parameters
+    ----------
+    data : :class:`~astropy.table.Table`
+        A data table.
+    label : :class:`str`
+        A label to use in logging.
+
+    Returns
+    -------
+    :class:`~astropy.table.Table`
+        The modified `data` table.
+    """
+    log = get_logger()
+    for column in data.colnames:
+        if hasattr(data[column], 'mask'):
+            if data[column].mask.any():
+                log.info("Replacing %d masked values in dst_%s column %s with zero.",
+                         np.sum(data[column].mask), label, column)
+                data[column][data[column].mask] = 0
+                data[column].mask[data[column].mask] = False
+    return data
 
 
 def patch_frames(src_frames, dst_frames):
@@ -80,7 +106,7 @@ def patch_frames(src_frames, dst_frames):
             log.info("Replacing masked values in src_frames column %s with zero.", column)
             src_frames[column][src_frames[column].mask] = 0
             src_frames[column].mask[src_frames[column].mask] = False
-        if hasattr(dst_frames_patched[column], 'mask') and not column.startswith('TSNR2_'):
+        if hasattr(dst_frames_patched[column], 'mask'):  #  and not column.startswith('TSNR2_'):
             if np.any(dst_frames_patched[column].mask[dst_frames_index]):
                 log.info("Patching %d rows in dst_frames column %s.",
                          np.sum(dst_frames_patched[column].mask[dst_frames_index]), column)
@@ -90,12 +116,13 @@ def patch_frames(src_frames, dst_frames):
                 assert np.sum(dst_frames_mask_matched) == np.sum(dst_frames_patched[column].mask[dst_frames_index])
                 dst_frames_matched[dst_frames_mask_matched] = src_frames_matched[dst_frames_mask_matched]
                 dst_frames_matched.mask[dst_frames_mask_matched] = False
-                dst_frames_patched[column][dst_frames_index] = dst_frames_matched
-                dst_frames_patched[column].mask[dst_frames_index] = dst_frames_matched.mask
+                # dst_frames_patched[column][dst_frames_index] = dst_frames_matched
+                # dst_frames_patched[column].mask[dst_frames_index] = dst_frames_matched.mask
                 #
                 # Some values should have changed!
                 #
                 assert not (dst_frames_patched[column].data.data == dst_frames[column].data.data).all()
+    dst_frames_patched = zero_fill(dst_frames_patched, 'frames')
     return dst_frames_patched
 
 
@@ -218,13 +245,7 @@ def patch_exposures(src_exposures, dst_exposures, first_night=None):
     #
     # Fill any remaining masked values with zero.
     #
-    for column in dst_exposures_patched.colnames:
-        if hasattr(dst_exposures_patched[column], 'mask'):
-            if dst_exposures_patched[column].mask.any():
-                log.info("Replacing %d masked values in dst_exposures column %s with zero.",
-                         np.sum(dst_exposures_patched[column].mask), column)
-                dst_exposures_patched[column][dst_exposures_patched[column].mask] = 0
-                dst_exposures_patched[column].mask[dst_exposures_patched[column].mask] = False
+    dst_exposures_patched = zero_fill(dst_exposures_patched, 'exposures')
     return dst_exposures_patched
 
 
