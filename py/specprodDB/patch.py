@@ -264,13 +264,18 @@ def patch_missing_frames_mjd(exposures, frames):
     :class:`~astropy.table.Table`
         An updated version of `frames`.
     """
+    log = get_logger()
     exposures_index, frames_index = match_rows(exposures['EXPID'], frames['EXPID'])
     exposures_mjd_matched = exposures['MJD'][exposures_index]
     frames_mjd_matched = frames['MJD'][frames_index]
     frames_missing_mjd = (exposures_mjd_matched != frames_mjd_matched) & (frames_mjd_matched < 50000)
+    log.info("Patching %d frames with MJD == 0 from exposures.", np.sum(frames_missing_mjd))
     frames_mjd_matched[frames_missing_mjd] = exposures_mjd_matched[frames_missing_mjd]
     frames['MJD'][frames_index] = frames_mjd_matched
-    assert np.all(frames['MJD'] > 50000)
+    assert (np.sum(frames['MJD'][frames_index] < 50000) ==
+            np.sum((frames['MJD'][frames_index] < 50000) & (exposures['MJD'][exposures_index] < 50000)))
+    log.warning("%d frames still have MJD == 0 because the corresponding exposures still have MJD == 0.",
+                np.sum(frames['MJD'] < 50000))
     return frames
 
 
