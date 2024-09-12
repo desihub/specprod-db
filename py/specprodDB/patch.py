@@ -13,6 +13,7 @@ import sys
 from shutil import copy2
 from argparse import ArgumentParser
 import numpy as np
+import pytz
 from astropy.table import Table, join
 from astropy.io import fits
 from desiutil.log import get_logger, DEBUG, INFO
@@ -236,12 +237,15 @@ def patch_exposures(src_exposures, dst_exposures, first_night=None):
                                      "{0:08d}".format(row['NIGHT']),
                                      "{0:08d}".format(row['EXPID']),
                                      "desi-{0:08d}.fits.fz".format(row['EXPID']))
-        with fits.open(raw_data_file, mode='readonly') as hdulist:
-            mjd_obs = hdulist['SPEC'].header['MJD-OBS']
-        log.info("Tile %d exposure %d has MJD-OBS = %f in %s.", row['TILEID'], row['EXPID'], mjd_obs, raw_data_file)
-        w = np.where(dst_exposures_patched['EXPID'] == row['EXPID'])[0]
-        assert len(w) == 1
-        dst_exposures_patched['MJD'][w] = mjd_obs
+        try:
+            with fits.open(raw_data_file, mode='readonly') as hdulist:
+                mjd_obs = hdulist['SPEC'].header['MJD-OBS']
+            log.info("Tile %d exposure %d has MJD-OBS = %f in %s.", row['TILEID'], row['EXPID'], mjd_obs, raw_data_file)
+            w = np.where(dst_exposures_patched['EXPID'] == row['EXPID'])[0]
+            assert len(w) == 1
+            dst_exposures_patched['MJD'][w] = mjd_obs
+        except FileNotFoundError:
+            log.error("%s not found, skipping patch!", raw_data_file)
     #
     # Fill any remaining masked values with zero.
     #
@@ -279,7 +283,7 @@ def patch_missing_frames_mjd(exposures, frames):
     return frames
 
 
-def patch_tiles(src_tiles, dst_tiles):
+def patch_tiles(src_tiles, dst_tiles, timestamp):
     """Patch frames data in `dst_tiles` with the data in `src_tiles`.
 
     Parameters
@@ -288,6 +292,8 @@ def patch_tiles(src_tiles, dst_tiles):
         Source of tiles data.
     dst_tiles : :class:`~astropy.table.Table`
         Data to be patched.
+    timestamp : :class:`datetime.datetime`
+        Fill value for the ``UPDATED`` column.
 
     Returns
     -------
@@ -330,6 +336,10 @@ def patch_tiles(src_tiles, dst_tiles):
     assert (dst_tiles_patched['SURVEY'][oddball_survey] == 'unknown').all()
     assert len(oddball_program) == 0
     dst_tiles_patched['SURVEY'][oddball_survey] = 'cmx'
+    #
+    # Add UPDATED.
+    #
+    dst_tiles_patched['UPDATED'] = np.array([timestamp.strftime("%Y-%m-%dT%H:%M:%S%z")]*len(dst_tiles_patched))
     return dst_tiles_patched
 
 
@@ -415,19 +425,20 @@ def main():
     #
     # Apply patches.
     #
-    timestamp = datetime.date.today().strftime('%Y%m%d')
+    timestamp = datetime.datetime.now(tz=pytz.timezone('US/Pacific'))
+    ymd = timestamp.strftime('%Y%m%d')
     patched = dict()
-    patched['tiles_file'] = os.path.join(options.output, f'tiles-{options.dst}-patched-with-{options.src}-{timestamp}.csv')
-    patched['exposures_file'] = os.path.join(options.output, f'exposures-{options.dst}-patched-with-{options.src}-{timestamp}.fits')
+    patched['tiles_file'] = os.path.join(options.output, f'tiles-{options.dst}-patched-with-{options.src}-{ymd}.csv')
+    patched['exposures_file'] = os.path.join(options.output, f'exposures-{options.dst}-patched-with-{options.src}-{ymd}.fits')
     patched['frames'] = patch_frames(src['frames'], dst['frames'])
     patched['exposures'] = patch_exposures(src['exposures'], dst['exposures'])
     patched['frames'] = patch_missing_frames_mjd(patched['exposures'], patched['frames'])
-    patched['tiles'] = patch_tiles(src['tiles'], dst['tiles'])
+    patched['tiles'] = patch_tiles(src['tiles'], dst['tiles'], timestamp)
     #
     # Write out data.
     #
-    dst_original_tiles = os.path.join(options.output, os.path.basename(dst['tiles_file']).replace(f"tiles-{options.dst}", f"tiles-{options.dst}-original-{timestamp}"))
-    dst_original_exposures = os.path.join(options.output, os.path.basename(dst['exposures_file']).replace(f"exposures-{options.dst}", f"exposures-{options.dst}-original-{timestamp}"))
+    dst_original_tiles = os.path.join(options.output, os.path.basename(dst['tiles_file']).replace(f"tiles-{options.dst}", f"tiles-{options.dst}-original-{ymd}"))
+    dst_original_exposures = os.path.join(options.output, os.path.basename(dst['exposures_file']).replace(f"exposures-{options.dst}", f"exposures-{options.dst}-original-{ymd}"))
     for existing in (patched['tiles_file'],
                      patched['exposures_file'],
                      patched['exposures_file'].replace('.fits', '.csv'),
