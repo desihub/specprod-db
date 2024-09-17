@@ -27,6 +27,9 @@ Daily Database Loading Requirements
 Possible Load Scenario
 ----------------------
 
+For individual tiles
+~~~~~~~~~~~~~~~~~~~~
+
 1. Read ``tiles-daily``, find changes. Update ``daily.tile``.
 2. Find corresponding exposures. Update ``daily.exposure``, ``daily.frame``.
 3. Find any *new* fiberassign files and obtain the list of new potentials (because potentials include observed targets).
@@ -34,6 +37,15 @@ Possible Load Scenario
 5. Make sure to perform the equivalent of the ``targetphot`` stage, *i.e.* fill in photometric data from targeting data.
 6. Update ``daily.fiberassign``, ``daily.potential``.
 7. Read corresponding ``tiles/cumulative`` redshift files. Update ``daily.ztile``.
+
+For initial load
+~~~~~~~~~~~~~~~~
+
+1. Load the exposures and tiles files.
+2. Compute "monolithic" redshift catalogs. These are needed as input to photometry.
+3. Create "monolithic" photometry and target catalogs.
+4. The load procedure then resembles loading a static specprod, just without healpix redshifts.
+5. Update the "primary" columns and any q3c indexes.
 
 Automated Extraction of Targeting and Photometry
 ------------------------------------------------

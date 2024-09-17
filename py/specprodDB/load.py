@@ -1971,19 +1971,7 @@ def main():
                            'chunksize': chunksize,
                            'maxrows': maxrows
                            }],
-               'redshift': [{'filepaths': zpix_file,
-                             'tcls': Zpix,
-                             'hdu': 'ZCATALOG',
-                             'preload': _survey_program,
-                             'expand': {'COEFF': ('coeff_0', 'coeff_1', 'coeff_2', 'coeff_3', 'coeff_4',
-                                                  'coeff_5', 'coeff_6', 'coeff_7', 'coeff_8', 'coeff_9',)},
-                             'convert': {'id': lambda x: x[0] << 64 | x[1]},
-                             # 'rowfilter': lambda x: (x['TARGETID'] > 0) & ((x['TARGETID'] & 2**59) == 0),
-                             'rowfilter': no_sky,
-                             'chunksize': chunksize,
-                             'maxrows': maxrows
-                             },
-                            {'filepaths': ztile_file,
+               'redshift': [{'filepaths': ztile_file,
                              'tcls': Ztile,
                              'hdu': 'ZCATALOG',
                              'preload': _survey_program,
@@ -2017,6 +2005,18 @@ def main():
                                 'chunksize': chunksize,
                                 'maxrows': maxrows
                                 }]}
+    if specprod != 'daily':
+        loaders['redshift'].append({'filepaths': zpix_file,
+                                    'tcls': Zpix,
+                                    'hdu': 'ZCATALOG',
+                                    'preload': _survey_program,
+                                    'expand': {'COEFF': ('coeff_0', 'coeff_1', 'coeff_2', 'coeff_3', 'coeff_4',
+                                                        'coeff_5', 'coeff_6', 'coeff_7', 'coeff_8', 'coeff_9',)},
+                                    'convert': {'id': lambda x: x[0] << 64 | x[1]},
+                                    # 'rowfilter': lambda x: (x['TARGETID'] > 0) & ((x['TARGETID'] & 2**59) == 0),
+                                    'rowfilter': no_sky,
+                                    'chunksize': chunksize,
+                                    'maxrows': maxrows})
     try:
         loader = loaders[options.load]
     except KeyError:
