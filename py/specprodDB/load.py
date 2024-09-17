@@ -2011,7 +2011,7 @@ def main():
                                     'hdu': 'ZCATALOG',
                                     'preload': _survey_program,
                                     'expand': {'COEFF': ('coeff_0', 'coeff_1', 'coeff_2', 'coeff_3', 'coeff_4',
-                                                        'coeff_5', 'coeff_6', 'coeff_7', 'coeff_8', 'coeff_9',)},
+                                                         'coeff_5', 'coeff_6', 'coeff_7', 'coeff_8', 'coeff_9',)},
                                     'convert': {'id': lambda x: x[0] << 64 | x[1]},
                                     # 'rowfilter': lambda x: (x['TARGETID'] > 0) & ((x['TARGETID'] & 2**59) == 0),
                                     'rowfilter': no_sky,
