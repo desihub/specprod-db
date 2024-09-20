@@ -404,7 +404,7 @@ class Tile(SchemaMixin, Base):
     elg_efftime_dark = Column(DOUBLE_PRECISION, nullable=False)
     bgs_efftime_bright = Column(DOUBLE_PRECISION, nullable=False)
     lya_efftime_dark = Column(DOUBLE_PRECISION, nullable=False)
-    goaltype = Column(String(7), nullable=False)
+    goaltype = Column(String(20), nullable=False)  # This is probably wider than it needs to be, but it is also backward-compatible.
     mintfrac = Column(DOUBLE_PRECISION, nullable=False)
     lastnight = Column(Integer, nullable=False)  # In principle this could be replaced by MAX(night) grouped by exposures.
 
@@ -464,7 +464,7 @@ class Exposure(SchemaMixin, Base):
     exptime = Column(DOUBLE_PRECISION, nullable=False)
     efftime_spec = Column(DOUBLE_PRECISION, nullable=False)
     goaltime = Column(DOUBLE_PRECISION, nullable=False)
-    goaltype = Column(String(7), nullable=False)
+    goaltype = Column(String(7), nullable=False)  # This was increased from 6 to 7 to support 'unknown' in daily specprod.
     mintfrac = Column(DOUBLE_PRECISION, nullable=False)
     airmass = Column(REAL, nullable=False)
     ebv = Column(DOUBLE_PRECISION, nullable=False)
