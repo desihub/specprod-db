@@ -321,7 +321,7 @@ def patch_tiles(src_tiles, dst_tiles, timestamp):
                 dst_tiles_patched[column][dst_tiles_index] = dst_tiles_matched
                 assert not (dst_tiles_patched[column] == dst_tiles[column]).all()
         elif column in ('FAPRGRM', 'FAFLAVOR', 'OBSSTATUS', 'GOALTYPE'):
-            dst_tiles_unknown_matched = dst_tiles_patched[column] == 'unknown'
+            dst_tiles_unknown_matched = dst_tiles_patched[column][dst_tiles_index] == 'unknown'
             if np.any(dst_tiles_unknown_matched):
                 log.info("Patching %d rows in dst_tiles column %s.",
                          np.sum(dst_tiles_unknown_matched), column)
@@ -330,7 +330,7 @@ def patch_tiles(src_tiles, dst_tiles, timestamp):
                 assert not (dst_tiles_patched[column] == dst_tiles[column]).all()
         else:
             if dst_tiles_patched[column].dtype.kind == 'f':
-                dst_tiles_nan_matched = ~np.isfinite(dst_tiles_patched[column])
+                dst_tiles_nan_matched = ~np.isfinite(dst_tiles_patched[column][dst_tiles_index])
                 if np.any(dst_tiles_nan_matched):
                     log.info("Patching %d rows in dst_tiles column %s.",
                              np.sum(dst_tiles_nan_matched), column)
