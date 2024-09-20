@@ -329,11 +329,11 @@ def patch_tiles(src_tiles, dst_tiles, timestamp):
                 dst_tiles_patched[column][dst_tiles_index] = dst_tiles_matched
                 assert not (dst_tiles_patched[column] == dst_tiles[column]).all()
         else:
-            if dst_tiles_patched['column'].dtype.kind == 'f':
+            if dst_tiles_patched[column].dtype.kind == 'f':
                 dst_tiles_nan_matched = ~np.isfinite(dst_tiles_patched[column])
                 if np.any(dst_tiles_nan_matched):
                     log.info("Patching %d rows in dst_tiles column %s.",
-                            np.sum(dst_tiles_nan_matched), column)
+                             np.sum(dst_tiles_nan_matched), column)
                     dst_tiles_matched[dst_tiles_nan_matched] = src_tiles_matched[dst_tiles_nan_matched]
                     dst_tiles_patched[column][dst_tiles_index] = dst_tiles_matched
                     assert not (dst_tiles_patched[column] == dst_tiles[column]).all()
