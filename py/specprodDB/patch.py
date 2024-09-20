@@ -320,14 +320,23 @@ def patch_tiles(src_tiles, dst_tiles, timestamp):
                 dst_tiles_matched[dst_tiles_radec_matched] = src_tiles_matched[dst_tiles_radec_matched]
                 dst_tiles_patched[column][dst_tiles_index] = dst_tiles_matched
                 assert not (dst_tiles_patched[column] == dst_tiles[column]).all()
-        else:
-            if np.any(~np.isfinite(dst_tiles_patched[column])):
+        elif column in ('FAPRGRM', 'FAFLAVOR', 'OBSSTATUS', 'GOALTYPE'):
+            dst_tiles_unknown_matched = dst_tiles_patched[column] == 'unknown'
+            if np.any(dst_tiles_unknown_matched):
                 log.info("Patching %d rows in dst_tiles column %s.",
-                         np.sum(~np.isfinite(dst_tiles_patched[column])), column)
-                dst_tiles_nan_matched = dst_tiles_patched[column][~np.isfinite(dst_tiles_patched[column])]
-                dst_tiles_matched[dst_tiles_nan_matched] = src_tiles_matched[dst_tiles_nan_matched]
+                         np.sum(dst_tiles_unknown_matched), column)
+                dst_tiles_matched[dst_tiles_unknown_matched] = src_tiles_matched[dst_tiles_unknown_matched]
                 dst_tiles_patched[column][dst_tiles_index] = dst_tiles_matched
                 assert not (dst_tiles_patched[column] == dst_tiles[column]).all()
+        else:
+            if dst_tiles_patched['column'].dtype.kind == 'f':
+                dst_tiles_nan_matched = ~np.isfinite(dst_tiles_patched[column])
+                if np.any(dst_tiles_nan_matched):
+                    log.info("Patching %d rows in dst_tiles column %s.",
+                            np.sum(dst_tiles_nan_matched), column)
+                    dst_tiles_matched[dst_tiles_nan_matched] = src_tiles_matched[dst_tiles_nan_matched]
+                    dst_tiles_patched[column][dst_tiles_index] = dst_tiles_matched
+                    assert not (dst_tiles_patched[column] == dst_tiles[column]).all()
     #
     # Patch SURVEY and PROGRAM.
     #
