@@ -304,21 +304,30 @@ def patch_tiles(src_tiles, dst_tiles, timestamp):
     assert (np.unique(src_tiles['TILEID']) == sorted(src_tiles['TILEID'])).all()
     assert (np.unique(dst_tiles['TILEID']) == sorted(dst_tiles['TILEID'])).all()
     #
-    # Patch TILERA, TILEDEC.
+    # Patch TILERA, TILEDEC and other columns.
     #
     src_tiles_index, dst_tiles_index = match_rows(src_tiles['TILEID'], dst_tiles['TILEID'])
-    dst_tiles_mask_matched = ((dst_tiles['TILERA'][dst_tiles_index] == 0) &
-                              (dst_tiles['TILEDEC'][dst_tiles_index] == 0))
+    dst_tiles_radec_matched = ((dst_tiles['TILERA'][dst_tiles_index] == 0) &
+                               (dst_tiles['TILEDEC'][dst_tiles_index] == 0))
     dst_tiles_patched = dst_tiles.copy()
-    for column in ('TILERA', 'TILEDEC'):
+    for column in dst_tiles_patched.colnames:
         src_tiles_matched = src_tiles[column][src_tiles_index]
         dst_tiles_matched = dst_tiles_patched[column][dst_tiles_index]
-        if np.any(dst_tiles_mask_matched):
-            log.info("Patching %d rows in dst_tiles column %s.",
-                     np.sum(dst_tiles_mask_matched), column)
-            dst_tiles_matched[dst_tiles_mask_matched] = src_tiles_matched[dst_tiles_mask_matched]
-            dst_tiles_patched[column][dst_tiles_index] = dst_tiles_matched
-            assert not (dst_tiles_patched[column] == dst_tiles[column]).all()
+        if column == 'TILERA' or column == 'TILEDEC':
+            if np.any(dst_tiles_radec_matched):
+                log.info("Patching %d rows in dst_tiles column %s.",
+                         np.sum(dst_tiles_radec_matched), column)
+                dst_tiles_matched[dst_tiles_radec_matched] = src_tiles_matched[dst_tiles_radec_matched]
+                dst_tiles_patched[column][dst_tiles_index] = dst_tiles_matched
+                assert not (dst_tiles_patched[column] == dst_tiles[column]).all()
+        else:
+            if np.any(~np.isfinite(dst_tiles_patched[column])):
+                log.info("Patching %d rows in dst_tiles column %s.",
+                         np.sum(~np.isfinite(dst_tiles_patched[column])), column)
+                dst_tiles_nan_matched = dst_tiles_patched[column][~np.isfinite(dst_tiles_patched[column])]
+                dst_tiles_matched[dst_tiles_nan_matched] = src_tiles_matched[dst_tiles_nan_matched]
+                dst_tiles_patched[column][dst_tiles_index] = dst_tiles_matched
+                assert not (dst_tiles_patched[column] == dst_tiles[column]).all()
     #
     # Patch SURVEY and PROGRAM.
     #
@@ -340,6 +349,11 @@ def patch_tiles(src_tiles, dst_tiles, timestamp):
     # Add UPDATED.
     #
     dst_tiles_patched['UPDATED'] = np.array([timestamp.strftime("%Y-%m-%dT%H:%M:%S%z")]*len(dst_tiles_patched))
+    #
+    # QA check.
+    #
+    for column in dst_tiles_patched.colnames:
+        assert np.isfinite(dst_tiles_patched[column]).all()
     return dst_tiles_patched
 
 
