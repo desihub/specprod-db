@@ -362,7 +362,8 @@ def patch_tiles(src_tiles, dst_tiles, timestamp):
     # QA check.
     #
     for column in dst_tiles_patched.colnames:
-        assert np.isfinite(dst_tiles_patched[column]).all()
+        if dst_tiles_patched[column].dtype.kind == 'f':
+            assert np.isfinite(dst_tiles_patched[column]).all()
     return dst_tiles_patched
 
 
