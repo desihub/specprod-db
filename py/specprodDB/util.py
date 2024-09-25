@@ -376,9 +376,6 @@ def common_options(description):
     # prsr.add_argument('-l', '--load', action='store', dest='load',
     #                   default='exposures', metavar='STAGE',
     #                   help='Load the set of files associated with STAGE (default "%(default)s").')
-    # prsr.add_argument('-m', '--max-rows', action='store', dest='maxrows',
-    #                   type=int, default=0, metavar='M',
-    #                   help="Load up to M rows in the tables (default is all rows).")
     prsr.add_argument('-o', '--overwrite', action='store_true', dest='overwrite',
                       help='Delete any existing files or tables before loading.')
     prsr.add_argument('-P', '--public', action='store_true', dest='public',
@@ -386,9 +383,6 @@ def common_options(description):
     # prsr.add_argument('-p', '--photometry-version', action='store', dest='photometry_version',
     #                   metavar='VERSION', default='v2.1',
     #                   help='Load target photometry data from VERSION (default "%(default)s").')
-    # prsr.add_argument('-r', '--rows', action='store', dest='chunksize',
-    #                   type=int, default=50000, metavar='N',
-    #                   help="Load N rows at a time (default %(default)s).")
     prsr.add_argument('-s', '--schema', action='store', dest='schema',
                       metavar='SCHEMA',
                       help='Set the schema name in the PostgreSQL database.')
