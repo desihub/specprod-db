@@ -1344,14 +1344,6 @@ def load_file(filepaths, tcls, hdu=1, row_filter=None, q3c=None, chunksize=50000
             log.info("Row filter removed all data rows, skipping %s.", filepath)
             continue
         log.info("Row filter applied on %s; %d rows remain.", tn, good_rows.sum())
-        #
-        # Need to pass required arguments to convert, which depends on the table.
-        #
-        # if tn == 'ztile':
-        #     convert_inputs['survey'] = 0
-        #     convert_inputs['program'] = 0
-        #     convert_inputs['tileid'] = 0
-        #     convert_inputs['night'] = 0
         orm_objects = tcls.convert(data, row_filter=good_rows)
         log.info("Converted data to ORM objects on %s.", tn)
         del data
@@ -1366,7 +1358,7 @@ def load_file(filepaths, tcls, hdu=1, row_filter=None, q3c=None, chunksize=50000
                 dbSession.add_all(data_chunk)
                 dbSession.commit()
                 log.info("Inserted %d rows in %s.",
-                        min((k+1)*chunksize, finalrows), tn)
+                         min((k+1)*chunksize, finalrows), tn)
             else:
                 log.error("Detected empty data chunk in %s!", tn)
     if q3c is not None:
