@@ -11,5 +11,11 @@ specprodDB API
 .. automodule:: specprodDB.load
     :members:
 
+.. automodule:: specprodDB.patch
+    :members:
+
+.. automodule:: specprodDB.tile
+    :members:
+
 .. automodule:: specprodDB.util
     :members:

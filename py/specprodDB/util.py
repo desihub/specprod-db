@@ -6,8 +6,15 @@ specprodDB.util
 
 Classes and functions for use by all database code.
 """
+from sys import argv
+from argparse import ArgumentParser
 from datetime import datetime
-from os.path import expanduser, exists
+from os.path import expanduser, exists, basename
+import importlib.resources as ir
+import numpy as np
+from desitarget.targets import decode_targetid
+
+from . import __version__ as specprodDB_version
 
 
 _surveyid = {'cmx': 1, 'special': 2, 'sv1': 3, 'sv2': 4, 'sv3': 5, 'main': 6}
@@ -282,6 +289,23 @@ def checkgzip(filename):
         raise FileNotFoundError(f'Neither {filename} nor {altfilename} could be found!')
 
 
+def no_sky(catalog):
+    """Identify objects in `catalog` that are not sky targets.
+
+    Parameters
+    ----------
+    catalog : :class:`~astropy.table.Table`
+        Any Table containing a ``TARGETID`` column.
+
+    Returns
+    -------
+    :class:`numpy.ndarray`
+        The indexes of rows that are not sky targets.
+    """
+    _, _, _, _, sky, _ = decode_targetid(catalog['TARGETID'])
+    return np.where((sky == 0) & (catalog['TARGETID'] > 0))[0]
+
+
 def parse_pgpass(hostname='specprod-db.desi.lbl.gov', username='desi_admin'):
     """Read a ``~/.pgpass`` file.
 
@@ -318,3 +342,61 @@ def parse_pgpass(hostname='specprod-db.desi.lbl.gov', username='desi_admin'):
     except KeyError:
         return None
     return pgpass
+
+
+def common_options(description):
+    """Define a set of common command-line options.
+
+    Individual command-line scripts will add additional options.
+
+    Parameters
+    ----------
+    description : :class:`str`
+        Define the description in the command-line help.
+
+    Returns
+    -------
+    :class:`~argparse.ArgumentParser`
+        An argument parser to which further arguments may be added.
+    """
+    prsr = ArgumentParser(description=description,
+                          prog=basename(argv[0]))
+    prsr.add_argument('-c', '--config', action='store', dest='config', metavar='FILE',
+                      default=str(ir.files('specprodDB') / 'data' / 'load_specprod_db.ini'),
+                      help="Override the default configuration file.")
+    # prsr.add_argument('-d', '--data-release', action='store', dest='release',
+    #                   default='edr', metavar='RELEASE',
+    #                   help='Use data release RELEASE (default "%(default)s").')
+    # prsr.add_argument('-f', '--filename', action='store', dest='dbfile',
+    #                   default='specprod.db', metavar='FILE',
+    #                   help='Store data in FILE (default "%(default)s").')
+    # prsr.add_argument('-H', '--hostname', action='store', dest='hostname',
+    #                   metavar='HOSTNAME', default='specprod-db.desi.lbl.gov',
+    #                   help='If specified, connect to a PostgreSQL database on HOSTNAME (default "%(default)s").')
+    # prsr.add_argument('-l', '--load', action='store', dest='load',
+    #                   default='exposures', metavar='STAGE',
+    #                   help='Load the set of files associated with STAGE (default "%(default)s").')
+    prsr.add_argument('-o', '--overwrite', action='store_true', dest='overwrite',
+                      help='Delete any existing files or tables before loading.')
+    prsr.add_argument('-P', '--public', action='store_true', dest='public',
+                      help='GRANT access to the schema to the public database user.')
+    # prsr.add_argument('-p', '--photometry-version', action='store', dest='photometry_version',
+    #                   metavar='VERSION', default='v2.1',
+    #                   help='Load target photometry data from VERSION (default "%(default)s").')
+    prsr.add_argument('-s', '--schema', action='store', dest='schema',
+                      metavar='SCHEMA',
+                      help='Set the schema name in the PostgreSQL database.')
+    # prsr.add_argument('-t', '--tiles-version', action='store', dest='tiles_version',
+    #                   metavar='VERSION', default='0.5',
+    #                   help='Load fiberassign data from VERSION (default "%(default)s").')
+    # prsr.add_argument('-U', '--username', action='store', dest='username',
+    #                   metavar='USERNAME', default='desi_admin',
+    #                   help='If specified, connect to a PostgreSQL database with USERNAME (default "%(default)s").')
+    prsr.add_argument('-v', '--verbose', action='store_true', dest='verbose',
+                      help='Print extra information.')
+    # prsr.add_argument('-z', '--redshift-version', action='store', dest='redshift_version',
+    #                   metavar='VERSION',
+    #                   help='Load redshift data from VAC VERSION')
+    prsr.add_argument('-V', '--version', action='version',
+                      version='%(prog)s ' + specprodDB_version)
+    return prsr

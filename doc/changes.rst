@@ -5,20 +5,25 @@ Change Log
 1.3.0 (unreleaded)
 ------------------
 
-*Planned*: Support loading ongoing daily reductions.
+*Planned*: Support loading ongoing daily reductions, in particular, updates
+to tiles already in the database.
 
 1.2.0 (unreleased)
 ------------------
 
 This release corresponds to loading the ``guadalupe`` and ``iron`` spectroscopic
-productions in preparation for DR1. See also PR `#12`_. Some specific changes:
+productions in preparation for DR1. See also PR `#12`_ and `#14`_. Some specific changes:
 
 * Photometry and target data are split among several files instead of a monolithic file.
-* Add ``DESINAME`` column to redshift tabled.
+* Add ``DESINAME`` column to redshift tables.
 * Move version configuration to a configuration file.
 * Default values for targeting bits when they are absent from target files.
+* Support SQLAlchemy 2.
+* ORM objects know how to "load themselves".
+* Support for tile-based loading, needed to load ``daily`` reductions.
 
 .. _`#12`: https://github.com/desihub/specprod-db/pull/12
+.. _`#14`: https://github.com/desihub/specprod-db/pull/14
 
 1.1.0 (2023-06-09)
 ------------------

@@ -44,7 +44,7 @@ class TestBatch(unittest.TestCase):
             scripts = prepare_template(options)
         self.assertIn('load_specprod_db_fuji_test_exposures.csh', scripts)
 
-    @patch('sys.argv', ['prepare_batch_specprod_db', '--swap', '--schema', 'fuji_test', 'foo@example.com', '/global/cfs/cdirs/desi', 'fuji'])
+    @patch('sys.argv', ['prepare_batch_specprod_db', '--schema', 'fuji_test', 'foo@example.com', '/global/cfs/cdirs/desi', 'fuji'])
     def test_prepare_template_bash(self):
         """Test conversion of options to scripts with bash.
         """
@@ -69,11 +69,14 @@ class TestBatch(unittest.TestCase):
 #SBATCH --account=desi
 #SBATCH --mail-type=end,fail
 #SBATCH --mail-user=foo@example.com
-module load specprod-db/{specprod_db_version}
+module swap specprod-db/{specprod_db_version}
 export DESI_ROOT=/global/cfs/cdirs/desi
 export SPECPROD=fuji
 srun --ntasks=1 load_specprod_db --overwrite \\
     --load exposures --schema ${{SPECPROD}} ${{DESI_ROOT}}
+load_status=$?
+[[ ${{load_status}} == 0 ]] && /bin/mv -v /home/test/Documents/Jobs/load_specprod_db_fuji_exposures.sh /home/test/Documents/Jobs/done
+exit ${{load_status}}
 """
         with patch('os.environ', {'HOME': '/home/test'}):
             options = get_options()
@@ -96,11 +99,14 @@ srun --ntasks=1 load_specprod_db --overwrite \\
 #SBATCH --account=desi
 #SBATCH --mail-type=end,fail
 #SBATCH --mail-user=foo@example.com
-module load specprod-db/{specprod_db_version}
+module swap specprod-db/{specprod_db_version}
 export DESI_ROOT=/global/cfs/cdirs/desi
 export SPECPROD=fuji
 srun --ntasks=1 load_specprod_db  \\
     --load photometry --schema fuji_test ${{DESI_ROOT}}
+load_status=$?
+[[ ${{load_status}} == 0 ]] && /bin/mv -v /home/test/Documents/Jobs/load_specprod_db_fuji_test_photometry.sh /home/test/Documents/Jobs/done
+exit ${{load_status}}
 """
         with patch('os.environ', {'HOME': '/home/test'}):
             options = get_options()
@@ -123,11 +129,14 @@ srun --ntasks=1 load_specprod_db  \\
 #SBATCH --account=desi
 #SBATCH --mail-type=end,fail
 #SBATCH --mail-user=foo@example.com
-module load specprod-db/main
+module swap specprod-db/main
 export DESI_ROOT=/global/cfs/cdirs/desi
 export SPECPROD=fuji
 srun --ntasks=1 load_specprod_db  \\
     --load photometry --schema ${{SPECPROD}} ${{DESI_ROOT}}
+load_status=$?
+[[ ${{load_status}} == 0 ]] && /bin/mv -v /home/test/Documents/Jobs/load_specprod_db_fuji_photometry.sh /home/test/Documents/Jobs/done
+exit ${{load_status}}
 """
         with patch('os.environ', {'HOME': '/home/test'}):
             options = get_options()

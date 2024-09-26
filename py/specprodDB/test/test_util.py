@@ -7,9 +7,11 @@ from unittest.mock import patch, call
 import importlib.resources as ir
 
 from pytz import utc
+import numpy as np
+
 from ..util import (cameraid, frameid, surveyid, decode_surveyid, programid,
                     spgrpid, targetphotid, decode_targetphotid, zpixid, ztileid,
-                    fiberassignid, convert_dateobs, checkgzip, parse_pgpass)
+                    fiberassignid, convert_dateobs, checkgzip, no_sky, parse_pgpass)
 
 
 class TestUtil(unittest.TestCase):
@@ -161,6 +163,12 @@ class TestUtil(unittest.TestCase):
             path = checkgzip('filename.txt')
         mock_exists.assert_has_calls([call('filename.txt'), call('filename.txt.gz')])
         self.assertEqual(str(e.exception), 'Neither filename.txt nor filename.txt.gz could be found!')
+
+    def test_no_sky(self):
+        """Test specprodDB.util.no_sky.
+        """
+        catalog = {'TARGETID': np.array([-123456789, 123456789, 1 << 59], dtype=np.int64)}
+        self.assertListEqual(no_sky(catalog).tolist(), [1])
 
     @patch('specprodDB.util.expanduser')
     def test_parse_pgpass(self, mock_expand):
