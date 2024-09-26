@@ -5,7 +5,8 @@ Change Log
 1.3.0 (unreleaded)
 ------------------
 
-*Planned*: Support loading ongoing daily reductions.
+*Planned*: Support loading ongoing daily reductions, in particular, updates
+to tiles already in the database.
 
 1.2.0 (unreleased)
 ------------------
