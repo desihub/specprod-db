@@ -8,7 +8,7 @@ Change Log
 *Planned*: Support loading ongoing daily reductions, in particular, updates
 to tiles already in the database.
 
-1.2.0 (unreleased)
+1.2.0 (2024-09-26)
 ------------------
 
 This release corresponds to loading the ``guadalupe`` and ``iron`` spectroscopic
