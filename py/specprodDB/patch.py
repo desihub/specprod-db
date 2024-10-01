@@ -500,6 +500,7 @@ def main():
     patched['exposures'] = patch_exposures(src['exposures'], dst['exposures'])
     patched['frames'] = patch_missing_frames_mjd(patched['exposures'], patched['frames'])
     patched['tiles'] = patch_tiles(src['tiles'], dst['tiles'], timestamp)
+    back_exposures, back_tiles = back_patch_inconsistent_values(patched)
     #
     # Write out data.
     #
