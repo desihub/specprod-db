@@ -8,6 +8,11 @@ Change Log
 *Planned*: Support loading ongoing daily reductions, in particular, updates
 to tiles already in the database.
 
+1.2.1 (unreleased)
+------------------
+
+* Finalize patches of ``tiles-daily`` and ``exposures-daily`` files.
+
 1.2.0 (2024-09-26)
 ------------------
 

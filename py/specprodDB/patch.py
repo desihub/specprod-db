@@ -367,6 +367,48 @@ def patch_tiles(src_tiles, dst_tiles, timestamp):
     return dst_tiles_patched
 
 
+def back_patch_inconsistent_values(patched):
+    """When the primary round of patching is done, copy some values back
+    into the exposures and frames files.
+
+    Parameters
+    ----------
+    patched : :class:`dict`
+        A dictionary containing tables for further patching.
+
+    Returns
+    -------
+    :class:`tuple`
+        A tuple containing the back-patched exposures and frames tables.
+        Not strictly necessary as this function will modify the tables in
+        `patched` in-place.
+    """
+    log = get_logger()
+    back_patch = {'tiles': 'exposures', 'exposures': 'frames'}
+    for s, d in back_patch.items():
+        for row in patched[s]:
+            key = 'TILEID' if s == 'tiles' else 'EXPID'
+            w = np.where(patched[d][key] == row[key])[0]
+            for column in ('SURVEY', 'PROGRAM', 'FAPRGRM', 'FAFLAVOR', 'GOALTYPE'):
+                if column in patched[d].colnames:
+                    if (patched[d][column][w] != row[column]).any():
+                        log.info("Patching %s associated with %s %d with %s = '%s'.",
+                                 d, ('tile' if s == 'tiles' else 'exposure'), row[key],
+                                 column, row[column])
+                        patched[d][column][w] = row[column]
+    #
+    # Run a QA step.
+    #
+    for s, d in back_patch.items():
+        for row in patched[s]:
+            key = 'TILEID' if s == 'tiles' else 'EXPID'
+            w = np.where(patched[d][key] == row[key])[0]
+            for column in ('SURVEY', 'PROGRAM', 'FAPRGRM', 'FAFLAVOR', 'GOALTYPE'):
+                if column in patched[d].colnames:
+                    assert (patched[d][column][w] == row[column]).all()
+    return (patched['exposures'], patched['frames'])
+
+
 def get_data(options):
     """Read in source and destination data.
 
