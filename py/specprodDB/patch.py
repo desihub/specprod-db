@@ -133,7 +133,7 @@ def patch_exposures(src_exposures, dst_exposures, first_night=None):
     Parameters
     ----------
     src_exposures : :class:`~astropy.table.Table`
-        Source of tiles data.
+        Source of exposures data.
     dst_exposures : :class:`~astropy.table.Table`
         Data to be patched.
     first_night : :class:`int`, optional
@@ -421,6 +421,55 @@ def back_patch_inconsistent_values(patched):
     return (patched['exposures'], patched['frames'])
 
 
+def patch_exposures_efftime_spec(src_exposures, dst_exposures, dst_tiles):
+    """Patch exposures that have ``EFFTIME_SPEC == 0`` where the corresponding
+    tile has ``EFFTIME_SPEC > 0``.
+
+    Parameters
+    ----------
+    src_exposures : :class:`~astropy.table.Table`
+        Source of exposures data.
+    dst_exposures : :class:`~astropy.table.Table`
+        Data to be patched.
+    dst_tiles : :class:`~astropy.table.Table`
+        Tiles data for comparison. Should not be modified.
+
+    Returns
+    -------
+    :class:`~astropy.table.Table`
+        A *copy* of `dst_exposures` with data replaced from `src_exposures`.
+    """
+    log = get_logger()
+    dst_exposures_patched = dst_exposures.copy()
+    candidate_tiles = dst_tiles[(dst_tiles['LASTNIGHT'] >= 20201214) &
+                                (dst_tiles['EFFTIME_SPEC'] > 0)]
+    for t in candidate_tiles:
+        row_index = np.where((dst_exposures_patched['TILEID'] == t['TILEID']) &
+                             (dst_exposures_patched['EFFTIME_SPEC'] > 0))[0]
+        if len(row_index) == 0:
+            log.error("No valid exposures found for tile %d, even though EFFTIME_SPEC == %.2f!",
+                      t['TILEID'], t['EFFTIME_SPEC'])
+            bad_index = np.where((dst_exposures_patched['TILEID'] == t['TILEID']))[0]
+            w = np.in1d(src_exposures['EXPID'], dst_exposures_patched['EXPID'][bad_index])
+            n_src = w.sum()
+            can_patch = False
+            if n_src == 0:
+                log.error("Tile %d cannot be patched with upstream data.", t['TILEID'])
+            elif n_src == len(bad_index):
+                log.info("Tile %d can be fully patched with upstream data.", t['TILEID'])
+                can_patch = True
+            elif n_src < len(bad_index):
+                log.warning("Tile %d can be partially patched with upstream data.", t['TILEID'])
+                can_patch = True
+            else:
+                log.critical("Should not actually reach this point. This is weird.")
+            if can_patch:
+                for row in src_exposures[w]:
+                    ww = dst_exposures_patched['EXPID'] == row['EXPID']
+                    dst_exposures_patched['EFFTIME_SPEC'][ww] = row['EFFTIME_SPEC']
+    return dst_exposures_patched
+
+
 def get_data(options):
     """Read in source and destination data.
 
@@ -513,6 +562,7 @@ def main():
     patched['frames'] = patch_missing_frames_mjd(patched['exposures'], patched['frames'])
     patched['tiles'] = patch_tiles(src['tiles'], dst['tiles'], timestamp)
     back_exposures, back_tiles = back_patch_inconsistent_values(patched)
+    patched['exposures'] = patch_exposures_efftime_spec(src['exposures'], patched['exposures'], patched['tiles'])
     #
     # Write out data.
     #
