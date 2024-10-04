@@ -355,6 +355,18 @@ def patch_tiles(src_tiles, dst_tiles, timestamp):
     assert len(oddball_program) == 0
     dst_tiles_patched['SURVEY'][oddball_survey] = 'cmx'
     #
+    # Patch GOALTYPE.
+    #
+    dst_tiles_patched['GOALTYPE'][dst_tiles_patched['TILEID'] == 83004] = 'dark'
+    dst_tiles_patched['GOALTYPE'][dst_tiles_patched['TILEID'] == 83024] = 'bright'
+    oddball_goaltype = np.where(dst_tiles_patched['GOALTYPE'] == 'unknown')[0]
+    dst_tiles_patched['GOALTYPE'][oddball_goaltype] = 'other'
+    #
+    # Patch EFFTIME_SPEC.
+    #
+    dst_tiles_patched['EFFTIME_SPEC'][dst_tiles_patched['TILEID'] == 1825] = 0
+    dst_tiles_patched['EFFTIME_SPEC'][dst_tiles_patched['TILEID'] == 21273] = 0
+    #
     # Add UPDATED.
     #
     dst_tiles_patched['UPDATED'] = np.array([timestamp.strftime("%Y-%m-%dT%H:%M:%S%z")]*len(dst_tiles_patched))
