@@ -8,10 +8,12 @@ Change Log
 *Planned*: Support loading ongoing daily reductions, in particular, updates
 to tiles already in the database.
 
-1.2.1 (unreleased)
+1.2.1 (2024-10-07)
 ------------------
 
-* Finalize patches of ``tiles-daily`` and ``exposures-daily`` files.
+* Finalize patches of ``tiles-daily`` and ``exposures-daily`` files (PR `#16`_).
+
+.. _`#16`: https://github.com/desihub/specprod-db/pull/16
 
 1.2.0 (2024-09-26)
 ------------------
