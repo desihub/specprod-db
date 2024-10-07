@@ -20,7 +20,7 @@ sys.path.insert(0, os.path.abspath('../py'))
 
 project = 'specprod-db'
 python_project = 'specprodDB'
-copyright = '2023, DESI Collaboration'
+copyright = '2023-2024, DESI Collaboration'
 author = 'DESI Collaboration'
 
 
@@ -35,7 +35,8 @@ extensions = [
     'sphinx.ext.todo',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
-    'sphinx.ext.napoleon'
+    'sphinx.ext.napoleon',
+    'sphinx_rtd_theme'
 ]
 
 # Configuration for intersphinx, copied from astropy.
@@ -46,9 +47,10 @@ intersphinx_mapping = {
     'matplotlib': ('https://matplotlib.org/stable/', None),
     'astropy': ('https://docs.astropy.org/en/stable/', None),
     'h5py': ('https://docs.h5py.org/en/latest/', None),
-    'sqlalchemy': ('https://docs.sqlalchemy.org/en/14/', None),
+    'sqlalchemy': ('https://docs.sqlalchemy.org/en/20/', None),
     'desispec': ('https://desispec.readthedocs.io/en/latest/', None),
     'desiutil': ('https://desiutil.readthedocs.io/en/latest/', None),
+    'desitarget': ('https://desitarget.readthedocs.io/en/latest/', None),
     }
 
 # Add any paths that contain templates here, relative to this directory.
@@ -88,13 +90,9 @@ for missing in ('desiutil', 'desispec', 'desitarget', 'numpy', 'astropy', 'pytz'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-#
-try:
-    import sphinx_rtd_theme
-    html_theme = 'sphinx_rtd_theme'
-    html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
-except ImportError:
-    html_theme = 'alabaster'
+#html_theme = 'default'
+#html_theme = 'haiku'
+html_theme = 'sphinx_rtd_theme'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

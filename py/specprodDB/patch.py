@@ -133,7 +133,7 @@ def patch_exposures(src_exposures, dst_exposures, first_night=None):
     Parameters
     ----------
     src_exposures : :class:`~astropy.table.Table`
-        Source of tiles data.
+        Source of exposures data.
     dst_exposures : :class:`~astropy.table.Table`
         Data to be patched.
     first_night : :class:`int`, optional
@@ -355,6 +355,18 @@ def patch_tiles(src_tiles, dst_tiles, timestamp):
     assert len(oddball_program) == 0
     dst_tiles_patched['SURVEY'][oddball_survey] = 'cmx'
     #
+    # Patch GOALTYPE.
+    #
+    dst_tiles_patched['GOALTYPE'][dst_tiles_patched['TILEID'] == 83004] = 'dark'
+    dst_tiles_patched['GOALTYPE'][dst_tiles_patched['TILEID'] == 83024] = 'bright'
+    oddball_goaltype = np.where(dst_tiles_patched['GOALTYPE'] == 'unknown')[0]
+    dst_tiles_patched['GOALTYPE'][oddball_goaltype] = 'other'
+    #
+    # Patch EFFTIME_SPEC.
+    #
+    dst_tiles_patched['EFFTIME_SPEC'][dst_tiles_patched['TILEID'] == 1825] = 0
+    dst_tiles_patched['EFFTIME_SPEC'][dst_tiles_patched['TILEID'] == 21273] = 0
+    #
     # Add UPDATED.
     #
     dst_tiles_patched['UPDATED'] = np.array([timestamp.strftime("%Y-%m-%dT%H:%M:%S%z")]*len(dst_tiles_patched))
@@ -365,6 +377,97 @@ def patch_tiles(src_tiles, dst_tiles, timestamp):
         if dst_tiles_patched[column].dtype.kind == 'f':
             assert np.isfinite(dst_tiles_patched[column]).all()
     return dst_tiles_patched
+
+
+def back_patch_inconsistent_values(patched):
+    """When the primary round of patching is done, copy some values back
+    into the exposures and frames files.
+
+    Parameters
+    ----------
+    patched : :class:`dict`
+        A dictionary containing tables for further patching.
+
+    Returns
+    -------
+    :class:`tuple`
+        A tuple containing the back-patched exposures and frames tables.
+        Not strictly necessary as this function will modify the tables in
+        `patched` in-place.
+    """
+    log = get_logger()
+    back_patch = {'tiles': 'exposures', 'exposures': 'frames'}
+    for s, d in back_patch.items():
+        for row in patched[s]:
+            key = 'TILEID' if s == 'tiles' else 'EXPID'
+            w = np.where(patched[d][key] == row[key])[0]
+            for column in ('SURVEY', 'PROGRAM', 'FAPRGRM', 'FAFLAVOR', 'GOALTYPE'):
+                if column in patched[d].colnames:
+                    if (patched[d][column][w] != row[column]).any():
+                        log.info("Patching %s associated with %s %d with %s = '%s'.",
+                                 d, ('tile' if s == 'tiles' else 'exposure'), row[key],
+                                 column, row[column])
+                        patched[d][column][w] = row[column]
+    #
+    # Run a QA step.
+    #
+    for s, d in back_patch.items():
+        for row in patched[s]:
+            key = 'TILEID' if s == 'tiles' else 'EXPID'
+            w = np.where(patched[d][key] == row[key])[0]
+            for column in ('SURVEY', 'PROGRAM', 'FAPRGRM', 'FAFLAVOR', 'GOALTYPE'):
+                if column in patched[d].colnames:
+                    assert (patched[d][column][w] == row[column]).all()
+    return (patched['exposures'], patched['frames'])
+
+
+def patch_exposures_efftime_spec(src_exposures, dst_exposures, dst_tiles):
+    """Patch exposures that have ``EFFTIME_SPEC == 0`` where the corresponding
+    tile has ``EFFTIME_SPEC > 0``.
+
+    Parameters
+    ----------
+    src_exposures : :class:`~astropy.table.Table`
+        Source of exposures data.
+    dst_exposures : :class:`~astropy.table.Table`
+        Data to be patched.
+    dst_tiles : :class:`~astropy.table.Table`
+        Tiles data for comparison. Should not be modified.
+
+    Returns
+    -------
+    :class:`~astropy.table.Table`
+        A *copy* of `dst_exposures` with data replaced from `src_exposures`.
+    """
+    log = get_logger()
+    dst_exposures_patched = dst_exposures.copy()
+    candidate_tiles = dst_tiles[(dst_tiles['LASTNIGHT'] >= 20201214) &
+                                (dst_tiles['EFFTIME_SPEC'] > 0)]
+    for t in candidate_tiles:
+        row_index = np.where((dst_exposures_patched['TILEID'] == t['TILEID']) &
+                             (dst_exposures_patched['EFFTIME_SPEC'] > 0))[0]
+        if len(row_index) == 0:
+            log.error("No valid exposures found for tile %d, even though EFFTIME_SPEC == %.2f!",
+                      t['TILEID'], t['EFFTIME_SPEC'])
+            bad_index = np.where((dst_exposures_patched['TILEID'] == t['TILEID']))[0]
+            w = np.in1d(src_exposures['EXPID'], dst_exposures_patched['EXPID'][bad_index])
+            n_src = w.sum()
+            can_patch = False
+            if n_src == 0:
+                log.error("Tile %d cannot be patched with upstream data.", t['TILEID'])
+            elif n_src == len(bad_index):
+                log.info("Tile %d can be fully patched with upstream data.", t['TILEID'])
+                can_patch = True
+            elif n_src < len(bad_index):
+                log.warning("Tile %d can be partially patched with upstream data.", t['TILEID'])
+                can_patch = True
+            else:
+                log.critical("Should not actually reach this point. This is weird.")
+            if can_patch:
+                for row in src_exposures[w]:
+                    ww = dst_exposures_patched['EXPID'] == row['EXPID']
+                    dst_exposures_patched['EFFTIME_SPEC'][ww] = row['EFFTIME_SPEC']
+    return dst_exposures_patched
 
 
 def get_data(options):
@@ -458,6 +561,8 @@ def main():
     patched['exposures'] = patch_exposures(src['exposures'], dst['exposures'])
     patched['frames'] = patch_missing_frames_mjd(patched['exposures'], patched['frames'])
     patched['tiles'] = patch_tiles(src['tiles'], dst['tiles'], timestamp)
+    back_exposures, back_tiles = back_patch_inconsistent_values(patched)
+    patched['exposures'] = patch_exposures_efftime_spec(src['exposures'], patched['exposures'], patched['tiles'])
     #
     # Write out data.
     #
