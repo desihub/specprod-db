@@ -24,14 +24,13 @@ from pytz import utc
 
 from sqlalchemy import __version__ as sqlalchemy_version
 from sqlalchemy import (create_engine, event, ForeignKey, Column, DDL,
-                        BigInteger, Boolean, Integer, String, Float, DateTime,
-                        SmallInteger, bindparam, Numeric, and_, text)
-from sqlalchemy.sql import func
-from sqlalchemy.exc import IntegrityError, ProgrammingError
+                        BigInteger, Boolean, Integer, String, DateTime,
+                        SmallInteger, Numeric, text)
 from sqlalchemy.orm import (DeclarativeBase, declarative_mixin, declared_attr,
                             scoped_session, sessionmaker, relationship)
-from sqlalchemy.schema import CreateSchema, Index
+from sqlalchemy.schema import Index
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, REAL
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from desiutil import __version__ as desiutil_version
 from desiutil.iers import freeze_iers
@@ -1224,6 +1223,33 @@ class Ztile(SchemaMixin, Base):
         return [cls(**(dict([(col.name, dat) for col, dat in zip(cls.__table__.columns, row)]))) for row in data_rows]
 
 
+def upsert(rows):
+    """Convert a list of ORM objects into an ``INSERT ... ON CONFLICT`` statement.
+
+    Parameters
+    ----------
+    rows : :class:`list`
+        A list of ORM objects. All items should be the same type.
+
+    Returns
+    -------
+    :class:`~sqlalchemy.dialects.postgresql.Insert`
+        A specialzed INSERT statement ready for execution.
+    """
+    cls = rows[0].__class__
+    pk = [c for c in cls.__table__.columns if c.primary_key][0]
+    inserts = list()
+    for row in rows:
+        rr = row.__dict__.copy()
+        del rr['_sa_instance_state']
+        inserts.append(rr)
+    stmt = pg_insert(cls).values(inserts)
+    stmt = stmt.on_conflict_do_update(index_elements=[getattr(cls, pk.name)],
+                                      set_=dict([(c, getattr(stmt.excluded, c.name))
+                                                 for c in cls.__table__.columns if c.name != pk.name]))
+    return stmt
+
+
 def deduplicate_targetid(data):
     """Find targetphot rows that are not already loaded into the Photometry
     table *and* resolve any duplicate TARGETID.
@@ -1739,4 +1765,9 @@ def main():
             log.info("Finished loading %s.", tn)
     if options.load == 'fiberassign':
         log.info("Consider running VACUUM FULL VERBOSE ANALYZE at this point.")
+    #
+    # Clean up.
+    #
+    dbSession.close()
+    engine.dispose()
     return 0
