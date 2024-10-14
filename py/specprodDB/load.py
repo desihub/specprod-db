@@ -1223,13 +1223,15 @@ class Ztile(SchemaMixin, Base):
         return [cls(**(dict([(col.name, dat) for col, dat in zip(cls.__table__.columns, row)]))) for row in data_rows]
 
 
-def upsert(rows):
+def upsert(rows, do_nothing=False):
     """Convert a list of ORM objects into an ``INSERT ... ON CONFLICT`` statement.
 
     Parameters
     ----------
     rows : :class:`list`
         A list of ORM objects. All items should be the same type.
+    do_nothing : :class:`bool`, optional
+        If ``True``, *do not* attempt to update existing rows.
 
     Returns
     -------
@@ -1244,9 +1246,12 @@ def upsert(rows):
         del rr['_sa_instance_state']
         inserts.append(rr)
     stmt = pg_insert(cls).values(inserts)
-    stmt = stmt.on_conflict_do_update(index_elements=[getattr(cls, pk.name)],
-                                      set_=dict([(c, getattr(stmt.excluded, c.name))
-                                                 for c in cls.__table__.columns if c.name != pk.name]))
+    if do_nothing:
+        stmt = stmt.on_conflict_do_nothing(index_elements=[getattr(cls, pk.name)])
+    else:
+        stmt = stmt.on_conflict_do_update(index_elements=[getattr(cls, pk.name)],
+                                          set_=dict([(c, getattr(stmt.excluded, c.name))
+                                                     for c in cls.__table__.columns if c.name != pk.name]))
     return stmt
 
 

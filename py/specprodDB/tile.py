@@ -73,8 +73,10 @@ def potential_targets(tileid):
         A table containing potential target information.
     """
     potential_targets_table = Table.read(fiberassign_file(tileid), format='fits', hdu='TARGETS')
+    db.log.debug("Found %d potential targets.", len(potential_targets_table))
     no_sky_rows = no_sky(potential_targets_table)
     potential_targets_table = Table(potential_targets_table[no_sky_rows])
+    db.log.debug("%d potential targets remain after removing sky targets.", len(potential_targets_table))
     return potential_targets_table
 
 
@@ -96,6 +98,7 @@ def potential_photometry(tile, targets):
     :class:`~astropy.table.Table`
         A Table that will be the input to photometric search functions.
     """
+    db.log.debug("Checking for existing photometry.")
     potential_tractorphot_already_loaded = db.dbSession.query(db.Photometry.targetid).filter(db.Photometry.targetid.in_(targets['TARGETID'].tolist())).all()
     potential_tractorphot_not_already_loaded = np.ones((len(targets),), dtype=bool)
     if len(potential_tractorphot_already_loaded) > 0:
@@ -126,7 +129,9 @@ def targetphot(catalog):
     :class:`~astropy.table.Table`
         A Table containing the targeting data.
     """
+    db.log.debug("Starting gather_targetphot(); %d objects in input catalog.", len(catalog))
     potential_targetphot = gather_targetphot(catalog, racolumn='TARGET_RA', deccolumn='TARGET_DEC')
+    db.log.debug("Finished with gather_targetphot(); %d objects found.", len(potential_targetphot))
     potential_targetphot['SURVEY'] = catalog['SURVEY']
     potential_targetphot['PROGRAM'] = catalog['PROGRAM']
     potential_targetphot['TILEID'] = catalog['TILEID']
@@ -151,7 +156,9 @@ def tractorphot(catalog):
     :class:`~astropy.table.Table`
         A Table containing the photometry data.
     """
+    db.log.debug("Starting gather_tractorphot(); %d objects in input catalog.", len(catalog))
     potential_tractorphot = gather_tractorphot(catalog, racolumn='TARGET_RA', deccolumn='TARGET_DEC')
+    db.log.debug("Finished with gather_tractorphot(); %d objects found.", len(potential_tractorphot))
     assert (np.where(potential_tractorphot['RELEASE'] == 0)[0] == np.where(potential_tractorphot['BRICKNAME'] == '')[0]).all()
     return potential_tractorphot
 
