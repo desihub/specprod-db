@@ -1375,7 +1375,7 @@ def load_file(filepaths, tcls, hdu=1, row_filter=None, q3c=None, chunksize=50000
             log.info("Row filter removed all data rows, skipping %s.", filepath)
             continue
         log.info("Row filter applied on %s; %d rows remain.", tn, good_rows.sum())
-        orm_objects = tcls.convert(data, row_filter=good_rows)
+        orm_objects = tcls.convert(data, row_index=good_rows)
         log.info("Converted data to ORM objects on %s.", tn)
         del data
         finalrows = len(orm_objects)
