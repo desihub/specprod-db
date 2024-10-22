@@ -1292,7 +1292,8 @@ def deduplicate_targetid(data):
     return load_rows
 
 
-def load_file(filepaths, tcls, hdu=1, row_filter=None, q3c=None, chunksize=50000):
+def load_file(filepaths, tcls, hdu=1, row_filter=None, q3c=None, chunksize=50000,
+              replacement_value=-9999.0):
     """Load data file into the database, assuming that column names map
     to database column names with no surprises.
 
@@ -1312,6 +1313,8 @@ def load_file(filepaths, tcls, hdu=1, row_filter=None, q3c=None, chunksize=50000
         named `q3c`.
     chunksize : :class:`int`, optional
         If set, load database `chunksize` rows at a time (default 50000).
+    replacement_value : :class:`float`, optional
+        Replace ``NaN`` or other non-finite values with this value (default -9999.0).
 
     Returns
     -------
@@ -1359,13 +1362,14 @@ def load_file(filepaths, tcls, hdu=1, row_filter=None, q3c=None, chunksize=50000
                                     "%s of %s.", nbadrows, nbaditems, col, filepath)
                     else:
                         log.warning("Bad data detected in high-dimensional column %s of %s.", col, filepath)
-                    #
-                    # TODO: is this replacement appropriate for all columns?
-                    #
                     if col in masked:
-                        data[col].data.data[bad] = -9999.0
+                        log.debug("data['%s'].data.data[bad] = %f", col, replacement_value)
+                        log.debug("data['%s'].mask[bad] = False", col)
+                        data[col].data.data[bad] = replacement_value
+                        data[col].mask[bad] = False
                     else:
-                        data[col][bad] = -9999.0
+                        log.debug("data['%s'][bad] = %f", col, replacement_value)
+                        data[col][bad] = replacement_value
         log.info("Integrity check complete on %s.", tn)
         if row_filter is None:
             good_rows = np.ones((len(data),), dtype=bool)
