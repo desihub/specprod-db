@@ -1420,7 +1420,11 @@ def load_file(filepaths, tcls, hdu=1, row_filter=None, q3c=None, chunksize=50000
             data_chunk = orm_objects[k*chunksize:(k+1)*chunksize]
             if len(data_chunk) > 0:
                 loaded_rows += len(data_chunk)
-                dbSession.add_all(data_chunk)
+                if tn == 'photometry' and os.path.basename(filepath).startswith('targetphot'):
+                    statement = upsert(data_chunk, do_nothing=True)
+                    dbSession.execute(statement)
+                else:
+                    dbSession.add_all(data_chunk)
                 dbSession.commit()
                 log.info("Inserted %d rows in %s.",
                          min((k+1)*chunksize, finalrows), tn)
@@ -1721,7 +1725,7 @@ def main():
                'targetphot': [{'filepaths': target_files,
                                'tcls': Photometry,
                                'hdu': 'TARGETPHOT',
-                               'row_filter': deduplicate_targetid,
+                               # 'row_filter': deduplicate_targetid,
                                'q3c': 'ra',
                                'chunksize': chunksize
                                }],
