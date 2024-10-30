@@ -359,6 +359,16 @@ class Target(SchemaMixin, Base):
         if len(row_index) == 0:
             return []
         data = finitize(data)
+        default_columns = dict()
+        #
+        # Surveys like main may not have the full set of target bitmasks
+        #
+        surveys = ('', 'sv1', 'sv2', 'sv3')
+        programs = ('desi', 'bgs', 'mws', 'scnd')
+        masks = ['cmx_target'] + [('_'.join(p) if p[0] else p[1]) + '_target'
+                                  for p in itertools.product(surveys, programs)]
+        for mask in masks:
+            default_columns[mask] = 0
         check_columns = {'survey': survey, 'tileid': tileid}
         for column in check_columns:
             if check_columns[column] is None:
@@ -377,6 +387,8 @@ class Target(SchemaMixin, Base):
                 else:
                     id0 = np.array([surveyid(survey) << 32 | tileid]*len(row_index), dtype=np.int64)
                 data_column = [i0 << 64 | i1 for i0, i1 in zip(id0.tolist(), data['TARGETID'].tolist())]
+            elif column.name in default_columns and column.name.upper() not in data.colnames:
+                data_column = [default_columns[column.name]]*len(row_index)
             else:
                 data_column = data[column.name.upper()][row_index].tolist()
             data_columns.append(data_column)
