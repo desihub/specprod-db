@@ -1674,7 +1674,8 @@ def main():
     if target_summary:
         target_files = os.path.join(options.datapath, 'vac', release, 'lsdr9-photometry', specprod, photometry_version, 'potential-targets', f'targetphot-potential-{specprod}.fits')
     else:
-        target_files = glob.glob(os.path.join(options.datapath, 'vac', release, 'lsdr9-photometry', specprod, photometry_version, 'potential-targets', f'targetphot-potential-*-{specprod}.fits'))
+        # target_files = glob.glob(os.path.join(options.datapath, 'vac', release, 'lsdr9-photometry', specprod, photometry_version, 'potential-targets', f'targetphot-potential-*-{specprod}.fits'))
+        target_files = glob.glob(os.path.join(options.datapath, 'vac', release, 'lsdr9-photometry', specprod, photometry_version, 'potential-targets', f'targetphot-potential-*.fits'))
     if redshift_type == 'base' or redshift_type == 'patch':
         redshift_dir = os.path.join(options.datapath, 'spectro', 'redux', specprod, 'zcatalog')
         if redshift_type == 'base':
