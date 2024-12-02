@@ -1676,14 +1676,22 @@ def main():
     else:
         # target_files = glob.glob(os.path.join(options.datapath, 'vac', release, 'lsdr9-photometry', specprod, photometry_version, 'potential-targets', f'targetphot-potential-*-{specprod}.fits'))
         target_files = glob.glob(os.path.join(options.datapath, 'vac', release, 'lsdr9-photometry', specprod, photometry_version, 'potential-targets', f'targetphot-potential-*.fits'))
+    generate_primary = False
     if redshift_type == 'base' or redshift_type == 'patch':
-        redshift_dir = os.path.join(options.datapath, 'spectro', 'redux', specprod, 'zcatalog')
         if redshift_type == 'base':
-            zpix_file = os.path.join(redshift_dir, f'zall-pix-{specprod}.fits')
-            ztile_file = os.path.join(redshift_dir, f'zall-tilecumulative-{specprod}.fits')
+            redshift_dir = os.path.join(options.datapath, 'spectro', 'redux', specprod, 'zcatalog')
         else:
-            zpix_file = os.path.join(redshift_dir, redshift_version, f'zall-pix-{specprod}.fits')
-            ztile_file = os.path.join(redshift_dir, redshift_version, f'zall-tilecumulative-{specprod}.fits')
+            redshift_dir = os.path.join(options.datapath, 'spectro', 'redux', specprod, 'zcatalog', redshift_version)
+        zpix_file = os.path.join(redshift_dir, f'zall-pix-{specprod}.fits')
+        ztile_file = os.path.join(redshift_dir, f'zall-tilecumulative-{specprod}.fits')
+        if not os.path.exists(zpix_file):
+            log.warning("%s not found, will use individual survey-program files.")
+            zpix_file = glob.glob(os.path.join(redshift_dir, f'zpix-*.fits'))
+            generate_primary = True
+        if not os.path.exists(ztile_file):
+            log.warning("%s not found, will use individual survey-program files.")
+            ztile_file = glob.glob(os.path.join(redshift_dir, f'ztile-*-cumulative.fits'))
+            generate_primary = True
     elif redshift_type == 'zcat':
         redshift_dir = os.path.join(options.datapath, 'vac', release, 'zcat', specprod)
         zpix_file = os.path.join(redshift_dir, redshift_version, f'zall-pix-{release}-vac.fits')
@@ -1817,6 +1825,8 @@ def main():
             log.info("Finished loading %s.", tn)
     if options.load == 'fiberassign':
         log.info("Consider running VACUUM FULL VERBOSE ANALYZE at this point.")
+    if options.load == 'redshift' and generate_primary:
+        log.info("Generating global primary columns.")
     #
     # Clean up.
     #
