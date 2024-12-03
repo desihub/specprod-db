@@ -1383,7 +1383,7 @@ def load_file(filepaths, tcls, hdu=1, row_filter=None, q3c=None, chunksize=50000
         Read a data table from this HDU (default 1).
     row_filter : callable, optional
         If set, apply this filter to the rows to be loaded.  The function
-        should return :class:`bool`, with ``True`` meaning a good row.
+        should return an array of indexes of "good" rows.
     q3c : :class:`str`, optional
         If set, create q3c index on the table, using the RA column
         named `q3c`.
@@ -1414,13 +1414,13 @@ def load_file(filepaths, tcls, hdu=1, row_filter=None, q3c=None, chunksize=50000
             log.error("Unrecognized data file, %s!", filepath)
             return
         if row_filter is None:
-            good_rows = np.ones((len(data),), dtype=bool)
+            good_rows = np.arange(len(data))
         else:
             good_rows = row_filter(data)
-        if good_rows.sum() == 0:
+        if len(good_rows) == 0:
             log.info("Row filter removed all data rows, skipping %s.", filepath)
             continue
-        log.info("Row filter applied on %s; %d rows remain.", tn, good_rows.sum())
+        log.info("Row filter applied on %s; %d rows remain.", tn, len(good_rows))
         orm_objects = tcls.convert(data, row_index=good_rows)
         log.info("Converted data to ORM objects on %s.", tn)
         del data
