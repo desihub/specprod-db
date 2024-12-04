@@ -1369,7 +1369,8 @@ def finitize(data, replacement_value=-9999.0):
     return data
 
 
-def load_file(filepaths, tcls, hdu=1, row_filter=None, q3c=None, chunksize=50000):
+def load_file(filepaths, tcls, hdu=1, row_filter=None, q3c=None, chunksize=50000,
+              alternate_load=False):
     """Load data file into the database, assuming that column names map
     to database column names with no surprises.
 
@@ -1389,6 +1390,8 @@ def load_file(filepaths, tcls, hdu=1, row_filter=None, q3c=None, chunksize=50000
         named `q3c`.
     chunksize : :class:`int`, optional
         If set, load database `chunksize` rows at a time (default 50000).
+    alternate_load : :class:`bool`, optional
+        If ``True`` use an alternate loading scheme that may reduce memory use.
 
     Returns
     -------
@@ -1421,21 +1424,28 @@ def load_file(filepaths, tcls, hdu=1, row_filter=None, q3c=None, chunksize=50000
             log.info("Row filter removed all data rows, skipping %s.", filepath)
             continue
         log.info("Row filter applied on %s; %d rows remain.", tn, len(good_rows))
-        orm_objects = tcls.convert(data, row_index=good_rows)
-        log.info("Converted data to ORM objects on %s.", tn)
-        del data
-        finalrows = len(orm_objects)
+        if alternate_load:
+            data = data[good_rows]
+            finalrows = len(data)
+        else:
+            orm_objects = tcls.convert(data, row_index=good_rows)
+            log.info("Converted data to ORM objects on %s.", tn)
+            del data
+            finalrows = len(orm_objects)
         n_chunks = finalrows//chunksize
         if finalrows % chunksize:
             n_chunks += 1
         for k in range(n_chunks):
-            data_chunk = orm_objects[k*chunksize:(k+1)*chunksize]
+            if alternate_load:
+                data_chunk = tcls.convert(data[k*chunksize:(k+1)*chunksize])
+            else:
+                data_chunk = orm_objects[k*chunksize:(k+1)*chunksize]
             if len(data_chunk) > 0:
                 loaded_rows += len(data_chunk)
                 dbSession.add_all(data_chunk)
                 dbSession.commit()
                 log.info("Inserted %d rows in %s.",
-                         min((k+1)*chunksize, finalrows), tn)
+                        min((k+1)*chunksize, finalrows), tn)
             else:
                 log.error("Detected empty data chunk in %s!", tn)
     if q3c is not None:
@@ -1755,7 +1765,8 @@ def main():
                              'tcls': Ztile,
                              'hdu': 'ZCATALOG',
                              'row_filter': no_sky,
-                             'chunksize': chunksize
+                             'chunksize': chunksize,
+                             'alternate_load': True
                              }],
                'fiberassign': [{'filepaths': None,
                                 'tcls': Fiberassign,
@@ -1775,7 +1786,8 @@ def main():
                                     'tcls': Zpix,
                                     'hdu': 'ZCATALOG',
                                     'row_filter': no_sky,
-                                    'chunksize': chunksize
+                                    'chunksize': chunksize,
+                                    'alternate_load': True
                                     })
     try:
         loader = loaders[options.load]
