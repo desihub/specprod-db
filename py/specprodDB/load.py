@@ -1445,7 +1445,7 @@ def load_file(filepaths, tcls, hdu=1, row_filter=None, q3c=None, chunksize=50000
                 dbSession.add_all(data_chunk)
                 dbSession.commit()
                 log.info("Inserted %d rows in %s.",
-                        min((k+1)*chunksize, finalrows), tn)
+                         min((k+1)*chunksize, finalrows), tn)
             else:
                 log.error("Detected empty data chunk in %s!", tn)
     if q3c is not None:
