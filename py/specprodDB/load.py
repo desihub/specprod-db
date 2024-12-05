@@ -1228,7 +1228,10 @@ class Ztile(SchemaMixin, Base):
         data_columns = list()
         for column in cls.__table__.columns:
             if column.name == 'id':
-                id0 = spgrpid(spgrp) << 27 | data['SPGRPVAL'][row_index].base.astype(np.int64)
+                if 'survey' in default_columns:
+                    id0 = ((spgrpid(spgrp) << 27 | data['SPGRPVAL'][row_index].base.astype(np.int64)) << 32) | tileid
+                else:
+                    id0 = ((spgrpid(spgrp) << 27 | data['SPGRPVAL'][row_index].base.astype(np.int64)) << 32) | data['TILEID'][row_index].astype(np.int64)
                 data_column = [(i0 << 64) | i1 for i0, i1 in zip(id0.tolist(), data['TARGETID'][row_index].tolist())]
             elif column.name == 'targetphotid':
                 if 'survey' in default_columns:
