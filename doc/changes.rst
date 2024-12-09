@@ -2,11 +2,19 @@
 Change Log
 ==========
 
-1.3.0 (unreleaded)
+1.4.0 (unreleaded)
 ------------------
 
 *Planned*: Support loading ongoing daily reductions, in particular, updates
 to tiles already in the database.
+
+1.3.0 (2024-12-09)
+------------------
+
+* This release corresponds to loading the ``loa`` spectroscopic production
+  in preparation for DR2 (PR `#17`_).
+
+.. _`#17`: https://github.com/desihub/specprod-db/pull/17
 
 1.2.1 (2024-10-07)
 ------------------
