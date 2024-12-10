@@ -1024,6 +1024,9 @@ class Zpix(SchemaMixin, Base):
             if check_columns[column] is None:
                 if column.upper() in data.colnames:
                     log.info("Obtaining '%s' from input data file.", column)
+                elif column.upper() in data.meta:
+                    log.info("Obtaining '%s' from input data header.", column)
+                    default_columns[column] = data.meta[column.upper()]
                 else:
                     msg = "Could not obtain '%s' from input data file."
                     log.critical(msg, column)
@@ -1218,7 +1221,10 @@ class Ztile(SchemaMixin, Base):
         for column in check_columns:
             if check_columns[column] is None:
                 if column.upper() in data.colnames:
-                    log.info("Obtaining '%s' from input data file.", column)
+                    log.info("Obtaining '%s' from input data table.", column)
+                elif column.upper() in data.meta:
+                    log.info("Obtaining '%s' from input data header.", column)
+                    default_columns[column] = data.meta[column.upper()]
                 else:
                     msg = "Could not obtain '%s' from input data file."
                     log.critical(msg, column)
