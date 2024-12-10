@@ -2,13 +2,13 @@
 Change Log
 ==========
 
-1.4.0 (unreleaded)
+1.4.0 (unreleased)
 ------------------
 
 *Planned*: Support loading ongoing daily reductions, in particular, updates
 to tiles already in the database.
 
-1.3.0 (2024-12-09)
+1.3.0 (2024-12-10)
 ------------------
 
 * This release corresponds to loading the ``loa`` spectroscopic production
