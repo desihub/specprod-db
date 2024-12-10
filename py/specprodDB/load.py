@@ -24,14 +24,13 @@ from pytz import utc
 
 from sqlalchemy import __version__ as sqlalchemy_version
 from sqlalchemy import (create_engine, event, ForeignKey, Column, DDL,
-                        BigInteger, Boolean, Integer, String, Float, DateTime,
-                        SmallInteger, bindparam, Numeric, and_, text)
-from sqlalchemy.sql import func
-from sqlalchemy.exc import IntegrityError, ProgrammingError
+                        BigInteger, Boolean, Integer, String, DateTime,
+                        SmallInteger, Numeric, text)
 from sqlalchemy.orm import (DeclarativeBase, declarative_mixin, declared_attr,
                             scoped_session, sessionmaker, relationship)
-from sqlalchemy.schema import CreateSchema, Index
+from sqlalchemy.schema import Index
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, REAL
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from desiutil import __version__ as desiutil_version
 from desiutil.iers import freeze_iers
@@ -104,6 +103,10 @@ class Version(SchemaMixin, Base):
             row_index = np.arange(len(data))
         if len(row_index) == 0:
             return []
+        #
+        # Version has no floating-point columns.
+        #
+        # data = finitize(data)
         data_columns = list()
         for column in cls.__table__.columns:
             if column.name == 'id':
@@ -257,6 +260,7 @@ class Photometry(SchemaMixin, Base):
             row_index = np.arange(len(data))
         if len(row_index) == 0:
             return []
+        data = finitize(data)
         expand_dchisq = ('dchisq_psf', 'dchisq_rex', 'dchisq_dev', 'dchisq_exp', 'dchisq_ser',)
         data_columns = list()
         for column in cls.__table__.columns:
@@ -354,6 +358,17 @@ class Target(SchemaMixin, Base):
             row_index = np.arange(len(data))
         if len(row_index) == 0:
             return []
+        data = finitize(data)
+        default_columns = dict()
+        #
+        # Surveys like main may not have the full set of target bitmasks
+        #
+        surveys = ('', 'sv1', 'sv2', 'sv3')
+        programs = ('desi', 'bgs', 'mws', 'scnd')
+        masks = ['cmx_target'] + [('_'.join(p) if p[0] else p[1]) + '_target'
+                                  for p in itertools.product(surveys, programs)]
+        for mask in masks:
+            default_columns[mask] = 0
         check_columns = {'survey': survey, 'tileid': tileid}
         for column in check_columns:
             if check_columns[column] is None:
@@ -372,6 +387,8 @@ class Target(SchemaMixin, Base):
                 else:
                     id0 = np.array([surveyid(survey) << 32 | tileid]*len(row_index), dtype=np.int64)
                 data_column = [i0 << 64 | i1 for i0, i1 in zip(id0.tolist(), data['TARGETID'].tolist())]
+            elif column.name in default_columns and column.name.upper() not in data.colnames:
+                data_column = [default_columns[column.name]]*len(row_index)
             else:
                 data_column = data[column.name.upper()][row_index].tolist()
             data_columns.append(data_column)
@@ -458,6 +475,7 @@ class Tile(SchemaMixin, Base):
             row_index = np.arange(len(data))
         if len(row_index) == 0:
             return []
+        data = finitize(data)
         data_columns = list()
         for column in cls.__table__.columns:
             data_column = data[column.name.upper()][row_index].tolist()
@@ -550,6 +568,7 @@ class Exposure(SchemaMixin, Base):
             row_index = np.arange(len(data))
         if len(row_index) == 0:
             return []
+        data = finitize(data)
         data_columns = list()
         for column in cls.__table__.columns:
             if column.name == 'date_obs':
@@ -640,6 +659,7 @@ class Frame(SchemaMixin, Base):
             row_index = np.arange(len(data))
         if len(row_index) == 0:
             return []
+        data = finitize(data)
         data_columns = list()
         for column in cls.__table__.columns:
             if column.name == 'frameid':
@@ -728,6 +748,7 @@ class Fiberassign(SchemaMixin, Base):
             row_index = np.arange(len(data))
         if len(row_index) == 0:
             return []
+        data = finitize(data)
         if tileid is None:
             try:
                 tileid = data.meta['TILEID']
@@ -802,6 +823,10 @@ class Potential(SchemaMixin, Base):
             row_index = np.arange(len(data))
         if len(row_index) == 0:
             return []
+        #
+        # Potential table has no floating point columns.
+        #
+        # data = finitize(data)
         if tileid is None:
             try:
                 tileid = data.meta['TILEID']
@@ -981,6 +1006,7 @@ class Zpix(SchemaMixin, Base):
             row_index = np.arange(len(data))
         if len(row_index) == 0:
             return []
+        data = finitize(data)
         default_columns = {'spgrp': 'healpix',
                            'sv_nspec': 0, 'main_nspec': 0, 'zcat_nspec': 0,
                            'sv_primary': False, 'main_primary': False, 'zcat_primary': False}
@@ -1183,6 +1209,7 @@ class Ztile(SchemaMixin, Base):
             row_index = np.arange(len(data))
         if len(row_index) == 0:
             return []
+        data = finitize(data)
         default_columns = {'spgrp': spgrp,
                            'sv_nspec': 0, 'main_nspec': 0, 'zcat_nspec': 0,
                            'sv_primary': False, 'main_primary': False, 'zcat_primary': False}
@@ -1201,7 +1228,10 @@ class Ztile(SchemaMixin, Base):
         data_columns = list()
         for column in cls.__table__.columns:
             if column.name == 'id':
-                id0 = spgrpid(spgrp) << 27 | data['SPGRPVAL'][row_index].base.astype(np.int64)
+                if 'survey' in default_columns:
+                    id0 = ((spgrpid(spgrp) << 27 | data['SPGRPVAL'][row_index].base.astype(np.int64)) << 32) | tileid
+                else:
+                    id0 = ((spgrpid(spgrp) << 27 | data['SPGRPVAL'][row_index].base.astype(np.int64)) << 32) | data['TILEID'][row_index].astype(np.int64)
                 data_column = [(i0 << 64) | i1 for i0, i1 in zip(id0.tolist(), data['TARGETID'][row_index].tolist())]
             elif column.name == 'targetphotid':
                 if 'survey' in default_columns:
@@ -1222,6 +1252,38 @@ class Ztile(SchemaMixin, Base):
             data_columns.append(data_column)
         data_rows = list(zip(*data_columns))
         return [cls(**(dict([(col.name, dat) for col, dat in zip(cls.__table__.columns, row)]))) for row in data_rows]
+
+
+def upsert(rows, do_nothing=False):
+    """Convert a list of ORM objects into an ``INSERT ... ON CONFLICT`` statement.
+
+    Parameters
+    ----------
+    rows : :class:`list`
+        A list of ORM objects. All items should be the same type.
+    do_nothing : :class:`bool`, optional
+        If ``True``, *do not* attempt to update existing rows.
+
+    Returns
+    -------
+    :class:`~sqlalchemy.dialects.postgresql.Insert`
+        A specialzed INSERT statement ready for execution.
+    """
+    cls = rows[0].__class__
+    pk = [c for c in cls.__table__.columns if c.primary_key][0]
+    inserts = list()
+    for row in rows:
+        rr = row.__dict__.copy()
+        del rr['_sa_instance_state']
+        inserts.append(rr)
+    stmt = pg_insert(cls).values(inserts)
+    if do_nothing:
+        stmt = stmt.on_conflict_do_nothing(index_elements=[getattr(cls, pk.name)])
+    else:
+        stmt = stmt.on_conflict_do_update(index_elements=[getattr(cls, pk.name)],
+                                          set_=dict([(c, getattr(stmt.excluded, c.name))
+                                                     for c in cls.__table__.columns if c.name != pk.name]))
+    return stmt
 
 
 def deduplicate_targetid(data):
@@ -1261,7 +1323,57 @@ def deduplicate_targetid(data):
     return load_rows
 
 
-def load_file(filepaths, tcls, hdu=1, row_filter=None, q3c=None, chunksize=50000):
+def finitize(data, replacement_value=-9999.0):
+    """Convert ``NaN`` and other non-finite floating point values.
+
+    Parameters
+    ----------
+    data : :class:`~astropy.table.Table`
+        Data table to convert.
+    replacement_value : :class:`float`, optional
+        Replace ``NaN`` or other non-finite values with this value (default -9999.0).
+
+    Returns
+    -------
+    :class:`~astropy.table.Table`
+        The input `data` modified in-place.
+    """
+    try:
+        colnames = data.names
+    except AttributeError:
+        colnames = data.colnames
+    masked = dict()
+    for col in colnames:
+        if data[col].dtype.kind == 'f':
+            if isinstance(data[col], MaskedColumn):
+                bad = ~np.isfinite(data[col].data.data)
+                masked[col] = True
+            else:
+                bad = ~np.isfinite(data[col])
+            if np.any(bad):
+                if bad.ndim == 1:
+                    log.warning("%d rows of bad data detected in column " +
+                                "%s.", bad.sum(), col)
+                elif bad.ndim == 2:
+                    nbadrows = len(bad.sum(1).nonzero()[0])
+                    nbaditems = bad.sum(1).sum()
+                    log.warning("%d rows (%d items) of bad data detected in column " +
+                                "%s.", nbadrows, nbaditems, col)
+                else:
+                    log.warning("Bad data detected in high-dimensional column %s.", col)
+                if col in masked:
+                    log.debug("data['%s'].data.data[bad] = %f", col, replacement_value)
+                    log.debug("data['%s'].mask[bad] = False", col)
+                    data[col].data.data[bad] = replacement_value
+                    data[col].mask[bad] = False
+                else:
+                    log.debug("data['%s'][bad] = %f", col, replacement_value)
+                    data[col][bad] = replacement_value
+    return data
+
+
+def load_file(filepaths, tcls, hdu=1, row_filter=None, q3c=None, chunksize=50000,
+              alternate_load=False):
     """Load data file into the database, assuming that column names map
     to database column names with no surprises.
 
@@ -1275,12 +1387,14 @@ def load_file(filepaths, tcls, hdu=1, row_filter=None, q3c=None, chunksize=50000
         Read a data table from this HDU (default 1).
     row_filter : callable, optional
         If set, apply this filter to the rows to be loaded.  The function
-        should return :class:`bool`, with ``True`` meaning a good row.
+        should return an array of indexes of "good" rows.
     q3c : :class:`str`, optional
         If set, create q3c index on the table, using the RA column
         named `q3c`.
     chunksize : :class:`int`, optional
         If set, load database `chunksize` rows at a time (default 50000).
+    alternate_load : :class:`bool`, optional
+        If ``True`` use an alternate loading scheme that may reduce memory use.
 
     Returns
     -------
@@ -1305,54 +1419,30 @@ def load_file(filepaths, tcls, hdu=1, row_filter=None, q3c=None, chunksize=50000
         else:
             log.error("Unrecognized data file, %s!", filepath)
             return
-        try:
-            colnames = data.names
-        except AttributeError:
-            colnames = data.colnames
-        masked = dict()
-        for col in colnames:
-            if data[col].dtype.kind == 'f':
-                if isinstance(data[col], MaskedColumn):
-                    bad = ~np.isfinite(data[col].data.data)
-                    masked[col] = True
-                else:
-                    bad = ~np.isfinite(data[col])
-                if np.any(bad):
-                    if bad.ndim == 1:
-                        log.warning("%d rows of bad data detected in column " +
-                                    "%s of %s.", bad.sum(), col, filepath)
-                    elif bad.ndim == 2:
-                        nbadrows = len(bad.sum(1).nonzero()[0])
-                        nbaditems = bad.sum(1).sum()
-                        log.warning("%d rows (%d items) of bad data detected in column " +
-                                    "%s of %s.", nbadrows, nbaditems, col, filepath)
-                    else:
-                        log.warning("Bad data detected in high-dimensional column %s of %s.", col, filepath)
-                    #
-                    # TODO: is this replacement appropriate for all columns?
-                    #
-                    if col in masked:
-                        data[col].data.data[bad] = -9999.0
-                    else:
-                        data[col][bad] = -9999.0
-        log.info("Integrity check complete on %s.", tn)
         if row_filter is None:
-            good_rows = np.ones((len(data),), dtype=bool)
+            good_rows = np.arange(len(data))
         else:
             good_rows = row_filter(data)
-        if good_rows.sum() == 0:
+        if len(good_rows) == 0:
             log.info("Row filter removed all data rows, skipping %s.", filepath)
             continue
-        log.info("Row filter applied on %s; %d rows remain.", tn, good_rows.sum())
-        orm_objects = tcls.convert(data, row_filter=good_rows)
-        log.info("Converted data to ORM objects on %s.", tn)
-        del data
-        finalrows = len(orm_objects)
+        log.info("Row filter applied on %s; %d rows remain.", tn, len(good_rows))
+        if alternate_load:
+            data = data[good_rows]
+            finalrows = len(data)
+        else:
+            orm_objects = tcls.convert(data, row_index=good_rows)
+            log.info("Converted data to ORM objects on %s.", tn)
+            del data
+            finalrows = len(orm_objects)
         n_chunks = finalrows//chunksize
         if finalrows % chunksize:
             n_chunks += 1
         for k in range(n_chunks):
-            data_chunk = orm_objects[k*chunksize:(k+1)*chunksize]
+            if alternate_load:
+                data_chunk = tcls.convert(data[k*chunksize:(k+1)*chunksize])
+            else:
+                data_chunk = orm_objects[k*chunksize:(k+1)*chunksize]
             if len(data_chunk) > 0:
                 loaded_rows += len(data_chunk)
                 dbSession.add_all(data_chunk)
@@ -1597,15 +1687,24 @@ def main():
     if target_summary:
         target_files = os.path.join(options.datapath, 'vac', release, 'lsdr9-photometry', specprod, photometry_version, 'potential-targets', f'targetphot-potential-{specprod}.fits')
     else:
-        target_files = glob.glob(os.path.join(options.datapath, 'vac', release, 'lsdr9-photometry', specprod, photometry_version, 'potential-targets', f'targetphot-potential-*-{specprod}.fits'))
+        # target_files = glob.glob(os.path.join(options.datapath, 'vac', release, 'lsdr9-photometry', specprod, photometry_version, 'potential-targets', f'targetphot-potential-*-{specprod}.fits'))
+        target_files = glob.glob(os.path.join(options.datapath, 'vac', release, 'lsdr9-photometry', specprod, photometry_version, 'potential-targets', f'targetphot-potential-*.fits'))
+    generate_primary = False
     if redshift_type == 'base' or redshift_type == 'patch':
-        redshift_dir = os.path.join(options.datapath, 'spectro', 'redux', specprod, 'zcatalog')
         if redshift_type == 'base':
-            zpix_file = os.path.join(redshift_dir, f'zall-pix-{specprod}.fits')
-            ztile_file = os.path.join(redshift_dir, f'zall-tilecumulative-{specprod}.fits')
+            redshift_dir = os.path.join(options.datapath, 'spectro', 'redux', specprod, 'zcatalog')
         else:
-            zpix_file = os.path.join(redshift_dir, redshift_version, f'zall-pix-{specprod}.fits')
-            ztile_file = os.path.join(redshift_dir, redshift_version, f'zall-tilecumulative-{specprod}.fits')
+            redshift_dir = os.path.join(options.datapath, 'spectro', 'redux', specprod, 'zcatalog', redshift_version)
+        zpix_file = os.path.join(redshift_dir, f'zall-pix-{specprod}.fits')
+        ztile_file = os.path.join(redshift_dir, f'zall-tilecumulative-{specprod}.fits')
+        if not os.path.exists(zpix_file):
+            log.warning("%s not found, will use individual survey-program files.")
+            zpix_file = glob.glob(os.path.join(redshift_dir, f'zpix-*.fits'))
+            generate_primary = True
+        if not os.path.exists(ztile_file):
+            log.warning("%s not found, will use individual survey-program files.")
+            ztile_file = glob.glob(os.path.join(redshift_dir, f'ztile-*-cumulative.fits'))
+            generate_primary = True
     elif redshift_type == 'zcat':
         redshift_dir = os.path.join(options.datapath, 'vac', release, 'zcat', specprod)
         zpix_file = os.path.join(redshift_dir, redshift_version, f'zall-pix-{release}-vac.fits')
@@ -1669,7 +1768,8 @@ def main():
                              'tcls': Ztile,
                              'hdu': 'ZCATALOG',
                              'row_filter': no_sky,
-                             'chunksize': chunksize
+                             'chunksize': chunksize,
+                             'alternate_load': True
                              }],
                'fiberassign': [{'filepaths': None,
                                 'tcls': Fiberassign,
@@ -1689,7 +1789,8 @@ def main():
                                     'tcls': Zpix,
                                     'hdu': 'ZCATALOG',
                                     'row_filter': no_sky,
-                                    'chunksize': chunksize
+                                    'chunksize': chunksize,
+                                    'alternate_load': True
                                     })
     try:
         loader = loaders[options.load]
@@ -1739,4 +1840,11 @@ def main():
             log.info("Finished loading %s.", tn)
     if options.load == 'fiberassign':
         log.info("Consider running VACUUM FULL VERBOSE ANALYZE at this point.")
+    if options.load == 'redshift' and generate_primary:
+        log.info("Generating global primary columns.")
+    #
+    # Clean up.
+    #
+    dbSession.close()
+    engine.dispose()
     return 0

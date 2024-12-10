@@ -73,8 +73,10 @@ def potential_targets(tileid):
         A table containing potential target information.
     """
     potential_targets_table = Table.read(fiberassign_file(tileid), format='fits', hdu='TARGETS')
+    db.log.debug("Found %d potential targets.", len(potential_targets_table))
     no_sky_rows = no_sky(potential_targets_table)
     potential_targets_table = Table(potential_targets_table[no_sky_rows])
+    db.log.debug("%d potential targets remain after removing sky targets.", len(potential_targets_table))
     return potential_targets_table
 
 
@@ -96,6 +98,7 @@ def potential_photometry(tile, targets):
     :class:`~astropy.table.Table`
         A Table that will be the input to photometric search functions.
     """
+    db.log.debug("Checking for existing photometry.")
     potential_tractorphot_already_loaded = db.dbSession.query(db.Photometry.targetid).filter(db.Photometry.targetid.in_(targets['TARGETID'].tolist())).all()
     potential_tractorphot_not_already_loaded = np.ones((len(targets),), dtype=bool)
     if len(potential_tractorphot_already_loaded) > 0:
@@ -126,7 +129,9 @@ def targetphot(catalog):
     :class:`~astropy.table.Table`
         A Table containing the targeting data.
     """
+    db.log.debug("Starting gather_targetphot(); %d objects in input catalog.", len(catalog))
     potential_targetphot = gather_targetphot(catalog, racolumn='TARGET_RA', deccolumn='TARGET_DEC')
+    db.log.debug("Finished with gather_targetphot(); %d objects found.", len(potential_targetphot))
     potential_targetphot['SURVEY'] = catalog['SURVEY']
     potential_targetphot['PROGRAM'] = catalog['PROGRAM']
     potential_targetphot['TILEID'] = catalog['TILEID']
@@ -151,7 +156,9 @@ def tractorphot(catalog):
     :class:`~astropy.table.Table`
         A Table containing the photometry data.
     """
+    db.log.debug("Starting gather_tractorphot(); %d objects in input catalog.", len(catalog))
     potential_tractorphot = gather_tractorphot(catalog, racolumn='TARGET_RA', deccolumn='TARGET_DEC')
+    db.log.debug("Finished with gather_tractorphot(); %d objects found.", len(potential_tractorphot))
     assert (np.where(potential_tractorphot['RELEASE'] == 0)[0] == np.where(potential_tractorphot['BRICKNAME'] == '')[0]).all()
     return potential_tractorphot
 
@@ -322,7 +329,9 @@ def load_redshift(tile, spgrp='cumulative'):
                                        tile.tileid, firstnight,
                                        row_index=row_index)
     if len(load_ztile) > 0:
-        db.dbSession.add_all(load_ztile)
+        statement = db.upsert(load_ztile)
+        db.dbSession.execute(statement)
+        # db.dbSession.add_all(load_ztile)
         db.dbSession.commit()
         db.log.info("Loaded %d rows of Ztile data.", len(load_ztile))
     else:
@@ -436,6 +445,8 @@ def get_options(description="Load data for one tile into a specprod database."):
                       help='Update primary redshift values and indexes for all tiles.')
     prsr.add_argument('-t', '--tiles-file', action='store', dest='tiles_file', metavar='FILE',
                       help='Override the top-level tiles file associated with a specprod.')
+    prsr.add_argument('-u', '--update', action='store_true', dest='update',
+                      help='Specify that this is an update to an already-loaded tile.')
     prsr.add_argument('tile', metavar='TILEID', type=int, help='Load TILEID.')
     options = prsr.parse_args()
     return options
@@ -509,10 +520,10 @@ def main():
     # Find the tile in the top-level tiles file.
     #
     if options.tiles_file is None:
-        tiles_file = findfile('tiles', readonly=True).replace('.fits', '.csv')
+        tiles_file = findfile('tiles', readonly=True)
     else:
         tiles_file = options.tiles_file
-    tiles_table = Table.read(tiles_file, format='ascii.csv')
+    tiles_table = Table.read(tiles_file, format='fits', hdu='TILES')
     row_index = np.where(tiles_table['TILEID'] == options.tile)[0]
     if len(row_index) == 1:
         candidate_tiles = db.Tile.convert(tiles_table, row_index=row_index)
@@ -546,7 +557,9 @@ def main():
         assert len(row_index) > 0
         load_frames += db.Frame.convert(frames_table, row_index=row_index)
     try:
-        db.dbSession.add_all(candidate_tiles)
+        statement = db.upsert(candidate_tiles)
+        db.dbSession.execute(statement)
+        # db.dbSession.add_all(candidate_tiles)
         db.dbSession.commit()
     except IntegrityError as exc:
         #
@@ -557,40 +570,45 @@ def main():
         db.log.critical("Message was: %s", exc.args[0])
         db.dbSession.rollback()
         return 1
+    new_tile = candidate_tiles[0]
     try:
-        db.dbSession.add_all(load_exposures)
+        statement = db.upsert(load_exposures)
+        db.dbSession.execute(statement)
+        # db.dbSession.add_all(load_exposures)
         db.dbSession.commit()
     except IntegrityError as exc:
-        db.log.critical("Exposures for tile %d cannot be loaded!", candidate_tiles[0].tileid)
+        db.log.critical("Exposures for tile %d cannot be loaded!", new_tile.tileid)
         db.log.critical("Message was: %s", exc.args[0])
         db.dbSession.rollback()
-        db.dbSession.delete(candidate_tiles[0])
+        db.dbSession.delete(new_tile)
         db.dbSession.commit()
         return 1
-    db.dbSession.add_all(load_frames)
+    statement = db.upsert(load_frames)
+    db.dbSession.execute(statement)
+    # db.dbSession.add_all(load_frames)
     db.dbSession.commit()
     #
-    # Load photometry.
+    # Load photometry. If this is an update, these should already be loaded.
     #
-    new_tile = candidate_tiles[0]
-    potential_targets_table = potential_targets(new_tile.tileid)
-    potential_cat = potential_photometry(new_tile, potential_targets_table)
-    potential_targetphot = targetphot(potential_cat)
-    potential_tractorphot = tractorphot(potential_cat)
-    loaded_photometry = load_photometry(potential_tractorphot)
-    loaded_targetphot = load_targetphot(potential_targetphot, loaded_photometry)
-    #
-    # Load targeting table.
-    #
-    loaded_target = load_target(new_tile, potential_targetphot)
+    if not options.update:
+        potential_targets_table = potential_targets(new_tile.tileid)
+        potential_cat = potential_photometry(new_tile, potential_targets_table)
+        potential_targetphot = targetphot(potential_cat)
+        potential_tractorphot = tractorphot(potential_cat)
+        loaded_photometry = load_photometry(potential_tractorphot)
+        loaded_targetphot = load_targetphot(potential_targetphot, loaded_photometry)
+        #
+        # Load targeting table.
+        #
+        loaded_target = load_target(new_tile, potential_targetphot)
+        #
+        # Load fiberassign and potential.
+        #
+        loaded_fiberassign, loaded_potential = load_fiberassign(new_tile)
     #
     # Load tile/cumulative redshifts.
     #
     loaded_ztile = load_redshift(new_tile)
-    #
-    # Load fiberassign and potential.
-    #
-    loaded_fiberassign, loaded_potential = load_fiberassign(new_tile)
     #
     # Update global values, if requested.
     #
@@ -600,4 +618,6 @@ def main():
     #
     # Clean up.
     #
+    db.dbSession.close()
+    db.engine.dispose()
     return 0
