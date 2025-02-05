@@ -45,7 +45,7 @@ jobs:
                 python -m pip install git+https://github.com/desihub/desitarget.git@${DESITARGET_VERSION}#egg=desitarget
                 python -m pip install git+https://github.com/desihub/desimodel.git@${DESIMODEL_VERSION}#egg=desimodel
                 python -m pip install --upgrade "numpy${{ matrix.numpy-version }}"
-                python -m pip install --upgrade "astropy${{ matrix.astropy-version }}" 'scipy<1.13' fitsio numba
+                python -m pip install --upgrade "astropy${{ matrix.astropy-version }}" 'scipy<1.13' fitsio 'numba<0.60'
                 python -m pip install --editable .[test]
             - name: Run the test
               run: pytest
@@ -84,7 +84,7 @@ jobs:
                 python -m pip install git+https://github.com/desihub/desitarget.git@${DESITARGET_VERSION}#egg=desitarget
                 python -m pip install git+https://github.com/desihub/desimodel.git@${DESIMODEL_VERSION}#egg=desimodel
                 python -m pip install --upgrade "numpy${{ matrix.numpy-version }}"
-                python -m pip install --upgrade "astropy${{ matrix.astropy-version }}" 'scipy<1.13' fitsio numba
+                python -m pip install --upgrade "astropy${{ matrix.astropy-version }}" 'scipy<1.13' fitsio 'numba<0.60'
                 python -m pip install --editable .[coverage]
             - name: Run the test with coverage
               run: pytest --cov
