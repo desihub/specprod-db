@@ -14,7 +14,8 @@ import re
 from argparse import ArgumentParser
 from astropy.table import Table
 from desiutil.log import get_logger, DEBUG, INFO
-from desispec.io import findfile
+from desiutil.names import radec_to_desiname
+# from desispec.io import findfile
 from . import __version__ as specprodDB_version
 from .util import no_sky
 
@@ -47,6 +48,39 @@ def get_options(description='Extract coefficient columns to create a coeff patch
     return prsr.parse_args()
 
 
+def copy_columns(catalog, rowfilter, catalog_type):
+    """Copy columns from `catalog` into a new table.
+
+    Parameters
+    ----------
+    catalog : :class:`~astropy.table.Table`
+        Input data table.
+    rowfilter : callable
+        A function that returns the subset of rows to include from `catalog`.
+    catalog_type : :class:`str`
+        Indicates the set of columns contained in `catalog`.
+
+    Returns
+    -------
+    :class:`~astropy.table.Table`
+        A new Table with the desired columns.
+    """
+    cols = {'pix': ('TARGETID', 'SURVEY', 'PROGRAM', 'HEALPIX', 'DESINAME'),
+            'tilecumulative': ('TARGETID', 'TILEID', 'SPGRPVAL', 'DESINAME')}
+    good_rows = rowfilter(catalog)
+    new_table = Table()
+    new_table.meta['EXTNAME'] = 'COEFF_PATCH'
+    for column in cols[catalog_type]:
+        if column in catalog.colnames:
+            new_table[column] = catalog[column][good_rows].copy()
+        else:
+            new_table[column] = radec_to_desiname(catalog['TARGET_RA'][good_rows],
+                                                  catalog['TARGET_DEC'][good_rows])
+    for k in range(10):
+        new_table[f'COEFF_{k:d}'] = catalog['COEFF'][good_rows, k].copy()
+    return new_table
+
+
 def main():
     """Entry point for command-line script.
 
@@ -66,8 +100,9 @@ def main():
         log = get_logger(INFO, timestamp=True)
     # specprod = os.environ['SPECPROD']
     patch_dir = os.path.join(os.environ['SCRATCH'], 'coeff_patch')
-    log.debug("os.makedirs('%s', exist_ok=True)", patch_dir)
-    os.makedirs(patch_dir, exist_ok=True)
+    if not os.path.isdir(patch_dir):
+        log.debug("os.makedirs('%s', exist_ok=True)", patch_dir)
+        os.makedirs(patch_dir, exist_ok=True)
     if not os.path.exists(options.zall):
         log.critical("Could not find %s!", options.zall)
         return 1
@@ -79,20 +114,11 @@ def main():
         log.critical("Could not match catalog type for %s!", zall_filename)
         return 1
     zall_table = Table.read(options.zall, hdu='ZCATALOG')
-    good_spectra = no_sky(zall_table)
-    patch_table = Table()
-    patch_table['TARGETID'] = zall_table['TARGETID'][good_spectra].copy()
-    if catalog_type == 'pix':
-        patch_table['SURVEY'] = zall_table['SURVEY'][good_spectra].copy()
-        patch_table['PROGRAM'] = zall_table['PROGRAM'][good_spectra].copy()
-    else:
-        patch_table['TILEID'] = zall_table['PROGRAM'][good_spectra].copy()
-    for k in range(10):
-        patch_table[f'COEFF_{k:d}'] = zall_table['COEFF'][good_spectra, k].copy()
+    patch_table = copy_columns(zall_table, no_sky, catalog_type)
     patch_table_name = os.path.join(patch_dir,
                                     zall_filename.replace('.fits',
                                                           '-coeff-patch.fits'))
-    log.debug("patch_table.write('%s', overwrite=%s)",
+    log.debug("patch_table.write('%s', overwrite=%s, checksum=True)",
               patch_table_name, options.overwrite)
-    patch_table.write(patch_table_name, overwrite=options.overwrite)
+    patch_table.write(patch_table_name, overwrite=options.overwrite, checksum=True)
     return 0
