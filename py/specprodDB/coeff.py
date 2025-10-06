@@ -120,5 +120,5 @@ def main():
                                                           '-coeff-patch.fits'))
     log.debug("patch_table.write('%s', overwrite=%s, checksum=True)",
               patch_table_name, options.overwrite)
-    patch_table.write(patch_table_name, overwrite=options.overwrite, checksum=True)
+    patch_table.write(patch_table_name, overwrite=options.overwrite)  # , checksum=True)
     return 0
