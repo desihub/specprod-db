@@ -59,17 +59,18 @@ from desiutil.names import radec_to_desiname
 # from desispec.io import findfile
 
 # from . import __version__ as specprodDB_version
-from .load import SchemaMixin, Base, finitize, setup_db, load_file, log
+# from .load import SchemaMixin, Base, finitize, setup_db, load_file, log
+from . import load as db
 from .util import no_sky, programid, surveyid, spgrpid, common_options
 
 
-class ZpixPatch(SchemaMixin, Base):
+class ZpixPatch(db.SchemaMixin, db.Base):
     """Table for patching Zpix table.
     """
     @declared_attr.directive
     def __table_args__(cls):
         return (Index(f'ix_{cls.__tablename__}_unique', "targetid", "survey", "program", unique=True),
-                SchemaMixin.__table_args__)
+                db.SchemaMixin.__table_args__)
 
     id = Column(Numeric(39), primary_key=True, autoincrement=False)
     targetid = Column(BigInteger, nullable=False, index=True)
@@ -116,7 +117,7 @@ class ZpixPatch(SchemaMixin, Base):
             row_index = np.arange(len(data))
         if len(row_index) == 0:
             return []
-        data = finitize(data)
+        data = db.finitize(data)
         default_columns = dict()
         #
         # Reductions like guadalupe may not have the full set of target bitmasks
@@ -125,10 +126,10 @@ class ZpixPatch(SchemaMixin, Base):
         for column in check_columns:
             if check_columns[column] is None:
                 if column.upper() in data.colnames:
-                    log.info("Obtaining '%s' from input data file.", column)
+                    db.log.info("Obtaining '%s' from input data file.", column)
                 else:
                     msg = "Could not obtain '%s' from input data file."
-                    log.critical(msg, column)
+                    db.log.critical(msg, column)
                     raise KeyError(msg % (column, ))
             else:
                 default_columns[column] = check_columns[column]
@@ -151,13 +152,13 @@ class ZpixPatch(SchemaMixin, Base):
         return [cls(**(dict([(col.name, dat) for col, dat in zip(cls.__table__.columns, row)]))) for row in data_rows]
 
 
-class ZtilePatch(SchemaMixin, Base):
+class ZtilePatch(db.SchemaMixin, db.Base):
     """Table for patching Ztile table.
     """
     @declared_attr.directive
     def __table_args__(cls):
         return (Index(f'ix_{cls.__tablename__}_unique', "targetid", "tileid", "spgrpval", unique=True),
-                SchemaMixin.__table_args__)
+                db.SchemaMixin.__table_args__)
 
     id = Column(Numeric(39), primary_key=True, autoincrement=False)
     targetid = Column(BigInteger, nullable=False, index=True)
@@ -205,16 +206,16 @@ class ZtilePatch(SchemaMixin, Base):
             row_index = np.arange(len(data))
         if len(row_index) == 0:
             return []
-        data = finitize(data)
+        data = db.finitize(data)
         default_columns = dict()
         check_columns = {'tileid': tileid, 'spgrpval': night}
         for column in check_columns:
             if check_columns[column] is None:
                 if column.upper() in data.colnames:
-                    log.info("Obtaining '%s' from input data file.", column)
+                    db.log.info("Obtaining '%s' from input data file.", column)
                 else:
                     msg = "Could not obtain '%s' from input data file."
-                    log.critical(msg, column)
+                    db.log.critical(msg, column)
                     raise KeyError(msg % (column, ))
             else:
                 default_columns[column] = check_columns[column]
@@ -294,38 +295,37 @@ def main():
     :class:`int`
         An integer suitable for passing to :func:`sys.exit`.
     """
-    global log
     options = get_options()
     #
     # Logging
     #
     if options.verbose:
-        log = get_logger(DEBUG, timestamp=True)
+        db.log = get_logger(DEBUG, timestamp=True)
     else:
-        log = get_logger(INFO, timestamp=True)
+        db.log = get_logger(INFO, timestamp=True)
     patch_dir = os.path.join(os.environ['SCRATCH'], 'coeff_patch')
     if not os.path.isdir(patch_dir):
-        log.debug("os.makedirs('%s', exist_ok=True)", patch_dir)
+        db.log.debug("os.makedirs('%s', exist_ok=True)", patch_dir)
         os.makedirs(patch_dir, exist_ok=True)
     if not os.path.exists(options.zall):
-        log.critical("Could not find %s!", options.zall)
+        db.log.critical("Could not find %s!", options.zall)
         return 1
     zall_filename = os.path.basename(options.zall)
     m = re.match(r'zall-(pix|tilecumulative)-([a-z]+)\.fits', zall_filename)
     if m:
         catalog_type, specprod = m.groups()
     else:
-        log.critical("Could not match catalog type for %s!", zall_filename)
+        db.log.critical("Could not match catalog type for %s!", zall_filename)
         return 1
     patch_table_name = os.path.join(patch_dir,
                                     zall_filename.replace('.fits',
                                                           '-coeff-patch.fits'))
     if os.path.exists(patch_table_name) and not options.overwrite:
-        log.info("Patch file, %s, detected, skipping step.", patch_table_name)
+        db.log.info("Patch file, %s, detected, skipping step.", patch_table_name)
     else:
         zall_table = Table.read(options.zall, hdu='ZCATALOG')
         patch_table = copy_columns(zall_table, no_sky, catalog_type)
-        log.debug("patch_table.write('%s', overwrite=%s, checksum=True)",
+        db.log.debug("patch_table.write('%s', overwrite=%s, checksum=True)",
                   patch_table_name, options.overwrite)
         patch_table.write(patch_table_name, overwrite=options.overwrite)  # , checksum=True)
     #
@@ -334,19 +334,19 @@ def main():
     config = ConfigParser()
     r = config.read(options.config)
     if not (r and r[0] == options.config):
-        log.critical("Failed to read configuration file: %s!", options.config)
+        db.log.critical("Failed to read configuration file: %s!", options.config)
         return 1
     if specprod not in config:
-        log.critical("Configuration has no section for '%s'!", specprod)
+        db.log.critical("Configuration has no section for '%s'!", specprod)
         return 1
     #
     # Initialize DB
     #
-    postgresql = setup_db(hostname=config[specprod]['hostname'],
-                          username=config[specprod]['username'],
-                          schema='coeff_patch_{specprod}',
-                          overwrite=True,  # Otherwise the schema won't be created.
-                          verbose=options.verbose)
+    postgresql = db.setup_db(hostname=config[specprod]['hostname'],
+                             username=config[specprod]['username'],
+                             schema='coeff_patch_{specprod}',
+                             overwrite=True,  # Otherwise the schema won't be created.
+                             verbose=options.verbose)
     assert postgresql
     #
     # Loading
@@ -355,7 +355,7 @@ def main():
         tcls = ZpixPatch
     else:
         tcls = ZtilePatch
-    log.info("Loading %s from %s.", tcls.__tablename__, patch_table_name)
-    load_file(patch_table_name, tcls, alternate_load=True)
-    log.info("Finished loading %s.", tcls.__tablename__)
+    db.log.info("Loading %s from %s.", tcls.__tablename__, patch_table_name)
+    db.load_file(patch_table_name, tcls, alternate_load=True)
+    db.log.info("Finished loading %s.", tcls.__tablename__)
     return 0
