@@ -297,13 +297,13 @@ def main():
                                     zall_filename.replace('.fits',
                                                           '-coeff-patch.fits'))
     if os.path.exists(patch_table_name) and not options.overwrite:
+        log.info("Patch file, %s, detected, skipping step.", patch_table_name)
+    else:
         zall_table = Table.read(options.zall, hdu='ZCATALOG')
         patch_table = copy_columns(zall_table, no_sky, catalog_type)
         log.debug("patch_table.write('%s', overwrite=%s, checksum=True)",
                   patch_table_name, options.overwrite)
         patch_table.write(patch_table_name, overwrite=options.overwrite)  # , checksum=True)
-    else:
-        log.info("Patch file, %s, detected, skipping step.", patch_table_name)
     #
     # Read configuration file.
     #
