@@ -326,7 +326,7 @@ def main():
         zall_table = Table.read(options.zall, hdu='ZCATALOG')
         patch_table = copy_columns(zall_table, no_sky, catalog_type)
         db.log.debug("patch_table.write('%s', overwrite=%s, checksum=True)",
-                  patch_table_name, options.overwrite)
+                     patch_table_name, options.overwrite)
         patch_table.write(patch_table_name, overwrite=options.overwrite)  # , checksum=True)
     #
     # Read configuration file.
