@@ -7,19 +7,45 @@ specprodDB.coeff
 Patch redrock template coefficients. This is meant to fix bad values in the
 ``zpix`` and ``ztile`` tables in the ``coeff_0`` ... ``coeff_9`` columns.
 This affected ``fuji``, ``guadalupe`` and ``iron``, but not ``loa``.
+
+::
+    SELECT z.coeff_0 AS old_coeff_0, p.coeff_0 AS new_coeff_0
+        FROM fuji.zpix AS z JOIN coeff_patch_fuji.zpixpatch AS p
+        ON z.id = p.id;
+
+    UPDATE fuji.zpix AS z
+        SET
+            z.coeff_0 = p.coeff_0,
+            z.coeff_1 = p.coeff_1,
+            z.coeff_2 = p.coeff_2,
+            z.coeff_3 = p.coeff_3,
+            z.coeff_4 = p.coeff_4,
+            z.coeff_5 = p.coeff_5,
+            z.coeff_6 = p.coeff_6,
+            z.coeff_7 = p.coeff_7,
+            z.coeff_8 = p.coeff_8,
+            z.coeff_9 = p.coeff_9
+        FROM coeff_patch_fuji.zpixpatch AS p
+        WHERE z.id = p.id;
+
+To Do
+~~~~~
+
+* May need to have dynamical table names, otherwise the table will be overwritten
+  in the schema
 """
 import os
-import sys
+# import sys
 import re
 # import itertools
-from argparse import ArgumentParser
+# from argparse import ArgumentParser
 from configparser import ConfigParser
 
 from sqlalchemy import (Column, BigInteger, Integer, String, Numeric)
 from sqlalchemy.orm import declared_attr
 from sqlalchemy.schema import Index
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION
-from sqlalchemy.dialects.postgresql import insert as pg_insert
+# from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 import numpy as np
 
@@ -29,13 +55,9 @@ from desiutil.log import get_logger, DEBUG, INFO
 from desiutil.names import radec_to_desiname
 # from desispec.io import findfile
 
-from . import __version__ as specprodDB_version
-from .load import SchemaMixin, Base, finitize, setup_db, load_file
-from .load import log as db_log
+# from . import __version__ as specprodDB_version
+from .load import SchemaMixin, Base, finitize, setup_db, load_file, log
 from .util import no_sky, programid, surveyid, spgrpid, common_options
-
-
-log = None
 
 
 class ZpixPatch(SchemaMixin, Base):
@@ -269,7 +291,6 @@ def main():
     :class:`int`
         An integer suitable for passing to :func:`sys.exit`.
     """
-    global log
     options = get_options()
     #
     # Logging
@@ -278,7 +299,6 @@ def main():
         log = get_logger(DEBUG, timestamp=True)
     else:
         log = get_logger(INFO, timestamp=True)
-    db_log = log
     patch_dir = os.path.join(os.environ['SCRATCH'], 'coeff_patch')
     if not os.path.isdir(patch_dir):
         log.debug("os.makedirs('%s', exist_ok=True)", patch_dir)
@@ -320,9 +340,10 @@ def main():
     #
     postgresql = setup_db(hostname=config[specprod]['hostname'],
                           username=config[specprod]['username'],
-                          schema='coeff_patch',
+                          schema='coeff_patch_{specprod}',
                           overwrite=options.overwrite,
                           verbose=options.verbose)
+    assert postgresql
     #
     # Loading
     #
