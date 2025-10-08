@@ -8,10 +8,13 @@ Patch redrock template coefficients. This is meant to fix bad values in the
 ``zpix`` and ``ztile`` tables in the ``coeff_0`` ... ``coeff_9`` columns.
 This affected ``fuji``, ``guadalupe`` and ``iron``, but not ``loa``.
 
-::
+First test that we can join the patch to the primary::
+
     SELECT z.coeff_0 AS old_coeff_0, p.coeff_0 AS new_coeff_0
         FROM fuji.zpix AS z JOIN coeff_patch_fuji.zpixpatch AS p
         ON z.id = p.id;
+
+Then perform the update::
 
     UPDATE fuji.zpix AS z
         SET
@@ -31,8 +34,8 @@ This affected ``fuji``, ``guadalupe`` and ``iron``, but not ``loa``.
 To Do
 ~~~~~
 
-* May need to have dynamical table names, otherwise the table will be overwritten
-  in the schema
+* May need to have dynamical table or schema names,
+  otherwise the table will be overwritten in the schema
 """
 import os
 # import sys
