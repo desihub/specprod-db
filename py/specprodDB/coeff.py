@@ -344,7 +344,7 @@ def main():
     #
     postgresql = db.setup_db(hostname=config[specprod]['hostname'],
                              username=config[specprod]['username'],
-                             schema='coeff_patch_{specprod}',
+                             schema=f'coeff_patch_{specprod}',
                              overwrite=True,  # Otherwise the schema won't be created.
                              verbose=options.verbose)
     assert postgresql
