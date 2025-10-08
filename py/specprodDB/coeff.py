@@ -294,6 +294,7 @@ def main():
     :class:`int`
         An integer suitable for passing to :func:`sys.exit`.
     """
+    global log
     options = get_options()
     #
     # Logging
@@ -344,7 +345,7 @@ def main():
     postgresql = setup_db(hostname=config[specprod]['hostname'],
                           username=config[specprod]['username'],
                           schema='coeff_patch_{specprod}',
-                          overwrite=options.overwrite,
+                          overwrite=True,  # Otherwise the schema won't be created.
                           verbose=options.verbose)
     assert postgresql
     #
