@@ -31,11 +31,19 @@ Then perform the update::
         FROM coeff_patch_fuji.zpixpatch AS p
         WHERE z.id = p.id;
 
-To Do
-~~~~~
+Operational Steps
+~~~~~~~~~~~~~~~~~
 
-* May need to have dynamical table or schema names,
-  otherwise the table will be overwritten in the schema
+1. Create patch FITS files for all affected specprod: fuji, guadalupe, iron.
+2. Load all tables.
+3. Apply the patch to guadalupe, be prepared to restore that schema if something
+   goes wrong.
+4. Apply the patch to all tables.
+5. Move the *patch* tables to a combined ``coeff_patch`` schema; rename tables.
+6. Make a dump and tape backup of ``coeff_patch``.
+7. Within ``coeff_patch`` rename tables to match Data Lab names: ``desi_edr``, ``desi_dr1``.
+8. Make another dump and tape backup.
+9. Copy to Data Lab and apply patches there.
 """
 import os
 # import sys
