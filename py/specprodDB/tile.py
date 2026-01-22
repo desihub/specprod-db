@@ -13,7 +13,7 @@ Some of this code may be combined or otherwise refactored with :mod:`specprodDB.
 in the future.
 """
 import os
-from configparser import SafeConfigParser
+from configparser import ConfigParser
 
 import numpy as np
 
@@ -480,7 +480,7 @@ def main():
     #
     # Read configuration file.
     #
-    config = SafeConfigParser()
+    config = ConfigParser()
     r = config.read(options.config)
     if not (r and r[0] == options.config):
         db.log.critical("Failed to read configuration file: %s!", options.config)
