@@ -4,7 +4,7 @@
 """
 # import os
 import unittest
-from unittest.mock import patch, MagicMock, call
+from unittest.mock import patch
 import numpy as np
 from astropy.table import Table
 from ..coeff import get_options, copy_columns
@@ -27,7 +27,7 @@ class TestCoeff(unittest.TestCase):
     def tearDown(self):
         pass
 
-    @patch('sys.argv', ['patch_coeff', '-v', 'zall-pix-iron.fits'])
+    @patch('sys.argv', ['coeff_patch', '-v', 'zall-pix-iron.fits'])
     def test_get_options(self):
         """Test get_options().
         """
