@@ -19,13 +19,10 @@ build:
 sphinx:
     configuration: doc/conf.py
 
-# If using Sphinx, optionally build your docs in additional formats such as PDF
-formats:
-    - pdf
+# Optionally build your docs in additional formats such as PDF and ePub
+# formats: all
 
 # Optionally set the version of Python and requirements required to build your docs
-# python:
-    # version: 3
-    # system_packages: true
-    # install:
-    #   - requirements: doc/rtd-requirements.txt
+python:
+    install:
+        - requirements: doc/rtd-requirements.txt

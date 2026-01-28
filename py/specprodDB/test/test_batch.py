@@ -3,6 +3,7 @@
 """Test specprodDB.batch.
 """
 import os
+import sys
 import unittest
 from unittest.mock import patch, mock_open, call
 from ..batch import get_options, prepare_template, write_scripts
@@ -15,6 +16,7 @@ class TestBatch(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.maxDiff = None
+        cls.thirteen = sys.version_info.major == 3 and sys.version_info.minor >= 13
 
     @classmethod
     def tearDownClass(cls):
@@ -154,14 +156,18 @@ exit ${{load_status}}
         m = mock_open()
         with patch('builtins.open', m) as mm:
             write_scripts(scripts, options.job_dir)
-        m.assert_has_calls([call(os.path.join(os.environ['HOME'], 'Documents', 'Jobs', 'foo.sh'), 'w'),
-                            call().__enter__(),
-                            call().write('abcd'),
-                            call().__exit__(None, None, None),
-                            call(os.path.join(os.environ['HOME'], 'Documents', 'Jobs', 'bar.sh'), 'w'),
-                            call().__enter__(),
-                            call().write('abcd'),
-                            call().__exit__(None, None, None),
-                            ])
+        write_scripts_calls = [call(os.path.join(os.environ['HOME'], 'Documents', 'Jobs', 'foo.sh'), 'w'),
+                               call().__enter__(),
+                               call().write('abcd'),
+                               call().__exit__(None, None, None)]
+        if self.thirteen:
+            write_scripts_calls += [call().close()]
+        write_scripts_calls += [call(os.path.join(os.environ['HOME'], 'Documents', 'Jobs', 'bar.sh'), 'w'),
+                                call().__enter__(),
+                                call().write('abcd'),
+                                call().__exit__(None, None, None)]
+        if self.thirteen:
+            write_scripts_calls += [call().close()]
+        m.assert_has_calls(write_scripts_calls)
         handle = m()
         handle.write.assert_has_calls([call('abcd'), call('abcd')])

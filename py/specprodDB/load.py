@@ -13,7 +13,7 @@ import glob
 import itertools
 # import sys
 import importlib.resources as ir
-from configparser import SafeConfigParser
+from configparser import ConfigParser
 
 import numpy as np
 from astropy import __version__ as astropy_version
@@ -993,8 +993,6 @@ class Zpix(SchemaMixin, Base):
         row_index : :class:`numpy.ndarray`, optional
             Only convert the rows indexed by `row_index`. If not specified,
             convert all rows.
-        spgrp : :class:`str`, optional
-            Normally this will be set to the default value: 'cumulative'.
 
         Returns
         -------
@@ -1667,7 +1665,7 @@ def main():
     #
     # Read configuration file.
     #
-    config = SafeConfigParser()
+    config = ConfigParser()
     r = config.read(options.config)
     if not (r and r[0] == options.config):
         log.critical("Failed to read configuration file: %s!", options.config)

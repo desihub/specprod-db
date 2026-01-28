@@ -8,6 +8,9 @@ specprodDB API
 .. automodule:: specprodDB.batch
     :members:
 
+.. automodule:: specprodDB.coeff
+    :members:
+
 .. automodule:: specprodDB.load
     :members:
 
