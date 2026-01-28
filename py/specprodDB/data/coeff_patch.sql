@@ -136,3 +136,49 @@ VACUUM FULL VERBOSE ANALYZE guadalupe.ztile;
 -- All commands for other specprods can be reproduced by simple substitution,
 -- e.g. guadalupe -> fuji, fuji -> iron.
 --
+-- Convert tables to Astro Data Lab naming convention. Only do this
+-- after you have a full dump of the coeff_patch schema on tape!
+--
+DROP TABLE coeff_patch.guadalupe_zpixpatch;
+DROP TABLE coeff_patch.guadalupe_ztilepatch;
+ALTER TABLE coeff_patch.fuji_zpixpatch RENAME TO desi_edr_zpixpatch;
+ALTER TABLE coeff_patch.fuji_ztilepatch RENAME TO desi_edr_ztilepatch;
+ALTER TABLE coeff_patch.iron_zpixpatch RENAME TO desi_dr1_zpixpatch;
+ALTER TABLE coeff_patch.iron_ztilepatch RENAME TO desi_dr1_ztilepatch;
+--
+ALTER INDEX coeff_patch.fuji_zpixpatch_pkey RENAME TO desi_edr_zpixpatch_pkey;
+ALTER INDEX coeff_patch.ix_fuji_zpixpatch_desiname RENAME TO ix_desi_edr_zpixpatch_desiname;
+ALTER INDEX coeff_patch.ix_fuji_zpixpatch_healpix RENAME TO ix_desi_edr_zpixpatch_healpix;
+ALTER INDEX coeff_patch.ix_fuji_zpixpatch_program RENAME TO ix_desi_edr_zpixpatch_program;
+ALTER INDEX coeff_patch.ix_fuji_zpixpatch_survey RENAME TO ix_desi_edr_zpixpatch_survey;
+ALTER INDEX coeff_patch.ix_fuji_zpixpatch_targetid RENAME TO ix_desi_edr_zpixpatch_targetid;
+ALTER INDEX coeff_patch.ix_fuji_zpixpatch_unique RENAME TO ix_desi_edr_zpixpatch_unique;
+--
+ALTER INDEX coeff_patch.fuji_ztilepatch_pkey RENAME TO desi_edr_ztilepatch_pkey;
+ALTER INDEX coeff_patch.ix_fuji_ztilepatch_desiname RENAME TO ix_desi_edr_ztilepatch_desiname;
+ALTER INDEX coeff_patch.ix_fuji_ztilepatch_spgrpval RENAME TO ix_desi_edr_ztilepatch_spgrpval;
+ALTER INDEX coeff_patch.ix_fuji_ztilepatch_targetid RENAME TO ix_desi_edr_ztilepatch_targetid;
+ALTER INDEX coeff_patch.ix_fuji_ztilepatch_tileid RENAME TO ix_desi_edr_ztilepatch_tileid;
+ALTER INDEX coeff_patch.ix_fuji_ztilepatch_unique RENAME TO ix_desi_edr_ztilepatch_unique;
+--
+ALTER INDEX coeff_patch.iron_zpixpatch_pkey RENAME TO desi_dr1_zpixpatch_pkey;
+ALTER INDEX coeff_patch.ix_iron_zpixpatch_desiname RENAME TO ix_desi_dr1_zpixpatch_desiname;
+ALTER INDEX coeff_patch.ix_iron_zpixpatch_healpix RENAME TO ix_desi_dr1_zpixpatch_healpix;
+ALTER INDEX coeff_patch.ix_iron_zpixpatch_program RENAME TO ix_desi_dr1_zpixpatch_program;
+ALTER INDEX coeff_patch.ix_iron_zpixpatch_survey RENAME TO ix_desi_dr1_zpixpatch_survey;
+ALTER INDEX coeff_patch.ix_iron_zpixpatch_targetid RENAME TO ix_desi_dr1_zpixpatch_targetid;
+ALTER INDEX coeff_patch.ix_iron_zpixpatch_unique RENAME TO ix_desi_dr1_zpixpatch_unique;
+--
+ALTER INDEX coeff_patch.iron_ztilepatch_pkey RENAME TO desi_dr1_ztilepatch_pkey;
+ALTER INDEX coeff_patch.ix_iron_ztilepatch_desiname RENAME TO ix_desi_dr1_ztilepatch_desiname;
+ALTER INDEX coeff_patch.ix_iron_ztilepatch_spgrpval RENAME TO ix_desi_dr1_ztilepatch_spgrpval;
+ALTER INDEX coeff_patch.ix_iron_ztilepatch_targetid RENAME TO ix_desi_dr1_ztilepatch_targeid;
+ALTER INDEX coeff_patch.ix_iron_ztilepatch_tileid RENAME TO ix_desi_dr1_ztilepatch_tileid;
+ALTER INDEX coeff_patch.ix_iron_ztilepatch_unique RENAME TO ix_desi_dr1_ztilepatch_unique;
+--
+-- And then make a *separate* pg_dump of coeff_patch.
+--
+-- Hint: convert a binary dump file to SQL:
+--
+--     pg_restore -f sql_file.sql binary.dump
+--
