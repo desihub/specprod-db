@@ -8,6 +8,10 @@ Change Log
 *Planned*: Support loading ongoing daily reductions, in particular, updates
 to tiles already in the database.
 
+* Add module to patch the ``coeff`` columns in redshift tables (PR `#19`_).
+
+.. _`#19`: https://github.com/desihub/specprod-db/pull/19
+
 1.3.0 (2024-12-10)
 ------------------
 
