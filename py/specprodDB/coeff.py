@@ -8,38 +8,8 @@ Patch redrock template coefficients. This is meant to fix bad values in the
 ``zpix`` and ``ztile`` tables in the ``coeff_0`` ... ``coeff_9`` columns.
 This affected ``fuji``, ``guadalupe`` and ``iron``, but not ``loa``.
 
-First test that we can join the patch to the primary::
-
-    SELECT z.id,
-        z.coeff_0 AS old_coeff_0, p.coeff_0 AS new_coeff_0,
-        z.coeff_1 AS old_coeff_1, p.coeff_1 AS new_coeff_1,
-        z.coeff_2 AS old_coeff_2, p.coeff_2 AS new_coeff_2,
-        z.coeff_3 AS old_coeff_3, p.coeff_3 AS new_coeff_3,
-        z.coeff_4 AS old_coeff_4, p.coeff_4 AS new_coeff_4,
-        z.coeff_5 AS old_coeff_5, p.coeff_5 AS new_coeff_5,
-        z.coeff_6 AS old_coeff_6, p.coeff_6 AS new_coeff_6,
-        z.coeff_7 AS old_coeff_7, p.coeff_7 AS new_coeff_7,
-        z.coeff_8 AS old_coeff_8, p.coeff_8 AS new_coeff_8,
-        z.coeff_9 AS old_coeff_9, p.coeff_9 AS new_coeff_9
-        FROM fuji.zpix AS z JOIN coeff_patch.fuji_zpixpatch AS p
-        ON z.id = p.id;
-
-Then perform the update::
-
-    UPDATE fuji.zpix AS z
-        SET
-            z.coeff_0 = p.coeff_0,
-            z.coeff_1 = p.coeff_1,
-            z.coeff_2 = p.coeff_2,
-            z.coeff_3 = p.coeff_3,
-            z.coeff_4 = p.coeff_4,
-            z.coeff_5 = p.coeff_5,
-            z.coeff_6 = p.coeff_6,
-            z.coeff_7 = p.coeff_7,
-            z.coeff_8 = p.coeff_8,
-            z.coeff_9 = p.coeff_9
-        FROM coeff_patch.fuji_zpixpatch AS p
-        WHERE z.id = p.id;
+Details of the patch application SQL commands can be found in the file
+``data/coeff_patch.sql``.
 
 Operational Steps
 ~~~~~~~~~~~~~~~~~
@@ -47,7 +17,7 @@ Operational Steps
 1. Create patch FITS files for all affected specprod: ``fuji``, ``guadalupe``, ``iron``.
 2. Load all tables. As each table is loaded, move it to ``coeff_patch``.
    This isn't especially efficient, but it avoids code complexity elsewhere.
-   For example: ``ALTER TABLE coeff_patch_fuji.zpixpatch RENAME TO fuji_zpixpatch; ALTER TABLE coeff_patch_fuji.fuji_zpixpatch SET SCHEMA coeff_patch;``
+   See the ``data/coeff_patch.sql`` for details on how this is done.
 3. Apply the patch to guadalupe, be prepared to restore that schema if something
    goes wrong.
 4. Apply the patch to all tables.
