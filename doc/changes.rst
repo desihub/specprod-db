@@ -8,7 +8,14 @@ Change Log
 *Planned*: Support loading ongoing daily reductions, in particular, updates
 to tiles already in the database.
 
-* Add module to patch the ``coeff`` columns in redshift tables (PR `#19`_).
+
+1.3.1 (2026-03-17)
+------------------
+
+*Note*: there are no changes to database table definitions in this release;
+it should be 100% compatible with ``1.3.0``.
+
+* Support Numpy 2.0; add module to patch the ``coeff`` columns in redshift tables (PR `#19`_).
 
 .. _`#19`: https://github.com/desihub/specprod-db/pull/19
 
