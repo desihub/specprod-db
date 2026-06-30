@@ -431,7 +431,7 @@ class Tile(SchemaMixin, Base):
 
     tileid = Column(Integer, primary_key=True, autoincrement=False)
     survey = Column(String(20), nullable=False)
-    program = Column(String(6), nullable=False)
+    program = Column(String(6), nullable=False)  # matterhorn: 8A
     faprgrm = Column(String(20), nullable=False)
     faflavor = Column(String(20), nullable=False)
     nexp = Column(BigInteger, nullable=False)  # In principle this could be replaced by a count of exposures
@@ -502,7 +502,7 @@ class Exposure(SchemaMixin, Base):
     date_obs = Column(DateTime(True), nullable=False)
     mjd = Column(DOUBLE_PRECISION, nullable=False)
     survey = Column(String(7), nullable=False)
-    program = Column(String(6), nullable=False)
+    program = Column(String(6), nullable=False)  # matterhorn: 8A
     faprgrm = Column(String(16), nullable=False)
     faflavor = Column(String(19), nullable=False)
     exptime = Column(DOUBLE_PRECISION, nullable=False)
@@ -511,8 +511,8 @@ class Exposure(SchemaMixin, Base):
     goaltype = Column(String(7), nullable=False)  # This was increased from 6 to 7 to support 'unknown' in daily specprod.
     mintfrac = Column(DOUBLE_PRECISION, nullable=False)
     airmass = Column(REAL, nullable=False)
-    ebv = Column(DOUBLE_PRECISION, nullable=False)
-    seeing_etc = Column(DOUBLE_PRECISION, nullable=False)
+    ebv = Column(DOUBLE_PRECISION, nullable=False)  # matterhorn: type E
+    seeing_etc = Column(DOUBLE_PRECISION, nullable=False)  # matterhorn: all values below are type D
     efftime_etc = Column(REAL, nullable=False)
     tsnr2_elg = Column(REAL, nullable=False)
     tsnr2_qso = Column(REAL, nullable=False)
@@ -607,7 +607,7 @@ class Frame(SchemaMixin, Base):
     # frameid = Column(BigInteger, primary_key=True, autoincrement=True)
     night = Column(Integer, nullable=False, index=True)
     expid = Column(Integer, ForeignKey('exposure.expid'), nullable=False, index=True)
-    tileid = Column(Integer, nullable=False, index=True)
+    tileid = Column(Integer, nullable=False, index=True)  # weird that this is not a foreign key
     #  4 TILERA               D
     #  5 TILEDEC              D
     #  6 MJD                  D
@@ -629,7 +629,7 @@ class Frame(SchemaMixin, Base):
     # 18 TSNR2_GPBBACKUP      E
     # 19 TSNR2_QSO            E
     # 20 TSNR2_LRG            E
-    tsnr2_gpbdark = Column(REAL, nullable=False)
+    tsnr2_gpbdark = Column(REAL, nullable=False)  # matterhorn: all values below are type D
     tsnr2_elg = Column(REAL, nullable=False)
     tsnr2_gpbbright = Column(REAL, nullable=False)
     tsnr2_lya = Column(DOUBLE_PRECISION, nullable=False)
