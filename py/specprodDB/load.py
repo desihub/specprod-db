@@ -592,10 +592,15 @@ class Frame(SchemaMixin, Base):
     where ``cameraid()`` is :func:`specprodDB.util.cameraid`.
     """
 
+    @declared_attr.directive
+    def __table_args__(cls):
+        return (Index(f'ix_{cls.__tablename__}_unique', "expid", "camera", unique=True),
+                SchemaMixin.__table_args__)
+
     frameid = Column(Integer, primary_key=True, autoincrement=False)  # Arbitrary integer composed from expid + cameraid
     # frameid = Column(BigInteger, primary_key=True, autoincrement=True)
     night = Column(Integer, nullable=False, index=True)
-    expid = Column(Integer, ForeignKey('exposure.expid'), nullable=False)
+    expid = Column(Integer, ForeignKey('exposure.expid'), nullable=False, index=True)
     tileid = Column(Integer, nullable=False, index=True)
     #  4 TILERA               D
     #  5 TILEDEC              D
@@ -609,7 +614,7 @@ class Frame(SchemaMixin, Base):
     # 10 SEEING_ETC           D
     # 11 EFFTIME_ETC          E
     # 12 CAMERA               2A
-    camera = Column(String(2), nullable=False)
+    camera = Column(String(2), nullable=False, index=True)
     # 13 TSNR2_GPBDARK        E
     # 14 TSNR2_ELG            E
     # 15 TSNR2_GPBBRIGHT      E
@@ -1022,6 +1027,9 @@ class Zpix(SchemaMixin, Base):
             if check_columns[column] is None:
                 if column.upper() in data.colnames:
                     log.info("Obtaining '%s' from input data file.", column)
+                elif column.upper() in data.meta:
+                    log.info("Obtaining '%s' from input data header.", column)
+                    default_columns[column] = data.meta[column.upper()]
                 else:
                     msg = "Could not obtain '%s' from input data file."
                     log.critical(msg, column)
@@ -1216,7 +1224,10 @@ class Ztile(SchemaMixin, Base):
         for column in check_columns:
             if check_columns[column] is None:
                 if column.upper() in data.colnames:
-                    log.info("Obtaining '%s' from input data file.", column)
+                    log.info("Obtaining '%s' from input data table.", column)
+                elif column.upper() in data.meta:
+                    log.info("Obtaining '%s' from input data header.", column)
+                    default_columns[column] = data.meta[column.upper()]
                 else:
                     msg = "Could not obtain '%s' from input data file."
                     log.critical(msg, column)

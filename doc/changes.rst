@@ -8,6 +8,9 @@ Change Log
 *Planned*: Support loading ongoing daily reductions, in particular, updates
 to tiles already in the database.
 
+* Minor updates to indexes; preparation for ``matterhorn`` (PR `#20`_).
+
+.. _`#20`: https://github.com/desihub/specprod-db/pull/20
 
 1.3.1 (2026-03-17)
 ------------------
