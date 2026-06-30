@@ -44,13 +44,12 @@ class TestLoad(unittest.TestCase):
 
     @patch('specprodDB.load.text')
     @patch('specprodDB.load.dbSession')
-    @patch('specprodDB.load.log')
+    @patch('specprodDB.load.get_logger')
     def test_q3c_index(self, mock_log, mock_session, mock_text):
         """Test creation of q3c index.
         """
         text = mock_text('CREATE INDEX IF NOT EXISTS ix_target_q3c_ang2ipix ON fuji.target (q3c_ang2ipix(tile_ra, tile_dec));\n    CLUSTER fuji.target USING ix_target_q3c_ang2ipix;\n    ANALYZE fuji.target;\n    ')
-        with patch('specprodDB.load.schemaname', 'fuji'):
-            q3c_index('target', ra='tile_ra')
+        q3c_index('fuji', 'target', ra='tile_ra')
         mock_session.execute.assert_called_once_with(text)
-        mock_log.info.assert_has_calls([call("Creating q3c index on %s.%s.", 'fuji', 'target'),
-                                        call("Finished q3c index on %s.%s.", 'fuji', 'target')])
+        mock_log().info.assert_has_calls([call("Creating q3c index on %s.%s.", 'fuji', 'target'),
+                                          call("Finished q3c index on %s.%s.", 'fuji', 'target')])

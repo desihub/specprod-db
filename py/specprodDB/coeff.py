@@ -145,7 +145,7 @@ class ZpixPatch(SchemaMixin, Base):
         return [cls(**(dict([(col.name, dat) for col, dat in zip(cls.__table__.columns, row)]))) for row in data_rows]
 
 
-class ZtilePatch(db.SchemaMixin, db.Base):
+class ZtilePatch(SchemaMixin, Base):
     """Table for patching Ztile table.
     """
     @declared_attr.directive
