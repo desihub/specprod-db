@@ -50,16 +50,20 @@ from desiutil.names import radec_to_desiname
 # from . import __version__ as specprodDB_version
 # from .load import SchemaMixin, Base, finitize, setup_db, load_file, log
 from . import load as db
+from .base import Base, schema_mixin_factory
 from .util import no_sky, programid, surveyid, spgrpid, common_options
 
 
-class ZpixPatch(db.SchemaMixin, db.Base):
+SchemaMixin = schema_mixin_factory('coeff_patch_iron')
+
+
+class ZpixPatch(SchemaMixin, Base):
     """Table for patching Zpix table.
     """
     @declared_attr.directive
     def __table_args__(cls):
         return (Index(f'ix_{cls.__tablename__}_unique', "targetid", "survey", "program", unique=True),
-                db.SchemaMixin.__table_args__)
+                SchemaMixin.__table_args__)
 
     id = Column(Numeric(39), primary_key=True, autoincrement=False)
     targetid = Column(BigInteger, nullable=False, index=True)
@@ -147,7 +151,7 @@ class ZtilePatch(db.SchemaMixin, db.Base):
     @declared_attr.directive
     def __table_args__(cls):
         return (Index(f'ix_{cls.__tablename__}_unique', "targetid", "tileid", "spgrpval", unique=True),
-                db.SchemaMixin.__table_args__)
+                SchemaMixin.__table_args__)
 
     id = Column(Numeric(39), primary_key=True, autoincrement=False)
     targetid = Column(BigInteger, nullable=False, index=True)
