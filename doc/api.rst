@@ -5,6 +5,9 @@ specprodDB API
 .. automodule:: specprodDB
     :members:
 
+.. automodule:: specprodDB.base
+    :members:
+
 .. automodule:: specprodDB.batch
     :members:
 
