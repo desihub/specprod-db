@@ -14,7 +14,25 @@ specprodDB API
 .. automodule:: specprodDB.coeff
     :members:
 
+.. automodule:: specprodDB.daily
+    :members:
+
+.. automodule:: specprodDB.fuji
+    :members:
+
+.. automodule:: specprodDB.guadalupe
+    :members:
+
+.. automodule:: specprodDB.iron
+    :members:
+
+.. automodule:: specprodDB.loa
+    :members:
+
 .. automodule:: specprodDB.load
+    :members:
+
+.. automodule:: specprodDB.matterhorn
     :members:
 
 .. automodule:: specprodDB.patch
