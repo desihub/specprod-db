@@ -383,7 +383,7 @@ class Tile(SchemaMixin, Base):
 
     tileid = Column(Integer, primary_key=True, autoincrement=False)
     survey = Column(String(20), nullable=False)
-    program = Column(String(6), nullable=False)  # matterhorn: 8A
+    program = Column(String(8), nullable=False)  # matterhorn: 8A
     faprgrm = Column(String(20), nullable=False)
     faflavor = Column(String(20), nullable=False)
     nexp = Column(BigInteger, nullable=False)  # In principle this could be replaced by a count of exposures
@@ -454,7 +454,7 @@ class Exposure(SchemaMixin, Base):
     date_obs = Column(DateTime(True), nullable=False)
     mjd = Column(DOUBLE_PRECISION, nullable=False)
     survey = Column(String(7), nullable=False)
-    program = Column(String(6), nullable=False)  # matterhorn: 8A
+    program = Column(String(8), nullable=False)  # matterhorn: 8A
     faprgrm = Column(String(16), nullable=False)
     faflavor = Column(String(19), nullable=False)
     exptime = Column(DOUBLE_PRECISION, nullable=False)

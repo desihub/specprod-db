@@ -477,7 +477,8 @@ def main():
     chunksize = config[specprod].getint('chunksize')
     loaders = {'exposures': [{'filepaths': os.path.join(options.datapath, 'spectro', 'redux', specprod, f'tiles-{specprod}.{tiles_type}'),
                               'tcls': schemamodule.Tile,
-                              'hdu': 'TILE_COMPLETENESS',  # Ignored for CSV files.
+                              # 'hdu': 'TILE_COMPLETENESS',  # Ignored for CSV files.
+                              'hdu': 'TILES',  # matterhorn++
                               'q3c': 'tilera',
                               'chunksize': chunksize
                               },
