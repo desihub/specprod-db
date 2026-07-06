@@ -14,6 +14,7 @@ Notes
   as possible. Some fiberassign columns may be in the EXP_FIBERMAP files.
 """
 import os
+import sys
 import glob
 from importlib import import_module
 from configparser import ConfigParser
@@ -349,7 +350,7 @@ GRANT SELECT ON ALL SEQUENCES IN SCHEMA {schema} TO desi_public;
     #
     for orm in ('Version', 'Photometry', 'Target', 'Tile', 'Exposure', 'Frame',
                 'Fiberassign', 'Potential', 'Zpix', 'Ztile'):
-        __dict__[orm] = schemamodule.__dict__[orm]
+        setattr(sys.modules[__name__], orm, schemamodule.__dict__[orm])
     return hostname is not None
 
 
