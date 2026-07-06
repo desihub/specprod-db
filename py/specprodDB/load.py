@@ -344,6 +344,12 @@ GRANT SELECT ON ALL SEQUENCES IN SCHEMA {schema} TO desi_public;
         schemamodule.Base.metadata.drop_all(engine)
         schemamodule.Base.metadata.create_all(engine)
         log.info("Finished creating tables.")
+    #
+    # Simplify access to ORM objects
+    #
+    for orm in ('Version', 'Photometry', 'Target', 'Tile', 'Exposure', 'Frame',
+                'Fiberassign', 'Potential', 'Zpix', 'Ztile'):
+        __dict__[orm] = schemamodule.__dict__[orm]
     return hostname is not None
 
 

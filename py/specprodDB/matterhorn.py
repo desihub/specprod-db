@@ -251,7 +251,7 @@ class Target(SchemaMixin, Base):
                 SchemaMixin.__table_args__)
 
     id = Column(Numeric(39), primary_key=True, autoincrement=False)
-    targetid = Column(BigInteger, ForeignKey('photometry.targetid'), nullable=False, index=True)  # fiberassign
+    targetid = Column(BigInteger, ForeignKey(f'{schemaname}.photometry.targetid'), nullable=False, index=True)  # fiberassign
     photsys = Column(String(1), nullable=False)  # fiberassign
     subpriority = Column(DOUBLE_PRECISION, nullable=False)  # fiberassign
     obsconditions = Column(BigInteger, nullable=False)  # fiberassign
@@ -277,7 +277,7 @@ class Target(SchemaMixin, Base):
     sv3_scnd_target = Column(BigInteger, nullable=False, default=0)
     survey = Column(String(7), nullable=False, index=True)
     program = Column(String(6), nullable=False, index=True)
-    tileid = Column(Integer, ForeignKey('tile.tileid'), nullable=False, index=True)  # fiberassign
+    tileid = Column(Integer, ForeignKey(f'{schemaname}.tile.tileid'), nullable=False, index=True)  # fiberassign
 
     photometry = relationship("Photometry", back_populates="targets")
     tile = relationship("Tile", back_populates="targets")
@@ -448,7 +448,7 @@ class Exposure(SchemaMixin, Base):
 
     night = Column(Integer, nullable=False, index=True)
     expid = Column(Integer, primary_key=True, autoincrement=False)
-    tileid = Column(Integer, ForeignKey('tile.tileid'), nullable=False, index=True)
+    tileid = Column(Integer, ForeignKey(f'{schemaname}.tile.tileid'), nullable=False, index=True)
     tilera = Column(DOUBLE_PRECISION, nullable=False)  # Calib exposures don't have RA, dec
     tiledec = Column(DOUBLE_PRECISION, nullable=False)
     date_obs = Column(DateTime(True), nullable=False)
@@ -558,7 +558,7 @@ class Frame(SchemaMixin, Base):
     frameid = Column(Integer, primary_key=True, autoincrement=False)  # Arbitrary integer composed from expid + cameraid
     # frameid = Column(BigInteger, primary_key=True, autoincrement=True)
     night = Column(Integer, nullable=False, index=True)
-    expid = Column(Integer, ForeignKey('exposure.expid'), nullable=False, index=True)
+    expid = Column(Integer, ForeignKey(f'{schemaname}.exposure.expid'), nullable=False, index=True)
     tileid = Column(Integer, nullable=False, index=True)  # weird that this is not a foreign key
     #  4 TILERA               D
     #  5 TILEDEC              D
@@ -654,8 +654,8 @@ class Fiberassign(SchemaMixin, Base):
                 SchemaMixin.__table_args__)
 
     id = Column(Numeric(39), primary_key=True, autoincrement=False)
-    tileid = Column(Integer, ForeignKey('tile.tileid'), nullable=False, index=True)
-    targetid = Column(BigInteger, ForeignKey('photometry.targetid'), nullable=False, index=True)
+    tileid = Column(Integer, ForeignKey(f'{schemaname}.tile.tileid'), nullable=False, index=True)
+    targetid = Column(BigInteger, ForeignKey(f'{schemaname}.photometry.targetid'), nullable=False, index=True)
     petal_loc = Column(SmallInteger, nullable=False)
     device_loc = Column(Integer, nullable=False)
     location = Column(Integer, nullable=False, index=True)
@@ -748,8 +748,8 @@ class Potential(SchemaMixin, Base):
                 SchemaMixin.__table_args__)
 
     id = Column(Numeric(39), primary_key=True, autoincrement=False)
-    tileid = Column(Integer, ForeignKey('tile.tileid'), nullable=False, index=True)
-    targetid = Column(BigInteger, ForeignKey('photometry.targetid'), nullable=False, index=True)
+    tileid = Column(Integer, ForeignKey(f'{schemaname}.tile.tileid'), nullable=False, index=True)
+    targetid = Column(BigInteger, ForeignKey(f'{schemaname}.photometry.targetid'), nullable=False, index=True)
     fiber = Column(Integer, nullable=False)
     location = Column(Integer, nullable=False, index=True)
 
@@ -821,7 +821,7 @@ class Zpix(SchemaMixin, Base):
                 SchemaMixin.__table_args__)
 
     id = Column(Numeric(39), primary_key=True, autoincrement=False)
-    targetid = Column(BigInteger, ForeignKey('photometry.targetid'), nullable=False, index=True)  # zall
+    targetid = Column(BigInteger, ForeignKey(f'{schemaname}.photometry.targetid'), nullable=False, index=True)  # zall
     desiname = Column(String(22), nullable=False, index=True)  # zall
     survey = Column(String(7), nullable=False, index=True)  # zall
     program = Column(String(6), nullable=False, index=True)  # zall
@@ -1032,8 +1032,8 @@ class Ztile(SchemaMixin, Base):
                 SchemaMixin.__table_args__)
 
     id = Column(Numeric(39), primary_key=True, autoincrement=False)
-    targetphotid = Column(Numeric(39), ForeignKey("target.id"), nullable=False, index=True)
-    targetid = Column(BigInteger, ForeignKey('photometry.targetid'), nullable=False, index=True)  # zall
+    targetphotid = Column(Numeric(39), ForeignKey(f"{schemaname}.target.id"), nullable=False, index=True)
+    targetid = Column(BigInteger, ForeignKey(f'{schemaname}.photometry.targetid'), nullable=False, index=True)  # zall
     desiname = Column(String(22), nullable=False, index=True)  # zall
     survey = Column(String(7), nullable=False, index=True)  # zall
     program = Column(String(6), nullable=False, index=True)  # zall
@@ -1062,7 +1062,7 @@ class Ztile(SchemaMixin, Base):
     #
     # Skipping columns that are in other tables.
     #
-    tileid = Column(Integer, ForeignKey("tile.tileid"), nullable=False, index=True)  # zall
+    tileid = Column(Integer, ForeignKey(f"{schemaname}.tile.tileid"), nullable=False, index=True)  # zall
     coadd_numexp = Column(SmallInteger, nullable=False)  # zall
     coadd_exptime = Column(REAL, nullable=False)  # zall
     coadd_numnight = Column(SmallInteger, nullable=False)  # zall
