@@ -244,7 +244,7 @@ def load_versions(photometry, redshift, release, specprod, tiles):
     log = get_logger()
     log.info("Loading version metadata.")
     version_table = Table()
-    version_table['PACKAGE'] = np.array(['astropy', 'desiutil', 'lsd9-photometry',
+    version_table['PACKAGE'] = np.array(['astropy', 'desiutil', 'lsdr9-photometry',
                                          'numpy', 'redshift', 'release', 'specprod',
                                          'specprod-db', 'sqlalchemy', 'tiles'])
     version_table['VERSION'] = np.array([astropy_version, desiutil_version, photometry,

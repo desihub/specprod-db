@@ -91,101 +91,101 @@ class Photometry(SchemaMixin, Base):
     which are vector-valued, are not yet implemented.
     """
     ls_id = Column(BigInteger, nullable=False, index=True)  # (release << 40) | (brickid << 16) | brick_objid
-    release = Column(SmallInteger, nullable=False)  # targetphot, fiberassign, zall-imaging
-    brickid = Column(Integer, nullable=False)  # targetphot, fiberassign, zall-imaging
-    brickname = Column(String(8), nullable=False)  # targetphot, fiberassign, zall-imaging
-    brick_objid = Column(Integer, nullable=False)  # targetphot, fiberassign, zall-imaging
-    morphtype = Column(String(4), nullable=False)  # targetphot, fiberassign, zall-imaging
-    ra = Column(DOUBLE_PRECISION, nullable=False)  # targetphot, fiberassign, zall
-    ra_ivar = Column(REAL, nullable=False)  # targetphot
-    dec = Column(DOUBLE_PRECISION, nullable=False)  # targetphot, fiberassign, zall
-    dec_ivar = Column(REAL, nullable=False)  # targetphot
-    dchisq_psf = Column(REAL, nullable=False)  # targetphot
-    dchisq_rex = Column(REAL, nullable=False)  # targetphot
-    dchisq_dev = Column(REAL, nullable=False)  # targetphot
-    dchisq_exp = Column(REAL, nullable=False)  # targetphot
-    dchisq_ser = Column(REAL, nullable=False)  # targetphot
-    ebv = Column(REAL, nullable=False)  # targetphot, fiberassign, zall-imaging
-    flux_g = Column(REAL, nullable=False)  # targetphot, fiberassign, zall-imaging
-    flux_r = Column(REAL, nullable=False)  # targetphot, fiberassign, zall-imaging
-    flux_z = Column(REAL, nullable=False)  # targetphot, fiberassign, zall-imaging
-    flux_ivar_g = Column(REAL, nullable=False)  # targetphot, fiberassign, zall-imaging
-    flux_ivar_r = Column(REAL, nullable=False)  # targetphot, fiberassign, zall-imaging
-    flux_ivar_z = Column(REAL, nullable=False)  # targetphot, fiberassign, zall-imaging
-    mw_transmission_g = Column(REAL, nullable=False)  # targetphot
-    mw_transmission_r = Column(REAL, nullable=False)  # targetphot
-    mw_transmission_z = Column(REAL, nullable=False)  # targetphot
-    fracflux_g = Column(REAL, nullable=False)  # targetphot
-    fracflux_r = Column(REAL, nullable=False)  # targetphot
-    fracflux_z = Column(REAL, nullable=False)  # targetphot
-    fracmasked_g = Column(REAL, nullable=False)  # targetphot
-    fracmasked_r = Column(REAL, nullable=False)  # targetphot
-    fracmasked_z = Column(REAL, nullable=False)  # targetphot
-    fracin_g = Column(REAL, nullable=False)  # targetphot
-    fracin_r = Column(REAL, nullable=False)  # targetphot
-    fracin_z = Column(REAL, nullable=False)  # targetphot
-    nobs_g = Column(SmallInteger, nullable=False)  # targetphot
-    nobs_r = Column(SmallInteger, nullable=False)  # targetphot
-    nobs_z = Column(SmallInteger, nullable=False)  # targetphot
-    psfdepth_g = Column(REAL, nullable=False)  # targetphot
-    psfdepth_r = Column(REAL, nullable=False)  # targetphot
-    psfdepth_z = Column(REAL, nullable=False)  # targetphot
-    galdepth_g = Column(REAL, nullable=False)  # targetphot
-    galdepth_r = Column(REAL, nullable=False)  # targetphot
-    galdepth_z = Column(REAL, nullable=False)  # targetphot
-    flux_w1 = Column(REAL, nullable=False)  # targetphot, fiberassign, zall-imaging
-    flux_w2 = Column(REAL, nullable=False)  # targetphot, fiberassign, zall-imaging
-    flux_w3 = Column(REAL, nullable=False)  # targetphot
-    flux_w4 = Column(REAL, nullable=False)  # targetphot
-    flux_ivar_w1 = Column(REAL, nullable=False)  # fiberassign, zall-imaging
-    flux_ivar_w2 = Column(REAL, nullable=False)  # fiberassign, zall-imaging
-    flux_ivar_w3 = Column(REAL, nullable=False)  # targetphot
-    flux_ivar_w4 = Column(REAL, nullable=False)  # targetphot
-    mw_transmission_w1 = Column(REAL, nullable=False)  # targetphot
-    mw_transmission_w2 = Column(REAL, nullable=False)  # targetphot
-    mw_transmission_w3 = Column(REAL, nullable=False)  # targetphot
-    mw_transmission_w4 = Column(REAL, nullable=False)  # targetphot
-    allmask_g = Column(SmallInteger, nullable=False)  # targetphot
-    allmask_r = Column(SmallInteger, nullable=False)  # targetphot
-    allmask_z = Column(SmallInteger, nullable=False)  # targetphot
-    fiberflux_g = Column(REAL, nullable=False)  # targetphot, fiberassign, zall-imaging
-    fiberflux_r = Column(REAL, nullable=False)  # targetphot, fiberassign, zall-imaging
-    fiberflux_z = Column(REAL, nullable=False)  # targetphot, fiberassign, zall-imaging
-    fibertotflux_g = Column(REAL, nullable=False)  # targetphot, fiberassign, zall-imaging
-    fibertotflux_r = Column(REAL, nullable=False)  # targetphot, fiberassign, zall-imaging
-    fibertotflux_z = Column(REAL, nullable=False)  # targetphot, fiberassign, zall-imaging
-    ref_epoch = Column(REAL, nullable=False)  # targetphot, fiberassign, zall-imaging
-    wisemask_w1 = Column(SmallInteger, nullable=False)  # targetphot
-    wisemask_w2 = Column(SmallInteger, nullable=False)  # targetphot
-    maskbits = Column(SmallInteger, nullable=False)  # targetphot, fiberassign, zall-imaging
+    release = Column(SmallInteger, nullable=False)  # zall-imaging
+    brickid = Column(Integer, nullable=False)  # zall-imaging
+    brickname = Column(String(8), nullable=False)  # zall-imaging
+    brick_objid = Column(Integer, nullable=False)  # zall-imaging
+    morphtype = Column(String(4), nullable=False)  # zall-imaging
+    ra = Column(DOUBLE_PRECISION, nullable=False)  # zall
+    ra_ivar = Column(REAL, nullable=False, default=-9999.0)
+    dec = Column(DOUBLE_PRECISION, nullable=False)  # zall
+    dec_ivar = Column(REAL, nullable=False, default=-9999.0)
+    dchisq_psf = Column(REAL, nullable=False, default=-9999.0)
+    dchisq_rex = Column(REAL, nullable=False, default=-9999.0)
+    dchisq_dev = Column(REAL, nullable=False, default=-9999.0)
+    dchisq_exp = Column(REAL, nullable=False, default=-9999.0)
+    dchisq_ser = Column(REAL, nullable=False, default=-9999.0)
+    ebv = Column(REAL, nullable=False)  # zall-imaging
+    flux_g = Column(REAL, nullable=False)  # zall-imaging
+    flux_r = Column(REAL, nullable=False)  # zall-imaging
+    flux_z = Column(REAL, nullable=False)  # zall-imaging
+    flux_ivar_g = Column(REAL, nullable=False)  # zall-imaging
+    flux_ivar_r = Column(REAL, nullable=False)  # zall-imaging
+    flux_ivar_z = Column(REAL, nullable=False)  # zall-imaging
+    mw_transmission_g = Column(REAL, nullable=False, default=-9999.0)
+    mw_transmission_r = Column(REAL, nullable=False, default=-9999.0)
+    mw_transmission_z = Column(REAL, nullable=False, default=-9999.0)
+    fracflux_g = Column(REAL, nullable=False, default=-9999.0)
+    fracflux_r = Column(REAL, nullable=False, default=-9999.0)
+    fracflux_z = Column(REAL, nullable=False, default=-9999.0)
+    fracmasked_g = Column(REAL, nullable=False, default=-9999.0)
+    fracmasked_r = Column(REAL, nullable=False, default=-9999.0)
+    fracmasked_z = Column(REAL, nullable=False, default=-9999.0)
+    fracin_g = Column(REAL, nullable=False, default=-9999.0)
+    fracin_r = Column(REAL, nullable=False, default=-9999.0)
+    fracin_z = Column(REAL, nullable=False, default=-9999.0)
+    nobs_g = Column(SmallInteger, nullable=False, default=0)
+    nobs_r = Column(SmallInteger, nullable=False, default=0)
+    nobs_z = Column(SmallInteger, nullable=False, default=0)
+    psfdepth_g = Column(REAL, nullable=False, default=-9999.0)
+    psfdepth_r = Column(REAL, nullable=False, default=-9999.0)
+    psfdepth_z = Column(REAL, nullable=False, default=-9999.0)
+    galdepth_g = Column(REAL, nullable=False, default=-9999.0)
+    galdepth_r = Column(REAL, nullable=False, default=-9999.0)
+    galdepth_z = Column(REAL, nullable=False, default=-9999.0)
+    flux_w1 = Column(REAL, nullable=False)  # zall-imaging
+    flux_w2 = Column(REAL, nullable=False)  # zall-imaging
+    flux_w3 = Column(REAL, nullable=False, default=-9999.0)
+    flux_w4 = Column(REAL, nullable=False, default=-9999.0)
+    flux_ivar_w1 = Column(REAL, nullable=False)  # zall-imaging
+    flux_ivar_w2 = Column(REAL, nullable=False)  # zall-imaging
+    flux_ivar_w3 = Column(REAL, nullable=False, default=-9999.0)
+    flux_ivar_w4 = Column(REAL, nullable=False, default=-9999.0)
+    mw_transmission_w1 = Column(REAL, nullable=False, default=-9999.0)
+    mw_transmission_w2 = Column(REAL, nullable=False, default=-9999.0)
+    mw_transmission_w3 = Column(REAL, nullable=False, default=-9999.0)
+    mw_transmission_w4 = Column(REAL, nullable=False, default=-9999.0)
+    allmask_g = Column(SmallInteger, nullable=False, default=0)
+    allmask_r = Column(SmallInteger, nullable=False, default=0)
+    allmask_z = Column(SmallInteger, nullable=False, default=0)
+    fiberflux_g = Column(REAL, nullable=False)  # zall-imaging
+    fiberflux_r = Column(REAL, nullable=False)  # zall-imaging
+    fiberflux_z = Column(REAL, nullable=False)  # zall-imaging
+    fibertotflux_g = Column(REAL, nullable=False)  # zall-imaging
+    fibertotflux_r = Column(REAL, nullable=False)  # zall-imaging
+    fibertotflux_z = Column(REAL, nullable=False)  # zall-imaging
+    ref_epoch = Column(REAL, nullable=False)  # zall-imaging
+    wisemask_w1 = Column(SmallInteger, nullable=False, default=0)
+    wisemask_w2 = Column(SmallInteger, nullable=False, default=0)
+    maskbits = Column(SmallInteger, nullable=False)  # zall-imaging
     # LC_...
-    shape_r = Column(REAL, nullable=False)  # targetphot, fiberassign, zall-imaging
-    shape_e1 = Column(REAL, nullable=False)  # targetphot, fiberassign, zall-imaging
-    shape_e2 = Column(REAL, nullable=False)  # targetphot, fiberassign, zall-imaging
-    shape_r_ivar = Column(REAL, nullable=False)  # targetphot
-    shape_e1_ivar = Column(REAL, nullable=False)  # targetphot
-    shape_e2_ivar = Column(REAL, nullable=False)  # targetphot
-    sersic = Column(REAL, nullable=False)  # targetphot, fiberassign, zall-imaging
-    sersic_ivar = Column(REAL, nullable=False)  # targetphot
-    ref_id = Column(BigInteger, nullable=False)  # targetphot, fiberassign, zall-imaging
-    ref_cat = Column(String(2), nullable=False)  # targetphot, fiberassign, zall-imaging
-    gaia_phot_g_mean_mag = Column(REAL, nullable=False)  # targetphot, fiberassign, zall-imaging
-    gaia_phot_g_mean_flux_over_error = Column(REAL, nullable=False)  # targetphot
-    gaia_phot_bp_mean_mag = Column(REAL, nullable=False)  # targetphot, fiberassign, zall-imaging
-    gaia_phot_bp_mean_flux_over_error = Column(REAL, nullable=False)  # targetphot
-    gaia_phot_rp_mean_mag = Column(REAL, nullable=False)  # targetphot, fiberassign, zall-imaging
-    gaia_phot_rp_mean_flux_over_error = Column(REAL, nullable=False)  # targetphot
-    gaia_phot_bp_rp_excess_factor = Column(REAL, nullable=False)  # targetphot
-    gaia_duplicated_source = Column(Boolean, nullable=False)  # targetphot
-    gaia_astrometric_sigma5d_max = Column(REAL, nullable=False)  # targetphot
-    gaia_astrometric_params_solved = Column(SmallInteger, nullable=False)  # targetphot, but inconsistent type!
-    parallax = Column(REAL, nullable=False)  # targetphot, fiberassign, zall-imaging
-    parallax_ivar = Column(REAL, nullable=False)  # targetphot
-    pmra = Column(REAL, nullable=False)  # targetphot, fiberassign, zall-imaging
-    pmra_ivar = Column(REAL, nullable=False)  # targetphot
-    pmdec = Column(REAL, nullable=False)  # targetphot, fiberassign, zall-imaging
-    pmdec_ivar = Column(REAL, nullable=False)  # targetphot
-    targetid = Column(BigInteger, primary_key=True, autoincrement=False)  # targetphot, fiberassign, zall-imaging
+    shape_r = Column(REAL, nullable=False)  # zall-imaging
+    shape_e1 = Column(REAL, nullable=False)  # zall-imaging
+    shape_e2 = Column(REAL, nullable=False)  # zall-imaging
+    shape_r_ivar = Column(REAL, nullable=False, default=-9999.0)
+    shape_e1_ivar = Column(REAL, nullable=False, default=-9999.0)
+    shape_e2_ivar = Column(REAL, nullable=False, default=-9999.0)
+    sersic = Column(REAL, nullable=False)  # zall-imaging
+    sersic_ivar = Column(REAL, nullable=False, default=-9999.0)
+    ref_id = Column(BigInteger, nullable=False)  # zall-imaging
+    ref_cat = Column(String(2), nullable=False)  # zall-imaging
+    gaia_phot_g_mean_mag = Column(REAL, nullable=False)  # zall-imaging
+    gaia_phot_g_mean_flux_over_error = Column(REAL, nullable=False, default=-9999.0)
+    gaia_phot_bp_mean_mag = Column(REAL, nullable=False)  # zall-imaging
+    gaia_phot_bp_mean_flux_over_error = Column(REAL, nullable=False, default=-9999.0)
+    gaia_phot_rp_mean_mag = Column(REAL, nullable=False)  # zall-imaging
+    gaia_phot_rp_mean_flux_over_error = Column(REAL, nullable=False, default=-9999.0)
+    gaia_phot_bp_rp_excess_factor = Column(REAL, nullable=False, default=-9999.0)
+    gaia_duplicated_source = Column(Boolean, nullable=False, default=False)
+    gaia_astrometric_sigma5d_max = Column(REAL, nullable=False, default=-9999.0)
+    gaia_astrometric_params_solved = Column(SmallInteger, nullable=False, default=0)
+    parallax = Column(REAL, nullable=False)  # zall-imaging
+    parallax_ivar = Column(REAL, nullable=False, default=-9999.0)
+    pmra = Column(REAL, nullable=False)  # zall-imaging
+    pmra_ivar = Column(REAL, nullable=False, default=-9999.0)
+    pmdec = Column(REAL, nullable=False)  # zall-imaging
+    pmdec_ivar = Column(REAL, nullable=False, default=-9999.0)
+    targetid = Column(BigInteger, primary_key=True, autoincrement=False)  # zall-imaging
 
     targets = relationship("Target", back_populates="photometry")
     fiberassign = relationship("Fiberassign", back_populates="photometry")
@@ -252,12 +252,12 @@ class Target(SchemaMixin, Base):
 
     id = Column(Numeric(39), primary_key=True, autoincrement=False)
     targetid = Column(BigInteger, ForeignKey(f'{schemaname}.photometry.targetid'), nullable=False, index=True)  # fiberassign
-    photsys = Column(String(1), nullable=False)  # fiberassign
-    subpriority = Column(DOUBLE_PRECISION, nullable=False)  # fiberassign
-    obsconditions = Column(BigInteger, nullable=False)  # fiberassign
-    priority_init = Column(BigInteger, nullable=False)  # fiberassign
-    numobs_init = Column(BigInteger, nullable=False)  # fiberassign
-    hpxpixel = Column(BigInteger, nullable=False, index=True)
+    photsys = Column(String(1), nullable=False)  # zall-imaging
+    subpriority = Column(DOUBLE_PRECISION, nullable=False)  # zall-extra
+    obsconditions = Column(BigInteger, nullable=False)  # zall-extra
+    priority_init = Column(BigInteger, nullable=False)  # zall-extra
+    numobs_init = Column(BigInteger, nullable=False)  # zall-extra
+    hpxpixel = Column(BigInteger, nullable=False, default=-1, index=True)  # not available via zcatalog files
     cmx_target = Column(BigInteger, nullable=False, default=0)
     desi_target = Column(BigInteger, nullable=False, default=0)
     bgs_target = Column(BigInteger, nullable=False, default=0)
@@ -276,8 +276,8 @@ class Target(SchemaMixin, Base):
     sv2_scnd_target = Column(BigInteger, nullable=False, default=0)
     sv3_scnd_target = Column(BigInteger, nullable=False, default=0)
     survey = Column(String(7), nullable=False, index=True)
-    program = Column(String(6), nullable=False, index=True)
-    tileid = Column(Integer, ForeignKey(f'{schemaname}.tile.tileid'), nullable=False, index=True)  # fiberassign
+    program = Column(String(8), nullable=False, index=True)
+    tileid = Column(Integer, ForeignKey(f'{schemaname}.tile.tileid'), nullable=False, index=True)
 
     photometry = relationship("Photometry", back_populates="targets")
     tile = relationship("Tile", back_populates="targets")
@@ -463,24 +463,24 @@ class Exposure(SchemaMixin, Base):
     goaltype = Column(String(7), nullable=False)  # This was increased from 6 to 7 to support 'unknown' in daily specprod.
     mintfrac = Column(DOUBLE_PRECISION, nullable=False)
     airmass = Column(REAL, nullable=False)
-    ebv = Column(DOUBLE_PRECISION, nullable=False)  # matterhorn: type E
+    ebv = Column(REAL, nullable=False)  # matterhorn: type E
     seeing_etc = Column(DOUBLE_PRECISION, nullable=False)  # matterhorn: all values below are type D
-    efftime_etc = Column(REAL, nullable=False)
-    tsnr2_elg = Column(REAL, nullable=False)
-    tsnr2_qso = Column(REAL, nullable=False)
-    tsnr2_lrg = Column(REAL, nullable=False)
+    efftime_etc = Column(DOUBLE_PRECISION, nullable=False)
+    tsnr2_elg = Column(DOUBLE_PRECISION, nullable=False)
+    tsnr2_qso = Column(DOUBLE_PRECISION, nullable=False)
+    tsnr2_lrg = Column(DOUBLE_PRECISION, nullable=False)
     tsnr2_lya = Column(DOUBLE_PRECISION, nullable=False)
-    tsnr2_bgs = Column(REAL, nullable=False)
-    tsnr2_gpbdark = Column(REAL, nullable=False)
-    tsnr2_gpbbright = Column(REAL, nullable=False)
-    tsnr2_gpbbackup = Column(REAL, nullable=False)
-    lrg_efftime_dark = Column(REAL, nullable=False)
-    elg_efftime_dark = Column(REAL, nullable=False)
-    bgs_efftime_bright = Column(REAL, nullable=False)
+    tsnr2_bgs = Column(DOUBLE_PRECISION, nullable=False)
+    tsnr2_gpbdark = Column(DOUBLE_PRECISION, nullable=False)
+    tsnr2_gpbbright = Column(DOUBLE_PRECISION, nullable=False)
+    tsnr2_gpbbackup = Column(DOUBLE_PRECISION, nullable=False)
+    lrg_efftime_dark = Column(DOUBLE_PRECISION, nullable=False)
+    elg_efftime_dark = Column(DOUBLE_PRECISION, nullable=False)
+    bgs_efftime_bright = Column(DOUBLE_PRECISION, nullable=False)
     lya_efftime_dark = Column(DOUBLE_PRECISION, nullable=False)
-    gpb_efftime_dark = Column(REAL, nullable=False)
-    gpb_efftime_bright = Column(REAL, nullable=False)
-    gpb_efftime_backup = Column(REAL, nullable=False)
+    gpb_efftime_dark = Column(DOUBLE_PRECISION, nullable=False)
+    gpb_efftime_bright = Column(DOUBLE_PRECISION, nullable=False)
+    gpb_efftime_backup = Column(DOUBLE_PRECISION, nullable=False)
     transparency_gfa = Column(DOUBLE_PRECISION, nullable=False)
     seeing_gfa = Column(DOUBLE_PRECISION, nullable=False)
     fiber_fracflux_gfa = Column(DOUBLE_PRECISION, nullable=False)
@@ -656,26 +656,26 @@ class Fiberassign(SchemaMixin, Base):
     id = Column(Numeric(39), primary_key=True, autoincrement=False)
     tileid = Column(Integer, ForeignKey(f'{schemaname}.tile.tileid'), nullable=False, index=True)
     targetid = Column(BigInteger, ForeignKey(f'{schemaname}.photometry.targetid'), nullable=False, index=True)
-    petal_loc = Column(SmallInteger, nullable=False)
-    device_loc = Column(Integer, nullable=False)
-    location = Column(Integer, nullable=False, index=True)
-    fiber = Column(Integer, nullable=False)
-    fiberstatus = Column(Integer, nullable=False)
-    target_ra = Column(DOUBLE_PRECISION, nullable=False)
-    target_dec = Column(DOUBLE_PRECISION, nullable=False)
-    pmra = Column(REAL, nullable=False)
-    pmdec = Column(REAL, nullable=False)
-    ref_epoch = Column(REAL, nullable=False)
-    lambda_ref = Column(REAL, nullable=False)
-    fa_target = Column(BigInteger, nullable=False)
-    fa_type = Column(SmallInteger, nullable=False)
-    fiberassign_x = Column(REAL, nullable=False)
-    fiberassign_y = Column(REAL, nullable=False)
-    priority = Column(Integer, nullable=False)
-    subpriority = Column(DOUBLE_PRECISION, nullable=False)
-    parallax = Column(REAL, nullable=False)
-    # plate_ra = Column(DOUBLE_PRECISION, nullable=False)
-    # plate_dec = Column(DOUBLE_PRECISION, nullable=False)
+    petal_loc = Column(SmallInteger, nullable=False)  # expfibermap
+    device_loc = Column(Integer, nullable=False)  # expfibermap
+    location = Column(Integer, nullable=False, index=True)  # expfibermap
+    fiber = Column(Integer, nullable=False)  # expfibermap
+    fiberstatus = Column(Integer, nullable=False)  # expfibermap
+    target_ra = Column(DOUBLE_PRECISION, nullable=False, default=0.0)
+    target_dec = Column(DOUBLE_PRECISION, nullable=False, default=-90.0)
+    pmra = Column(REAL, nullable=False)  # zall-imaging
+    pmdec = Column(REAL, nullable=False)  # zall-imaging
+    ref_epoch = Column(REAL, nullable=False)  # zall-imaging
+    lambda_ref = Column(REAL, nullable=False)  # expfibermap
+    fa_target = Column(BigInteger, nullable=False, default=0)
+    fa_type = Column(SmallInteger, nullable=False, default=0)
+    fiberassign_x = Column(REAL, nullable=False)  # expfibermap
+    fiberassign_y = Column(REAL, nullable=False)  # expfibermap
+    priority = Column(Integer, nullable=False)  # expfibermap
+    subpriority = Column(DOUBLE_PRECISION, nullable=False)  # expfibermap
+    parallax = Column(REAL, nullable=False)  # zall-imagnig
+    plate_ra = Column(DOUBLE_PRECISION, nullable=False)  # expfibermap
+    plate_dec = Column(DOUBLE_PRECISION, nullable=False)  # expfibermap
 
     photometry = relationship("Photometry", back_populates="fiberassign")
     tile = relationship("Tile", back_populates="fiberassign")
@@ -827,26 +827,26 @@ class Zpix(SchemaMixin, Base):
     program = Column(String(6), nullable=False, index=True)  # zall
     spgrp = Column(String(10), nullable=False, index=True)  # healpix by definition
     spgrpval = Column(Integer, nullable=False, index=True)  # zall-extra, same as healpix by definition
-    healpix = Column(Integer, nullable=False, index=True)  # zall, renamed uniqpix, also in zall-extra
+    uniqpix = Column(Integer, nullable=False, index=True)  # zall, renamed uniqpix, also in zall-extra
     z = Column(DOUBLE_PRECISION, index=True, nullable=False)  # zall, renamed z_best
-    zerr = Column(DOUBLE_PRECISION, nullable=False)  # zall, renamed zerr_best, type E
-    zwarn = Column(BigInteger, index=True, nullable=False)  # zall, renamed zwarn_best, type J
-    chi2 = Column(DOUBLE_PRECISION, nullable=False)  # zall, renamed chi2_best, type E
-    coeff_0 = Column(DOUBLE_PRECISION, nullable=False)  # zall-extra, type E
-    coeff_1 = Column(DOUBLE_PRECISION, nullable=False)  # zall-extra, type E
-    coeff_2 = Column(DOUBLE_PRECISION, nullable=False)  # zall-extra, type E
-    coeff_3 = Column(DOUBLE_PRECISION, nullable=False)  # zall-extra, type E
-    coeff_4 = Column(DOUBLE_PRECISION, nullable=False)  # zall-extra, type E
-    coeff_5 = Column(DOUBLE_PRECISION, nullable=False)  # zall-extra, type E
-    coeff_6 = Column(DOUBLE_PRECISION, nullable=False)  # zall-extra, type E
-    coeff_7 = Column(DOUBLE_PRECISION, nullable=False)  # zall-extra, type E
-    coeff_8 = Column(DOUBLE_PRECISION, nullable=False)  # zall-extra, type E
-    coeff_9 = Column(DOUBLE_PRECISION, nullable=False)  # zall-extra, type E
-    npixels = Column(BigInteger, nullable=False)  # zall-extra, type J
+    zerr = Column(REAL, nullable=False)  # zall, renamed zerr_best, type E
+    zwarn = Column(Integer, index=True, nullable=False)  # zall, renamed zwarn_best, type J
+    chi2 = Column(REAL, nullable=False)  # zall, renamed chi2_best, type E
+    coeff_0 = Column(REAL, nullable=False)  # zall-extra, type E
+    coeff_1 = Column(REAL, nullable=False)  # zall-extra, type E
+    coeff_2 = Column(REAL, nullable=False)  # zall-extra, type E
+    coeff_3 = Column(REAL, nullable=False)  # zall-extra, type E
+    coeff_4 = Column(REAL, nullable=False)  # zall-extra, type E
+    coeff_5 = Column(REAL, nullable=False)  # zall-extra, type E
+    coeff_6 = Column(REAL, nullable=False)  # zall-extra, type E
+    coeff_7 = Column(REAL, nullable=False)  # zall-extra, type E
+    coeff_8 = Column(REAL, nullable=False)  # zall-extra, type E
+    coeff_9 = Column(REAL, nullable=False)  # zall-extra, type E
+    npixels = Column(Integer, nullable=False)  # zall-extra, type J
     spectype = Column(String(6), index=True, nullable=False)  # zall, renamed spectype_best
-    subtype = Column(String(20), index=True, nullable=False)  # zall, renamed subtype_best, type 3A?!
-    ncoeff = Column(BigInteger, nullable=False)  # zall-extra, type I
-    deltachi2 = Column(DOUBLE_PRECISION, nullable=False)  # zall, renamed deltachi2_best, type E
+    subtype = Column(String(3), index=True, nullable=False)  # zall, renamed subtype_best, type 3A
+    ncoeff = Column(SmallInteger, nullable=False)  # zall-extra, type I
+    deltachi2 = Column(REAL, nullable=False)  # zall, renamed deltachi2_best, type E
     coadd_fiberstatus = Column(Integer, nullable=False)  # zall
     #
     # Skipping columns that are in other tables.
@@ -1040,24 +1040,24 @@ class Ztile(SchemaMixin, Base):
     spgrp = Column(String, nullable=False, index=True)  # cumulative
     spgrpval = Column(Integer, nullable=False, index=True)  # zall
     z = Column(DOUBLE_PRECISION, index=True, nullable=False)  # zall, renamed to z_best
-    zerr = Column(DOUBLE_PRECISION, nullable=False)  # zall, renamed to zerr_best, type E
-    zwarn = Column(BigInteger, index=True, nullable=False)  # zall, renamed to zwarn_best, type J
-    chi2 = Column(DOUBLE_PRECISION, nullable=False)  # zall, renamed to chi2_best, type E
-    coeff_0 = Column(DOUBLE_PRECISION, nullable=False)  # zall-extra
-    coeff_1 = Column(DOUBLE_PRECISION, nullable=False)  # zall-extra
-    coeff_2 = Column(DOUBLE_PRECISION, nullable=False)  # zall-extra
-    coeff_3 = Column(DOUBLE_PRECISION, nullable=False)  # zall-extra
-    coeff_4 = Column(DOUBLE_PRECISION, nullable=False)  # zall-extra
-    coeff_5 = Column(DOUBLE_PRECISION, nullable=False)  # zall-extra
-    coeff_6 = Column(DOUBLE_PRECISION, nullable=False)  # zall-extra
-    coeff_7 = Column(DOUBLE_PRECISION, nullable=False)  # zall-extra
-    coeff_8 = Column(DOUBLE_PRECISION, nullable=False)  # zall-extra
-    coeff_9 = Column(DOUBLE_PRECISION, nullable=False)  # zall-extra
-    npixels = Column(BigInteger, nullable=False)  # zall-extra, type J
+    zerr = Column(REAL, nullable=False)  # zall, renamed to zerr_best, type E
+    zwarn = Column(Integer, index=True, nullable=False)  # zall, renamed to zwarn_best, type J
+    chi2 = Column(REAL, nullable=False)  # zall, renamed to chi2_best, type E
+    coeff_0 = Column(REAL, nullable=False)  # zall-extra
+    coeff_1 = Column(REAL, nullable=False)  # zall-extra
+    coeff_2 = Column(REAL, nullable=False)  # zall-extra
+    coeff_3 = Column(REAL, nullable=False)  # zall-extra
+    coeff_4 = Column(REAL, nullable=False)  # zall-extra
+    coeff_5 = Column(REAL, nullable=False)  # zall-extra
+    coeff_6 = Column(REAL, nullable=False)  # zall-extra
+    coeff_7 = Column(REAL, nullable=False)  # zall-extra
+    coeff_8 = Column(REAL, nullable=False)  # zall-extra
+    coeff_9 = Column(REAL, nullable=False)  # zall-extra
+    npixels = Column(Integer, nullable=False)  # zall-extra, type J
     spectype = Column(String(6), index=True, nullable=False)  # zall, renamed to spectype_best
-    subtype = Column(String(20), index=True, nullable=False)  # zall, renamed to subtype_best, type 3A
-    ncoeff = Column(BigInteger, nullable=False)  # zall-extra, type I
-    deltachi2 = Column(DOUBLE_PRECISION, nullable=False)  # zall, renamed to deltachi2_best, type E
+    subtype = Column(String(3), index=True, nullable=False)  # zall, renamed to subtype_best, type 3A
+    ncoeff = Column(SmallInteger, nullable=False)  # zall-extra, type I
+    deltachi2 = Column(REAL, nullable=False)  # zall, renamed to deltachi2_best, type E
     coadd_fiberstatus = Column(Integer, nullable=False)  # zall
     #
     # Skipping columns that are in other tables.
