@@ -12,6 +12,11 @@ Notes
 * Migrate to using separate ORM definitions for each release.
 * Obtain as much imaging/targeting/fiberassign information from zcatalog files
   as possible. Some fiberassign columns may be in the EXP_FIBERMAP files.
+* Pre-assemble loaded data on SCRATCH, or load some columns from some files,
+  other columns from other files.
+* Additional matterhorn columns, like good_spec?
+* matterhorn.fiberassign may need alternate q3c index?
+* Can we just figure out a tag for matterhorn *tiles* in the next day or so?
 """
 import os
 import sys
@@ -346,8 +351,11 @@ GRANT SELECT ON ALL SEQUENCES IN SCHEMA {schema} TO desi_public;
         schemamodule.Base.metadata.create_all(engine)
         log.info("Finished creating tables.")
     #
-    # Simplify access to ORM objects
+    # Simplify access to ORM objects. This gets more complicated when
+    # connecting to multiple schemas. Maybe have a separate function that is
+    # intended for read-only use.
     #
+    setattr(sys.modules[__name__], schema, schemamodule)
     for orm in ('Version', 'Photometry', 'Target', 'Tile', 'Exposure', 'Frame',
                 'Fiberassign', 'Potential', 'Zpix', 'Ztile'):
         setattr(sys.modules[__name__], orm, schemamodule.__dict__[orm])

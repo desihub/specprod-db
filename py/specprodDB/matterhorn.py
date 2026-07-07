@@ -4,7 +4,7 @@
 specprodDB.matterhorn
 =====================
 
-ORM definition for :envvar:`SPECPROD` = ``loa``.
+ORM definition for :envvar:`SPECPROD` = ``matterhorn``.
 """
 import itertools
 
