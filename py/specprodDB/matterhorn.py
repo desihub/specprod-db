@@ -974,6 +974,9 @@ class Zpix(SchemaMixin, Base):
         default_columns = {'spgrp': 'healpix',
                            'sv_nspec': 0, 'main_nspec': 0, 'zcat_nspec': 0,
                            'sv_primary': False, 'main_primary': False, 'zcat_primary': False}
+        best_columns = {'z': 'Z_BEST', 'zerr': 'ZERR_BEST', 'zwarn': 'ZWARN_BEST',
+                        'chi2': 'CHI2_BEST', 'spectype': 'SPECTYPE_BEST',
+                        'subtype': 'SUBTYPE_BEST', 'deltachi2': 'DELTACHI2_BEST'}
         #
         # Reductions like guadalupe may not have the full set of target bitmasks
         #
@@ -1008,11 +1011,15 @@ class Zpix(SchemaMixin, Base):
                     id0 = p << 32 | s
                 data_column = [(i0 << 64) | i1 for i0, i1 in zip(id0.tolist(), data['TARGETID'][row_index].tolist())]
             elif column.name == 'desiname':
+                # Does matterhorn already have desiname pre-defined?
                 data_column = radec_to_desiname(data['TARGET_RA'][row_index], data['TARGET_DEC'][row_index]).tolist()
             elif column.name == 'spgrpval':
+                # Neec to check this for matterhorn
                 data_column = data['HEALPIX'][row_index].tolist()
             elif column.name in default_columns and column.name.upper() not in data.colnames:
                 data_column = [default_columns[column.name]]*len(row_index)
+            elif column.name in best_columns:
+                data_column = data[best_columns[column.name]][row_index].tolist()
             elif column.name.startswith('coeff_'):
                 coeff_index = int(column.name.split('_')[1])
                 data_column = data['COEFF'][row_index, coeff_index].tolist()
@@ -1181,6 +1188,9 @@ class Ztile(SchemaMixin, Base):
         default_columns = {'spgrp': spgrp,
                            'sv_nspec': 0, 'main_nspec': 0, 'zcat_nspec': 0,
                            'sv_primary': False, 'main_primary': False, 'zcat_primary': False}
+        best_columns = {'z': 'Z_BEST', 'zerr': 'ZERR_BEST', 'zwarn': 'ZWARN_BEST',
+                        'chi2': 'CHI2_BEST', 'spectype': 'SPECTYPE_BEST',
+                        'subtype': 'SUBTYPE_BEST', 'deltachi2': 'DELTACHI2_BEST'}
         check_columns = {'survey': survey, 'program': program,
                          'tileid': tileid, 'firstnight': night}
         for column in check_columns:
@@ -1215,6 +1225,8 @@ class Ztile(SchemaMixin, Base):
                 data_column = radec_to_desiname(data['TARGET_RA'][row_index], data['TARGET_DEC'][row_index]).tolist()
             elif column.name in default_columns and column.name.upper() not in data.colnames:
                 data_column = [default_columns[column.name]]*len(row_index)
+            elif column.name in best_columns:
+                data_column = data[best_columns[column.name]][row_index].tolist()
             elif column.name.startswith('coeff_'):
                 coeff_index = int(column.name.split('_')[1])
                 data_column = data['COEFF'][row_index, coeff_index].tolist()
