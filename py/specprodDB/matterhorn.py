@@ -229,13 +229,16 @@ class Photometry(SchemaMixin, Base):
                 data_column = ((data[row_index]['RELEASE'].data.astype(np.int64) << 40) |
                                (data[row_index]['BRICKID'].data.astype(np.int64) << 16) |
                                (data[row_index]['BRICK_OBJID'].data.astype(np.int64))).tolist()
-            elif column.name == 'gaia_astrometric_params_solved' and data[column.name.upper()].dtype.kind != 'i':
+            elif column.name == 'gaia_astrometric_params_solved' and column.name.upper() in data.colnames and data[column.name.upper()].dtype.kind != 'i':
                 data_column = data[column.name.upper()][row_index].data.astype(np.int16).tolist()
-            elif column.name in expand_dchisq:
+            elif column.name in expand_dchisq and 'DCHISQ' in data.colnames:
                 j = expand_dchisq.index(column.name)
                 data_column = data['DCHISQ'][row_index, j].tolist()
             else:
-                data_column = data[column.name.upper()][row_index].tolist()
+                try:
+                    data_column = data[column.name.upper()][row_index].tolist()
+                except KeyError:
+                    data_column = [column.default]*len(row_index)
             data_columns.append(data_column)
         data_rows = list(zip(*data_columns))
         return [cls(**(dict([(col.name, dat) for col, dat in zip(cls.__table__.columns, row)]))) for row in data_rows]
@@ -258,25 +261,25 @@ class Target(SchemaMixin, Base):
     priority_init = Column(BigInteger, nullable=False)  # zall-extra
     numobs_init = Column(BigInteger, nullable=False)  # zall-extra
     hpxpixel = Column(BigInteger, nullable=False, default=-1, index=True)  # not available via zcatalog files
-    cmx_target = Column(BigInteger, nullable=False, default=0)
-    desi_target = Column(BigInteger, nullable=False, default=0)
-    bgs_target = Column(BigInteger, nullable=False, default=0)
-    mws_target = Column(BigInteger, nullable=False, default=0)
-    sv1_desi_target = Column(BigInteger, nullable=False, default=0)
-    sv1_bgs_target = Column(BigInteger, nullable=False, default=0)
-    sv1_mws_target = Column(BigInteger, nullable=False, default=0)
-    sv2_desi_target = Column(BigInteger, nullable=False, default=0)
-    sv2_bgs_target = Column(BigInteger, nullable=False, default=0)
-    sv2_mws_target = Column(BigInteger, nullable=False, default=0)
-    sv3_desi_target = Column(BigInteger, nullable=False, default=0)
-    sv3_bgs_target = Column(BigInteger, nullable=False, default=0)
-    sv3_mws_target = Column(BigInteger, nullable=False, default=0)
-    scnd_target = Column(BigInteger, nullable=False, default=0)
-    sv1_scnd_target = Column(BigInteger, nullable=False, default=0)
-    sv2_scnd_target = Column(BigInteger, nullable=False, default=0)
-    sv3_scnd_target = Column(BigInteger, nullable=False, default=0)
-    survey = Column(String(7), nullable=False, index=True)
-    program = Column(String(8), nullable=False, index=True)
+    cmx_target = Column(BigInteger, nullable=False, default=0)  # zall
+    desi_target = Column(BigInteger, nullable=False, default=0)  # zall
+    bgs_target = Column(BigInteger, nullable=False, default=0)  # zall
+    mws_target = Column(BigInteger, nullable=False, default=0)  # zall
+    sv1_desi_target = Column(BigInteger, nullable=False, default=0)  # zall
+    sv1_bgs_target = Column(BigInteger, nullable=False, default=0)  # zall
+    sv1_mws_target = Column(BigInteger, nullable=False, default=0)  # zall
+    sv2_desi_target = Column(BigInteger, nullable=False, default=0)  # zall
+    sv2_bgs_target = Column(BigInteger, nullable=False, default=0)  # zall
+    sv2_mws_target = Column(BigInteger, nullable=False, default=0)  # zall
+    sv3_desi_target = Column(BigInteger, nullable=False, default=0)  # zall
+    sv3_bgs_target = Column(BigInteger, nullable=False, default=0)  # zall
+    sv3_mws_target = Column(BigInteger, nullable=False, default=0)  # zall
+    scnd_target = Column(BigInteger, nullable=False, default=0)  # zall
+    sv1_scnd_target = Column(BigInteger, nullable=False, default=0)  # zall
+    sv2_scnd_target = Column(BigInteger, nullable=False, default=0)  # zall
+    sv3_scnd_target = Column(BigInteger, nullable=False, default=0)  # zall
+    survey = Column(String(7), nullable=False, index=True)  # zall
+    program = Column(String(8), nullable=False, index=True)  # zall
     tileid = Column(Integer, ForeignKey(f'{schemaname}.tile.tileid'), nullable=False, index=True)
 
     photometry = relationship("Photometry", back_populates="targets")
@@ -656,26 +659,26 @@ class Fiberassign(SchemaMixin, Base):
     id = Column(Numeric(39), primary_key=True, autoincrement=False)
     tileid = Column(Integer, ForeignKey(f'{schemaname}.tile.tileid'), nullable=False, index=True)
     targetid = Column(BigInteger, ForeignKey(f'{schemaname}.photometry.targetid'), nullable=False, index=True)
-    petal_loc = Column(SmallInteger, nullable=False)  # expfibermap
-    device_loc = Column(Integer, nullable=False)  # expfibermap
-    location = Column(Integer, nullable=False, index=True)  # expfibermap
-    fiber = Column(Integer, nullable=False)  # expfibermap
-    fiberstatus = Column(Integer, nullable=False)  # expfibermap
-    target_ra = Column(DOUBLE_PRECISION, nullable=False, default=0.0)
-    target_dec = Column(DOUBLE_PRECISION, nullable=False, default=-90.0)
+    petal_loc = Column(SmallInteger, nullable=False)  # zall
+    device_loc = Column(Integer, nullable=False)  # zall-extra
+    location = Column(Integer, nullable=False, index=True)  # zall
+    fiber = Column(Integer, nullable=False)  # zall
+    fiberstatus = Column(Integer, nullable=False)  # zall via coadd_fiberstatus & 8
+    target_ra = Column(DOUBLE_PRECISION, nullable=False)  # zall
+    target_dec = Column(DOUBLE_PRECISION, nullable=False)  # zall
     pmra = Column(REAL, nullable=False)  # zall-imaging
     pmdec = Column(REAL, nullable=False)  # zall-imaging
     ref_epoch = Column(REAL, nullable=False)  # zall-imaging
-    lambda_ref = Column(REAL, nullable=False)  # expfibermap
-    fa_target = Column(BigInteger, nullable=False, default=0)
-    fa_type = Column(SmallInteger, nullable=False, default=0)
-    fiberassign_x = Column(REAL, nullable=False)  # expfibermap
-    fiberassign_y = Column(REAL, nullable=False)  # expfibermap
-    priority = Column(Integer, nullable=False)  # expfibermap
-    subpriority = Column(DOUBLE_PRECISION, nullable=False)  # expfibermap
-    parallax = Column(REAL, nullable=False)  # zall-imagnig
-    plate_ra = Column(DOUBLE_PRECISION, nullable=False)  # expfibermap
-    plate_dec = Column(DOUBLE_PRECISION, nullable=False)  # expfibermap
+    lambda_ref = Column(REAL, nullable=False)  # zall-extra
+    fa_target = Column(BigInteger, nullable=False)  # zall-extra
+    fa_type = Column(SmallInteger, nullable=False)  # zall-extra
+    fiberassign_x = Column(REAL, nullable=False)  # zall
+    fiberassign_y = Column(REAL, nullable=False)  # zall
+    priority = Column(Integer, nullable=False)  # zall
+    subpriority = Column(DOUBLE_PRECISION, nullable=False)  # zall-extra
+    parallax = Column(REAL, nullable=False)  # zall-imaging
+    # plate_ra = Column(DOUBLE_PRECISION, nullable=False)  # zall-extra
+    # plate_dec = Column(DOUBLE_PRECISION, nullable=False)  # zall-extra
 
     photometry = relationship("Photometry", back_populates="fiberassign")
     tile = relationship("Tile", back_populates="fiberassign")
@@ -856,23 +859,23 @@ class Zpix(SchemaMixin, Base):
     # after the fact with values from the bitwise-or of
     # values in the target table.
     #
-    cmx_target = Column(BigInteger, nullable=False, default=0)  # zall
-    desi_target = Column(BigInteger, nullable=False, default=0)  # zall
-    bgs_target = Column(BigInteger, nullable=False, default=0)  # zall
-    mws_target = Column(BigInteger, nullable=False, default=0)  # zall
-    scnd_target = Column(BigInteger, nullable=False, default=0)  # zall
-    sv1_desi_target = Column(BigInteger, nullable=False, default=0)  # zall
-    sv1_bgs_target = Column(BigInteger, nullable=False, default=0)  # zall
-    sv1_mws_target = Column(BigInteger, nullable=False, default=0)  # zall
-    sv1_scnd_target = Column(BigInteger, nullable=False, default=0)  # zall
-    sv2_desi_target = Column(BigInteger, nullable=False, default=0)  # zall
-    sv2_bgs_target = Column(BigInteger, nullable=False, default=0)  # zall
-    sv2_mws_target = Column(BigInteger, nullable=False, default=0)  # zall
-    sv2_scnd_target = Column(BigInteger, nullable=False, default=0)  # zall
-    sv3_desi_target = Column(BigInteger, nullable=False, default=0)  # zall
-    sv3_bgs_target = Column(BigInteger, nullable=False, default=0)  # zall
-    sv3_mws_target = Column(BigInteger, nullable=False, default=0)  # zall
-    sv3_scnd_target = Column(BigInteger, nullable=False, default=0)  # zall
+    cmx_target = Column(BigInteger, nullable=False)  # zall
+    desi_target = Column(BigInteger, nullable=False)  # zall
+    bgs_target = Column(BigInteger, nullable=False)  # zall
+    mws_target = Column(BigInteger, nullable=False)  # zall
+    scnd_target = Column(BigInteger, nullable=False)  # zall
+    sv1_desi_target = Column(BigInteger, nullable=False)  # zall
+    sv1_bgs_target = Column(BigInteger, nullable=False)  # zall
+    sv1_mws_target = Column(BigInteger, nullable=False)  # zall
+    sv1_scnd_target = Column(BigInteger, nullable=False)  # zall
+    sv2_desi_target = Column(BigInteger, nullable=False)  # zall
+    sv2_bgs_target = Column(BigInteger, nullable=False)  # zall
+    sv2_mws_target = Column(BigInteger, nullable=False)  # zall
+    sv2_scnd_target = Column(BigInteger, nullable=False)  # zall
+    sv3_desi_target = Column(BigInteger, nullable=False)  # zall
+    sv3_bgs_target = Column(BigInteger, nullable=False)  # zall
+    sv3_mws_target = Column(BigInteger, nullable=False)  # zall
+    sv3_scnd_target = Column(BigInteger, nullable=False)  # zall
     #
     # Skipping columns that are in other tables.
     #
@@ -1010,12 +1013,10 @@ class Zpix(SchemaMixin, Base):
                     p = np.array([programid(s) for s in data['PROGRAM']], dtype=np.int64)
                     id0 = p << 32 | s
                 data_column = [(i0 << 64) | i1 for i0, i1 in zip(id0.tolist(), data['TARGETID'][row_index].tolist())]
-            elif column.name == 'desiname':
-                # Does matterhorn already have desiname pre-defined?
+            elif column.name == 'desiname' and column.name.upper() not in data.colnames:
                 data_column = radec_to_desiname(data['TARGET_RA'][row_index], data['TARGET_DEC'][row_index]).tolist()
             elif column.name == 'spgrpval':
-                # Neec to check this for matterhorn
-                data_column = data['HEALPIX'][row_index].tolist()
+                data_column = data['UNIQPIX'][row_index].tolist()
             elif column.name in default_columns and column.name.upper() not in data.colnames:
                 data_column = [default_columns[column.name]]*len(row_index)
             elif column.name in best_columns:
@@ -1221,7 +1222,7 @@ class Ztile(SchemaMixin, Base):
                     s = np.array([surveyid(s) for s in data['SURVEY'][row_index].tolist()], dtype=np.int64)
                     id0 = s << 32 | data['TILEID'][row_index].astype(np.int64)
                 data_column = [(i0 << 64) | i1 for i0, i1 in zip(id0.tolist(), data['TARGETID'][row_index].tolist())]
-            elif column.name == 'desiname':
+            elif column.name == 'desiname' and column.name.upper not in data.colnames:
                 data_column = radec_to_desiname(data['TARGET_RA'][row_index], data['TARGET_DEC'][row_index]).tolist()
             elif column.name in default_columns and column.name.upper() not in data.colnames:
                 data_column = [default_columns[column.name]]*len(row_index)

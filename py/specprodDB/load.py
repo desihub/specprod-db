@@ -6,17 +6,6 @@ specprodDB.load
 
 Code for loading a spectroscopic production database. This includes both
 targeting and redshift data.
-
-Notes
------
-* Migrate to using separate ORM definitions for each release.
-* Obtain as much imaging/targeting/fiberassign information from zcatalog files
-  as possible. Some fiberassign columns may be in the EXP_FIBERMAP files.
-* Pre-assemble loaded data on SCRATCH, or load some columns from some files,
-  other columns from other files.
-* Additional matterhorn columns, like good_spec?
-* matterhorn.fiberassign may need alternate q3c index?
-* Can we just figure out a tag for matterhorn *tiles* in the next day or so?
 """
 import os
 import sys

@@ -35,6 +35,9 @@ specprodDB API
 .. automodule:: specprodDB.matterhorn
     :members:
 
+.. automodule:: specprodDB.merge
+    :members:
+
 .. automodule:: specprodDB.patch
     :members:
 
