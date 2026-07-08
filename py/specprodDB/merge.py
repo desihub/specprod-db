@@ -92,7 +92,7 @@ column_sources = {'photometry': {'base': ['TARGETID', 'RA', 'DEC'],  # RA, DEC w
                            'extra': ['COEFF', 'NPIXELS', 'NCOEFF', 'MEAN_DELTA_X', 'RMS_DELTA_X',
                                      'MEAN_DELTA_Y', 'RMS_DELTA_Y', 'MEAN_FIBER_RA', 'STD_FIBER_RA',
                                      'MEAN_FIBER_DEC', 'STD_FIBER_DEC', 'MEAN_PSF_TO_FIBER_SPECFLUX',
-                                     'MEAN_FIBER_X', 'MEAN_FIBER_Y', 'TSNR2_GPBDARK_B', 'TSNR2_ELG_B',
+                                     'TSNR2_GPBDARK_B', 'TSNR2_ELG_B',
                                      'TSNR2_GPBBRIGHT_B', 'TSNR2_LYA_B', 'TSNR2_BGS_B', 'TSNR2_GPBBACKUP_B',
                                      'TSNR2_QSO_B', 'TSNR2_LRG_B', 'TSNR2_GPBDARK_R', 'TSNR2_ELG_R',
                                      'TSNR2_GPBBRIGHT_R', 'TSNR2_LYA_R', 'TSNR2_BGS_R', 'TSNR2_GPBBACKUP_R',
