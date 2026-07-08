@@ -34,7 +34,7 @@ from .util import no_sky
 column_sources = {'photometry': {'base': ['TARGETID', 'RA', 'DEC'],  # RA, DEC will be copied from TARGET_RA, TARGET_DEC
                                  'extra': [],
                                  'imaging': ['RELEASE', 'BRICKID', 'BRICKNAME', 'BRICK_OBJID', 'MORPHTYPE',
-                                             'EBV', 'FLUX_G', 'FLUX_R', 'FLUX_Z', 'FLUX_IVAR_G', 'FLUX_IVAR_R', 'FLUX_IVAR_Z'
+                                             'EBV', 'FLUX_G', 'FLUX_R', 'FLUX_Z', 'FLUX_IVAR_G', 'FLUX_IVAR_R', 'FLUX_IVAR_Z',
                                              'FLUX_W1', 'FLUX_W2', 'FLUX_IVAR_W1', 'FLUX_IVAR_W2',
                                              'FIBERFLUX_G', 'FIBERFLUX_R', 'FIBERFLUX_Z',
                                              'FIBERTOTFLUX_G', 'FIBERTOTFLUX_R', 'FIBERTOTFLUX_Z',
