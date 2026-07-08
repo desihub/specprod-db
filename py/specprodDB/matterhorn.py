@@ -661,7 +661,7 @@ class Fiberassign(SchemaMixin, Base):
     targetid = Column(BigInteger, ForeignKey(f'{schemaname}.photometry.targetid'), nullable=False, index=True)
     petal_loc = Column(SmallInteger, nullable=False)  # zall
     device_loc = Column(Integer, nullable=False)  # zall-extra
-    location = Column(Integer, nullable=False, index=True)  # zall
+    location = Column(Integer, nullable=False, index=True)  # zall-extra
     fiber = Column(Integer, nullable=False)  # zall
     fiberstatus = Column(Integer, nullable=False)  # zall via coadd_fiberstatus & 8
     target_ra = Column(DOUBLE_PRECISION, nullable=False)  # zall
