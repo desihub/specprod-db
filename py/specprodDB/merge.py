@@ -116,14 +116,14 @@ def main():
     specprod = os.environ['SPECPROD']
     zpix_file = findfile('zall_pix', version='v2', readonly=True)
     ztile_file = findfile('zall_tile', groupname='cumulative', version='v2', readonly=True)
-    merge_columns = dict()
     for spec in (ztile_file, zpix_file):
+        merge_columns = dict()
         for sub in ('base', 'extra', 'imaging'):
             if sub == 'base':
                 src = spec
             else:
                 src = spec.replace('.fits', f'-{sub}.fits')
-            log.info(src)
+            log.info('src = "%s"', src)
             with fits.open(src) as hdulist:
                 catalog = hdulist[1].data
             good_rows = no_sky(catalog)
@@ -136,9 +136,9 @@ def main():
                 assert (observed_tiles == tiles_catalog['TILEID'][itiles]).all()
             if spec == ztile_file:
                 for merge_catalog in ('photometry', 'target', 'fiberassign', 'ztile'):
-                    log.info(merge_catalog)
+                    log.info('merge_catalog = "%s"', merge_catalog)
                     for column in column_sources[merge_catalog][sub]:
-                        log.info(column)
+                        log.info('column = "%s"', column)
                         if merge_catalog == 'photometry' and (column == 'RA' or column == 'DEC'):
                             new_column = catalog.columns[f'TARGET_{column}'].copy()
                             new_column.name = column
@@ -154,14 +154,19 @@ def main():
                         else:
                             merge_columns[merge_catalog] = [new_column]
             if spec == zpix_file:
-                log.info('zpix')
-                for column in column_sources['zpix'][sub]:
-                    log.info(column)
+                merge_catalog = 'zpix'
+                log.info('merge_catalog = "%s"', merge_catalog)
+                for column in column_sources[merge_catalog][sub]:
+                    log.info('column = "%s"', column)
                     new_column = catalog.columns[column].copy()
                     new_column.array = new_column.array[good_rows].copy()
-    for table in merge_columns:
-        output = os.path.join(os.environ['SCRATCH'], f"{specprod}.{table}.fits")
-        log.info(output)
-        hdu = fits.BinTableHDU(merge_columns[table])
-        hdu.writeto(output, overwrite=True)
+                if merge_catalog in merge_columns:
+                    merge_columns[merge_catalog].append(new_column)
+                else:
+                    merge_columns[merge_catalog] = [new_column]
+        for table in merge_columns:
+            output = os.path.join(os.environ['SCRATCH'], f"{specprod}.{table}.fits")
+            log.info(output)
+            hdu = fits.BinTableHDU(merge_columns[table])
+            hdu.writeto(output, overwrite=True)
     return 0
