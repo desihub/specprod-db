@@ -129,7 +129,8 @@ def main():
                 top_level_tiles = findfile('tiles', readonly=True)
                 with fits.open(top_level_tiles) as hdulist:
                     tiles_catalog = hdulist[1].data
-                assert (observed_tiles == tiles_catalog['TILEID'].sort()).all()
+                itiles = tiles_catalog['TILEID'].argsort()
+                assert (observed_tiles == tiles_catalog['TILEID'][itiles]).all()
             if spec == ztile_file:
                 for merge_catalog in ('photometry', 'target', 'fiberassign', 'ztile'):
                     for column in column_sources[merge_catalog][sub]:
