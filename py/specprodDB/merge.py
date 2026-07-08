@@ -124,7 +124,7 @@ def main():
             else:
                 src = spec.replace('.fits', f'-{sub}.fits')
             log.info('src = "%s"', src)
-            with fits.open(src) as hdulist:
+            with fits.open(src, character_as_bytes=True) as hdulist:
                 catalog = hdulist[1].data
             good_rows = no_sky(catalog)
             if spec == ztile_file and sub == 'base':
