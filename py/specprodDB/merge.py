@@ -77,7 +77,7 @@ column_sources = {'photometry': {'base': ['TARGETID', 'RA', 'DEC'],  # RA, DEC w
                                       'TSNR2_GPBBRIGHT', 'TSNR2_LYA', 'TSNR2_BGS', 'TSNR2_GPBBACKUP',
                                       'TSNR2_QSO', 'TSNR2_LRG', 'FIRSTNIGHT'],
                             'imaging': []},
-                  'zpix': {'base': ['TARGETID', 'DESINAME', 'SURVEY', 'PROGRAM', 'UNIQPIX'
+                  'zpix': {'base': ['TARGETID', 'DESINAME', 'SURVEY', 'PROGRAM', 'UNIQPIX',
                                     'Z_BEST', 'ZERR_BEST', 'ZWARN_BEST', 'CHI2_BEST',
                                     'SPECTYPE_BEST', 'SUBTYPE_BEST', 'DELTACHI2_BEST',
                                     'COADD_FIBERSTATUS',
