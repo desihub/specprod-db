@@ -25,6 +25,7 @@ import os
 # from glob import glob
 import numpy as np
 from astropy.io import fits
+from desiutil.log import get_logger
 from desispec.io import findfile
 from .util import no_sky
 
@@ -111,6 +112,7 @@ def main():
     :class:`int`
         A value suitable for passing to :func:`sys.exit`.
     """
+    log = get_logger(timestamp=True)
     specprod = os.environ['SPECPROD']
     zpix_file = findfile('zall_pix', version='v2', readonly=True)
     ztile_file = findfile('zall_tile', groupname='cumulative', version='v2', readonly=True)
@@ -121,6 +123,7 @@ def main():
                 src = spec
             else:
                 src = spec.replace('.fits', f'-{sub}.fits')
+            log.info(src)
             with fits.open(src) as hdulist:
                 catalog = hdulist[1].data
             good_rows = no_sky(catalog)
@@ -133,7 +136,9 @@ def main():
                 assert (observed_tiles == tiles_catalog['TILEID'][itiles]).all()
             if spec == ztile_file:
                 for merge_catalog in ('photometry', 'target', 'fiberassign', 'ztile'):
+                    log.info(merge_catalog)
                     for column in column_sources[merge_catalog][sub]:
+                        log.info(column)
                         if merge_catalog == 'photometry' and (column == 'RA' or column == 'DEC'):
                             new_column = catalog.columns[f'TARGET_{column}'].copy()
                             new_column.name = column
@@ -149,11 +154,14 @@ def main():
                         else:
                             merge_columns[merge_catalog] = [new_column]
             if spec == zpix_file:
-                for column in column_sources['ztile'][sub]:
+                log.info('zpix')
+                for column in column_sources['zpix'][sub]:
+                    log.info(column)
                     new_column = catalog.columns[column].copy()
                     new_column.array = new_column.array[good_rows].copy()
     for table in merge_columns:
         output = os.path.join(os.environ['SCRATCH'], f"{specprod}.{table}.fits")
+        log.info(output)
         hdu = fits.BinTableHDU(merge_columns[table])
         hdu.writeto(output, overwrite=True)
     return 0
