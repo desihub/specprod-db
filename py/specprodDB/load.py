@@ -494,7 +494,8 @@ def main():
                # The potential targets are supposed to include data for all targets.
                # In other words, every actual target is also a potential target.
                #
-               'photometry': [{'filepaths': glob.glob(os.path.join(options.datapath, 'vac', release, 'lsdr9-photometry', specprod, photometry_version, 'potential-targets', 'tractorphot', 'tractorphot*.fits')),
+               'photometry': [{'filepaths': os.path.join(os.environ['SCRATCH'], f'{schemamodule.schemaname}.photometry.fits'),
+                               # 'filepaths': glob.glob(os.path.join(options.datapath, 'vac', release, 'lsdr9-photometry', specprod, photometry_version, 'potential-targets', 'tractorphot', 'tractorphot*.fits')),
                                'tcls': schemamodule.Photometry,
                                'hdu': 'TRACTORPHOT',
                                'chunksize': chunksize
@@ -510,36 +511,40 @@ def main():
                                'q3c': 'ra',
                                'chunksize': chunksize
                                }],
-               'target': [{'filepaths': target_files,
+               'target': [{'filepaths': os.path.join(os.environ['SCRATCH'], f'{schemamodule.schemaname}.target.fits'),
+                           # 'filepaths': target_files,
                            'tcls': schemamodule.Target,
                            'hdu': 'TARGETPHOT',
                            'chunksize': chunksize
                            }],
-               'redshift': [{'filepaths': ztile_file,
+               'redshift': [{'filepaths': os.path.join(os.environ['SCRATCH'], f'{schemamodule.schemaname}.ztile.fits'),
+                             # 'filepaths': ztile_file,
                              'tcls': schemamodule.Ztile,
                              'hdu': 'ZCATALOG',
-                             'row_filter': no_sky,
+                             # 'row_filter': no_sky,
                              'chunksize': chunksize,
                              'alternate_load': True
                              }],
-               'fiberassign': [{'filepaths': None,
+               'fiberassign': [{'filepaths': os.path.join(os.environ['SCRATCH'], f'{schemamodule.schemaname}.photometry.fits'),
+                                # 'filepaths': None,
                                 'tcls': schemamodule.Fiberassign,
                                 'hdu': 'FIBERASSIGN',
-                                'row_filter': no_sky,
+                                # 'row_filter': no_sky,
                                 'q3c': 'target_ra',
                                 'chunksize': chunksize
-                                },
-                               {'filepaths': None,
-                                'tcls': schemamodule.Potential,
-                                'hdu': 'POTENTIAL_ASSIGNMENTS',
-                                'row_filter': no_sky,
-                                'chunksize': chunksize
-                                }]}
+                                },]}
+                            #    {'filepaths': None,
+                            #     'tcls': schemamodule.Potential,
+                            #     'hdu': 'POTENTIAL_ASSIGNMENTS',
+                            #     'row_filter': no_sky,
+                            #     'chunksize': chunksize
+                            #     }]}
     if specprod != 'daily':
-        loaders['redshift'].append({'filepaths': zpix_file,
+        loaders['redshift'].append({'filepaths': os.path.join(os.environ['SCRATCH'], f'{schemamodule.schemaname}.zpix.fits'),
+                                    # 'filepaths': zpix_file,
                                     'tcls': schemamodule.Zpix,
                                     'hdu': 'ZCATALOG',
-                                    'row_filter': no_sky,
+                                    # 'row_filter': no_sky,
                                     'chunksize': chunksize,
                                     'alternate_load': True
                                     })
@@ -551,7 +556,7 @@ def main():
     #
     # Find the tiles that need to be loaded. Not all fiberassign files are compressed!
     #
-    if options.load == 'fiberassign':
+    if options.load == 'fiberassign' and loader[0]['filepaths'] is None:
         fiberassign_search_dirs = [os.path.join(options.datapath, 'target', 'fiberassign', 'tiles', 'tags', tiles_version),
                                    os.path.join(options.datapath, 'target', 'fiberassign', 'tiles', tiles_version),
                                    os.path.join('/global/cfs/cdirs/desi', 'target', 'fiberassign', 'tiles', 'tags', tiles_version),

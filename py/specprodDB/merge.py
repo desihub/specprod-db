@@ -199,4 +199,3 @@ def main():
                                                 character_as_bytes=True)
             hdu.writeto(output, overwrite=True)
     return 0
-
