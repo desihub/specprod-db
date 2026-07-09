@@ -167,6 +167,6 @@ def main():
         for table in merge_columns:
             output = os.path.join(os.environ['SCRATCH'], f"{specprod}.{table}.fits")
             log.info(output)
-            hdu = fits.BinTableHDU(merge_columns[table], character_as_bytes=True)
+            hdu = fits.BinTableHDU.from_columns(merge_columns[table], character_as_bytes=True)
             hdu.writeto(output, overwrite=True)
     return 0
