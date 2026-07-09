@@ -186,10 +186,10 @@ def main():
                     log.debug('column = "%s"', column)
                     new_column = catalog.columns[column].copy()
                     new_column.array = new_column.array[good_rows].copy()
-                if merge_catalog in merge_columns:
-                    merge_columns[merge_catalog].append(new_column)
-                else:
-                    merge_columns[merge_catalog] = [new_column]
+                    if merge_catalog in merge_columns:
+                        merge_columns[merge_catalog].append(new_column)
+                    else:
+                        merge_columns[merge_catalog] = [new_column]
         for table in merge_columns:
             output = os.path.join(os.environ['SCRATCH'], f"{specprod}.{table}.fits")
             log.info(output)
