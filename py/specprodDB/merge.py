@@ -22,10 +22,11 @@ Notes
   info from exp_fibermap files.
 """
 import os
-# from glob import glob
+import sys
+from argparse import ArgumentParser
 import numpy as np
 from astropy.io import fits
-from desiutil.log import get_logger
+from desiutil.log import get_logger, DEBUG, INFO
 from desispec.io import findfile
 from .util import no_sky
 
@@ -102,6 +103,27 @@ column_sources = {'photometry': {'base': ['TARGETID', 'RA', 'DEC'],  # RA, DEC w
                                      'TSNR2_GPBBRIGHT', 'TSNR2_LYA', 'TSNR2_BGS', 'TSNR2_GPBBACKUP',
                                      'TSNR2_QSO', 'TSNR2_LRG'],
                            'imaging': []}}
+table_to_extname = {'photometry': 'TRACTORPHOT',
+                    'target': 'TARGETPHOT',
+                    'ztile': 'ZCATALOG',
+                    'zpix': 'ZCATALOG',
+                    'fiberassign': 'FIBERASSIGN'}
+
+
+def get_options():
+    """Parse command-line options.
+
+    Returns
+    -------
+    :class:`argparse.Namespace`
+        The parsed options.
+    """
+    prsr = ArgumentParser(description=("Prepare merged FITS files for database loading."),
+                          prog=os.path.basename(sys.argv[0]))
+    prsr.add_argument('-d', '--debug', action='store_true',
+                      help='Set log level to DEBUG.')
+    options = prsr.parse_args()
+    return options
 
 
 def main():
@@ -112,7 +134,11 @@ def main():
     :class:`int`
         A value suitable for passing to :func:`sys.exit`.
     """
-    log = get_logger(timestamp=True)
+    options = get_options()
+    if options.debug:
+        log = get_logger(DEBUG, timestamp=True)
+    else:
+        log = get_logger(INFO, timestamp=True)
     specprod = os.environ['SPECPROD']
     zpix_file = findfile('zall_pix', version='v2', readonly=True)
     ztile_file = findfile('zall_tile', groupname='cumulative', version='v2', readonly=True)
@@ -138,7 +164,7 @@ def main():
                 for merge_catalog in ('photometry', 'target', 'fiberassign', 'ztile'):
                     log.info('merge_catalog = "%s"', merge_catalog)
                     for column in column_sources[merge_catalog][sub]:
-                        log.info('column = "%s"', column)
+                        log.debug('column = "%s"', column)
                         if merge_catalog == 'photometry' and (column == 'RA' or column == 'DEC'):
                             new_column = catalog.columns[f'TARGET_{column}'].copy()
                             new_column.name = column
@@ -157,7 +183,7 @@ def main():
                 merge_catalog = 'zpix'
                 log.info('merge_catalog = "%s"', merge_catalog)
                 for column in column_sources[merge_catalog][sub]:
-                    log.info('column = "%s"', column)
+                    log.debug('column = "%s"', column)
                     new_column = catalog.columns[column].copy()
                     new_column.array = new_column.array[good_rows].copy()
                 if merge_catalog in merge_columns:
@@ -167,6 +193,10 @@ def main():
         for table in merge_columns:
             output = os.path.join(os.environ['SCRATCH'], f"{specprod}.{table}.fits")
             log.info(output)
-            hdu = fits.BinTableHDU.from_columns(merge_columns[table], character_as_bytes=True)
+            log.debug([c.name for c in merge_columns[table]])
+            hdu = fits.BinTableHDU.from_columns(merge_columns[table],
+                                                name=table_to_extname[table],
+                                                character_as_bytes=True)
             hdu.writeto(output, overwrite=True)
     return 0
+
