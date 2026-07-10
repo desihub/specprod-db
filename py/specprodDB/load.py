@@ -494,7 +494,7 @@ def main():
                # The potential targets are supposed to include data for all targets.
                # In other words, every actual target is also a potential target.
                #
-               'photometry': [{'filepaths': os.path.join(os.environ['SCRATCH'], f'{schemamodule.schemaname}.photometry.fits'),
+               'photometry': [{'filepaths': glob(os.path.join(os.environ['SCRATCH'], f'{schemamodule.schemaname}.photometry.*.fits')),
                                # 'filepaths': glob.glob(os.path.join(options.datapath, 'vac', release, 'lsdr9-photometry', specprod, photometry_version, 'potential-targets', 'tractorphot', 'tractorphot*.fits')),
                                'tcls': schemamodule.Photometry,
                                'hdu': 'TRACTORPHOT',
@@ -511,13 +511,13 @@ def main():
                                'q3c': 'ra',
                                'chunksize': chunksize
                                }],
-               'target': [{'filepaths': os.path.join(os.environ['SCRATCH'], f'{schemamodule.schemaname}.target.fits'),
+               'target': [{'filepaths': glob(os.path.join(os.environ['SCRATCH'], f'{schemamodule.schemaname}.target.*.fits')),
                            # 'filepaths': target_files,
                            'tcls': schemamodule.Target,
                            'hdu': 'TARGETPHOT',
                            'chunksize': chunksize
                            }],
-               'redshift': [{'filepaths': os.path.join(os.environ['SCRATCH'], f'{schemamodule.schemaname}.ztile.fits'),
+               'redshift': [{'filepaths': glob(os.path.join(os.environ['SCRATCH'], f'{schemamodule.schemaname}.ztile.*.fits')),
                              # 'filepaths': ztile_file,
                              'tcls': schemamodule.Ztile,
                              'hdu': 'ZCATALOG',
@@ -525,7 +525,7 @@ def main():
                              'chunksize': chunksize,
                              'alternate_load': True
                              }],
-               'fiberassign': [{'filepaths': os.path.join(os.environ['SCRATCH'], f'{schemamodule.schemaname}.photometry.fits'),
+               'fiberassign': [{'filepaths': glob(os.path.join(os.environ['SCRATCH'], f'{schemamodule.schemaname}.fiberassign.*.fits')),
                                 # 'filepaths': None,
                                 'tcls': schemamodule.Fiberassign,
                                 'hdu': 'FIBERASSIGN',

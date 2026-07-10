@@ -9,17 +9,14 @@ Merge v2-style zcatalog files into an easily-ingestible set of intermediate file
 Notes
 -----
 * Obtain as much imaging/targeting/fiberassign information from zcatalog files
-  as possible. Some fiberassign columns may be in the EXP_FIBERMAP files.
-* Pre-assemble loaded data on SCRATCH, or load some columns from some files,
-  other columns from other files.
+  as possible.
+* Pre-assemble loaded data on SCRATCH.
 * Additional matterhorn columns, like good_spec?
-* matterhorn.fiberassign may need alternate q3c index?
-* Can we just figure out a tag for matterhorn *tiles* in the next day or so?
 * Read zall files, create intermediate files that have only the desired columns
   and have sky spectra removed, then merge the redshift-related intermediate files,
   but splitting out photometry & target information.
-* While working on that, get the list of tiles, then extract fiberassign
-  info from exp_fibermap files.
+* While working on that, confirm the list of tiles.
+* May need to split files into smaller chunks to conserve memory.
 """
 import os
 import sys
