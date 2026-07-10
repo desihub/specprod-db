@@ -278,7 +278,7 @@ def main():
                 id_array[:, 2] = np.array([programid(p) for p in table_data['PROGRAM'].tolist()], dtype=np.int64)
             else:
                 pass
-            unique_array, good_rows = np.unique(unique_array, return_index=True, axis=0)
+            unique_array, good_rows = np.unique(id_array, return_index=True, axis=0)
             log.info('len(good_rows) = %d', len(good_rows))
             hdu = fits.BinTableHDU(table_data[good_rows], name=table_header['EXTNAME'], character_as_bytes=True)
             output_file = os.path.join(options.output, f"{specprod}.{table}.fits")
