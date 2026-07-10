@@ -263,24 +263,21 @@ def main():
                 id_array = np.zeros((len(table_data), 1), dtype=np.int64)
             else:
                 id_array = np.zeros((len(table_data), 3), dtype=np.int64)
-            if table == 'photometry':
-                id_array[0, :] = table_data['TARGETID']
-            elif table == 'target':
-                id_array[0, :] = table_data['TARGETID']
-                id_array[1, :] = table_data['TILEID']
-                id_array[2, :] = np.array([surveyid(s) for s in table_data['SURVEY'].tolist()], dtype=np.int64)
+            id_array[:, 0] = table_data['TARGETID']
+            if table == 'target':
+                id_array[:, 1] = table_data['TILEID']
+                id_array[:, 2] = np.array([surveyid(s) for s in table_data['SURVEY'].tolist()], dtype=np.int64)
             elif table == 'fiberassign':
-                id_array[0, :] = table_data['TARGETID']
-                id_array[1, :] = table_data['TILEID']
-                id_array[2, :] = table_data['LOCATION']
+                id_array[:, 1] = table_data['TILEID']
+                id_array[:, 2] = table_data['LOCATION']
             elif table == 'ztile':
-                id_array[0, :] = table_data['TARGETID']
-                id_array[1, :] = table_data['TILEID']
-                id_array[2, :] = table_data['LASTNIGHT']
+                id_array[:, 1] = table_data['TILEID']
+                id_array[:, 2] = table_data['LASTNIGHT']
+            elif table == 'zpix':
+                id_array[:, 1] = np.array([surveyid(s) for s in table_data['SURVEY'].tolist()], dtype=np.int64)
+                id_array[:, 2] = np.array([programid(p) for p in table_data['PROGRAM'].tolist()], dtype=np.int64)
             else:
-                id_array[0, :] = table_data['TARGETID']
-                id_array[1, :] = np.array([surveyid(s) for s in table_data['SURVEY'].tolist()], dtype=np.int64)
-                id_array[2, :] = np.array([programid(p) for p in table_data['PROGRAM'].tolist()], dtype=np.int64)
+                pass
             unique_array, good_rows = np.unique(unique_array, return_index=True, axis=0)
             log.info('len(good_rows) = %d', len(good_rows))
             hdu = fits.BinTableHDU(table_data[good_rows], name=table_header['EXTNAME'], character_as_bytes=True)
