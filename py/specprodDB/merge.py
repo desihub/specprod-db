@@ -25,10 +25,11 @@ import os
 import sys
 from argparse import ArgumentParser
 import numpy as np
+import pandas as pd
 from astropy.io import fits
 from desiutil.log import get_logger, DEBUG, INFO
 from desispec.io import findfile
-from .util import no_sky
+from .util import no_sky, programid, surveyid
 
 #
 # Origins for columns in each table.
@@ -122,8 +123,44 @@ def get_options():
                           prog=os.path.basename(sys.argv[0]))
     prsr.add_argument('-d', '--debug', action='store_true',
                       help='Set log level to DEBUG.')
+    prsr.add_argument('-O', '--output', action='store', metavar='DIR',
+                      default=os.environ['SCRATCH'],
+                      help="Write files to DIR (default %(default)s).")
+    prsr.add_argument('-o', '--overwrite', action='store_true',
+                      help='Overwrite any existing files.')
     options = prsr.parse_args()
     return options
+
+
+def detect_files(specprod, output):
+    """Find any existing files and return anything that still needs to be
+    processed.
+
+    Parameters
+    ----------
+    specprod : :class:`str`
+        Name of the specprod.
+    output : :class:`str`
+        Output directory.
+
+    Returns
+    -------
+    :class:`tuple`
+        Two lists of missing intermediate and final files.
+    """
+    intermediate_files = [os.path.join(output, f"{specprod}.{table}.temp.fits")
+                          for table in column_sources.keys()]
+    final_files = [os.path.join(output, f"{specprod}.{table}.fits")
+                          for table in column_sources.keys()]
+    missing_intermediate = list()
+    missing_final = list()
+    for f in intermediate_files:
+        if not os.path.exists(f):
+            missing_intermediate.append(os.path.basename(f).split('.')[1])
+    for f in final_files:
+        if not os.path.exists(f):
+            missing_final.append(os.path.basename(f).split('.')[1])
+    return (missing_intermediate, missing_final)
 
 
 def main():
@@ -142,7 +179,18 @@ def main():
     specprod = os.environ['SPECPROD']
     zpix_file = findfile('zall_pix', version='v2', readonly=True)
     ztile_file = findfile('zall_tile', groupname='cumulative', version='v2', readonly=True)
-    for spec in (ztile_file, zpix_file):
+    missing_intermediate, missing_final = detect_files(specprod, options.output)
+    #
+    # Step 1: rearrange columns and remove sky spectra.
+    #
+    rearrange_files = list()
+    if any([table in missing_intermediate for table in ('photometry', 'target', 'fiberassign', 'ztile')]):
+        rearrange_files.append(ztile_file)
+    if 'zpix' in missing_intermediate:
+        rearrange_files.append(zpix_file)
+    if options.overwrite:
+        rearrange_files = [ztile_file, zpix_file]
+    for spec in rearrange_files:
         merge_columns = dict()
         for sub in ('base', 'extra', 'imaging'):
             if sub == 'base':
@@ -191,11 +239,52 @@ def main():
                     else:
                         merge_columns[merge_catalog] = [new_column]
         for table in merge_columns:
-            output = os.path.join(os.environ['SCRATCH'], f"{specprod}.{table}.fits")
-            log.info(output)
+            output_file = os.path.join(options.output, f"{specprod}.{table}.temp.fits")
+            log.info(output_file)
             log.debug([c.name for c in merge_columns[table]])
             hdu = fits.BinTableHDU.from_columns(merge_columns[table],
                                                 name=table_to_extname[table],
                                                 character_as_bytes=True)
-            hdu.writeto(output, overwrite=True)
+            hdu.writeto(output_file, overwrite=options.overwrite)
+    #
+    # Step 2: remove duplicate entries.
+    #
+    if options.overwrite:
+        missing_final = list(column_sources.keys())
+    if missing_final:
+        for table in missing_final:
+            table_file = os.path.join(options.output, f"{specprod}.{table}.temp.fits")
+            log.info(table_file)
+            with fits.open(table_file, character_as_bytes=True) as hdulist:
+                table_data = hdulist[1].data
+                table_header = hdulist[1].header  # copy EXTNAME
+            log.info('len(table_data) = %d', len(table_data))
+            if table == 'photometry':
+                id_array = np.zeros((len(table_data, 1)), dtype=np.int64)
+            else:
+                id_array = np.zeros((len(table_data, 3)), dtype=np.int64)
+            if table == 'photometry':
+                id_array[0, :] = table_data['TARGETID']
+            elif table == 'target':
+                id_array[0, :] = table_data['TARGETID']
+                id_array[1, :] = table_data['TILEID']
+                id_array[2, :] = np.array([surveyid(s) for s in table_data['SURVEY'].tolist()], dtype=np.int64)
+            elif table == 'fiberassign':
+                id_array[0, :] = table_data['TARGETID']
+                id_array[1, :] = table_data['TILEID']
+                id_array[2, :] = table_data['LOCATION']
+            elif table == 'ztile':
+                id_array[0, :] = table_data['TARGETID']
+                id_array[1, :] = table_data['TILEID']
+                id_array[2, :] = table_data['LASTNIGHT']
+            else:
+                id_array[0, :] = table_data['TARGETID']
+                id_array[1, :] = np.array([surveyid(s) for s in table_data['SURVEY'].tolist()], dtype=np.int64)
+                id_array[2, :] = np.array([programid(p) for p in table_data['PROGRAM'].tolist()], dtype=np.int64)
+            unique_array, good_rows = np.unique(unique_array, return_index=True, axis=0)
+            log.info('len(good_rows) = %d', len(good_rows))
+            hdu = fits.BinTableHDU(table_data[good_rows], name=table_header['EXTNAME'], character_as_bytes=True)
+            output_file = os.path.join(options.output, f"{specprod}.{table}.fits")
+            log.info(output_file)
+            hdu.writeto(output_file, overwrite=options.overwrite)
     return 0
