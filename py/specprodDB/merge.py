@@ -25,7 +25,6 @@ import os
 import sys
 from argparse import ArgumentParser
 import numpy as np
-import pandas as pd
 from astropy.io import fits
 from desiutil.log import get_logger, DEBUG, INFO
 from desispec.io import findfile
@@ -151,7 +150,7 @@ def detect_files(specprod, output):
     intermediate_files = [os.path.join(output, f"{specprod}.{table}.temp.fits")
                           for table in column_sources.keys()]
     final_files = [os.path.join(output, f"{specprod}.{table}.fits")
-                          for table in column_sources.keys()]
+                   for table in column_sources.keys()]
     missing_intermediate = list()
     missing_final = list()
     for f in intermediate_files:
@@ -266,7 +265,7 @@ def main():
             id_array[:, 0] = table_data['TARGETID']
             if table == 'target':
                 id_array[:, 1] = table_data['TILEID']
-                id_array[:, 2] = np.array([surveyid(s) for s in table_data['SURVEY'].tolist()], dtype=np.int64)
+                id_array[:, 2] = np.array([surveyid(s.decode()) for s in table_data['SURVEY'].tolist()], dtype=np.int64)
             elif table == 'fiberassign':
                 id_array[:, 1] = table_data['TILEID']
                 id_array[:, 2] = table_data['LOCATION']
@@ -274,8 +273,8 @@ def main():
                 id_array[:, 1] = table_data['TILEID']
                 id_array[:, 2] = table_data['LASTNIGHT']
             elif table == 'zpix':
-                id_array[:, 1] = np.array([surveyid(s) for s in table_data['SURVEY'].tolist()], dtype=np.int64)
-                id_array[:, 2] = np.array([programid(p) for p in table_data['PROGRAM'].tolist()], dtype=np.int64)
+                id_array[:, 1] = np.array([surveyid(s.decode()) for s in table_data['SURVEY'].tolist()], dtype=np.int64)
+                id_array[:, 2] = np.array([programid(p.decode()) for p in table_data['PROGRAM'].tolist()], dtype=np.int64)
             else:
                 pass
             unique_array, good_rows = np.unique(id_array, return_index=True, axis=0)
