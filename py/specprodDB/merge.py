@@ -260,9 +260,9 @@ def main():
                 table_header = hdulist[1].header  # copy EXTNAME
             log.info('len(table_data) = %d', len(table_data))
             if table == 'photometry':
-                id_array = np.zeros((len(table_data, 1)), dtype=np.int64)
+                id_array = np.zeros((len(table_data), 1), dtype=np.int64)
             else:
-                id_array = np.zeros((len(table_data, 3)), dtype=np.int64)
+                id_array = np.zeros((len(table_data), 3), dtype=np.int64)
             if table == 'photometry':
                 id_array[0, :] = table_data['TARGETID']
             elif table == 'target':
