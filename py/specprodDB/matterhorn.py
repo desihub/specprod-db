@@ -324,7 +324,7 @@ class Target(SchemaMixin, Base):
         if len(row_index) == 0:
             return []
         data = finitize(data)
-        default_columns = dict()
+        default_columns = dict(hpxpixel=-1)
         #
         # Surveys like main may not have the full set of target bitmasks
         #
