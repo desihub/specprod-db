@@ -176,7 +176,7 @@ class Photometry(SchemaMixin, Base):
     gaia_phot_rp_mean_mag = Column(REAL, nullable=False)  # zall-imaging
     gaia_phot_rp_mean_flux_over_error = Column(REAL, nullable=False, default=-9999.0)
     gaia_phot_bp_rp_excess_factor = Column(REAL, nullable=False, default=-9999.0)
-    gaia_duplicated_source = Column(Boolean, nullable=False)
+    gaia_duplicated_source = Column(Boolean, nullable=False, default=False)
     gaia_astrometric_sigma5d_max = Column(REAL, nullable=False, default=-9999.0)
     gaia_astrometric_params_solved = Column(SmallInteger, nullable=False, default=0)
     parallax = Column(REAL, nullable=False)  # zall-imaging
@@ -220,7 +220,9 @@ class Photometry(SchemaMixin, Base):
         data = finitize(data)
         expand_dchisq = ('dchisq_psf', 'dchisq_rex', 'dchisq_dev', 'dchisq_exp', 'dchisq_ser',)
         data_columns = list()
+        columns_present = list()
         for column in cls.__table__.columns:
+            data_column = None
             if column.name == 'brick_objid' and 'BRICK_OBJID' not in data.colnames:
                 data_column = data['OBJID'][row_index].tolist()
             elif column.name == 'morphtype' and 'MORPHTYPE' not in data.colnames:
@@ -231,8 +233,6 @@ class Photometry(SchemaMixin, Base):
                                (data[row_index]['BRICK_OBJID'].data.astype(np.int64))).tolist()
             elif column.name == 'gaia_astrometric_params_solved' and column.name.upper() in data.colnames and data[column.name.upper()].dtype.kind != 'i':
                 data_column = data[column.name.upper()][row_index].data.astype(np.int16).tolist()
-            elif column.name == 'gaia_duplicated_source' and column.name.upper() not in data.colnames:
-                data_column = [False] * len(row_index)
             elif column.name in expand_dchisq and 'DCHISQ' in data.colnames:
                 j = expand_dchisq.index(column.name)
                 data_column = data['DCHISQ'][row_index, j].tolist()
@@ -240,10 +240,12 @@ class Photometry(SchemaMixin, Base):
                 try:
                     data_column = data[column.name.upper()][row_index].tolist()
                 except KeyError:
-                    data_column = [column.default]*len(row_index)
-            data_columns.append(data_column)
+                    pass
+            if data_column is not None:
+                data_columns.append(data_column)
+                columns_present.append(column.name)
         data_rows = list(zip(*data_columns))
-        return [cls(**(dict([(col.name, dat) for col, dat in zip(cls.__table__.columns, row)]))) for row in data_rows]
+        return [cls(**(dict([(col, dat) for col, dat in zip(columns_present, row)]))) for row in data_rows]
 
 
 class Target(SchemaMixin, Base):
