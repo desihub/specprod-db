@@ -176,7 +176,7 @@ class Photometry(SchemaMixin, Base):
     gaia_phot_rp_mean_mag = Column(REAL, nullable=False)  # zall-imaging
     gaia_phot_rp_mean_flux_over_error = Column(REAL, nullable=False, default=-9999.0)
     gaia_phot_bp_rp_excess_factor = Column(REAL, nullable=False, default=-9999.0)
-    gaia_duplicated_source = Column(Boolean, nullable=False, default=False)
+    gaia_duplicated_source = Column(Boolean, nullable=False)
     gaia_astrometric_sigma5d_max = Column(REAL, nullable=False, default=-9999.0)
     gaia_astrometric_params_solved = Column(SmallInteger, nullable=False, default=0)
     parallax = Column(REAL, nullable=False)  # zall-imaging
@@ -231,6 +231,8 @@ class Photometry(SchemaMixin, Base):
                                (data[row_index]['BRICK_OBJID'].data.astype(np.int64))).tolist()
             elif column.name == 'gaia_astrometric_params_solved' and column.name.upper() in data.colnames and data[column.name.upper()].dtype.kind != 'i':
                 data_column = data[column.name.upper()][row_index].data.astype(np.int16).tolist()
+            elif column.name == 'gaia_duplicated_source' and column.name.upper() not in data.colnames:
+                data_column = [False] * len(row_index)
             elif column.name in expand_dchisq and 'DCHISQ' in data.colnames:
                 j = expand_dchisq.index(column.name)
                 data_column = data['DCHISQ'][row_index, j].tolist()
