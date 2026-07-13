@@ -365,6 +365,8 @@ def get_options(description="Load redshift data into a specprod database."):
         The parsed options.
     """
     prsr = common_options(description)
+    prsr.add_argument('-a', '--add', action='store_true',
+                      help='Load files even if some data are already present.')
     prsr.add_argument('-l', '--load', action='store', dest='load',
                       default='exposures', metavar='STAGE',
                       help='Load the set of files associated with STAGE (default "%(default)s").')
@@ -588,7 +590,7 @@ def main():
         #
         # The targetphot stage adds to the existing photometry table.
         #
-        if loaded > 0 and options.load != 'targetphot':
+        if not options.add and loaded > 0 and options.load != 'targetphot':
             log.info("Loading appears to be complete on %s.", tn)
         else:
             log.info("Loading %s from %s.", tn, str(l['filepaths']))
