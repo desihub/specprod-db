@@ -528,18 +528,15 @@ def main():
                              'alternate_load': True
                              }],
                'fiberassign': [{'filepaths': glob.glob(os.path.join(os.environ['SCRATCH'], f'{schemamodule.schemaname}.fiberassign.*.fits')),
-                                # 'filepaths': None,
                                 'tcls': schemamodule.Fiberassign,
                                 'hdu': 'FIBERASSIGN',
-                                # 'row_filter': no_sky,
                                 'q3c': 'target_ra',
                                 'chunksize': chunksize
                                 },]}
-            #    'fiberassign': [{'filepaths': glob.glob(os.path.join(os.environ['SCRATCH'], f'{schemamodule.schemaname}.fiberassign.*.fits')),
-            #                     # 'filepaths': None,
+            #    'fiberassign': [{'filepaths': None,
             #                     'tcls': schemamodule.Fiberassign,
             #                     'hdu': 'FIBERASSIGN',
-            #                     # 'row_filter': no_sky,
+            #                     'row_filter': no_sky,
             #                     'q3c': 'target_ra',
             #                     'chunksize': chunksize
             #                     },
