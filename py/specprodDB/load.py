@@ -535,21 +535,29 @@ def main():
                                 'q3c': 'target_ra',
                                 'chunksize': chunksize
                                 },]}
-                               # {'filepaths': None,
-                               #  'tcls': schemamodule.Potential,
-                               #  'hdu': 'POTENTIAL_ASSIGNMENTS',
-                               #  'row_filter': no_sky,
-                               #  'chunksize': chunksize
-                               #  }]}
-    if specprod != 'daily':
-        loaders['redshift'].append({'filepaths': os.path.join(os.environ['SCRATCH'], f'{schemamodule.schemaname}.zpix.fits'),
-                                    # 'filepaths': zpix_file,
-                                    'tcls': schemamodule.Zpix,
-                                    'hdu': 'ZCATALOG',
-                                    # 'row_filter': no_sky,
-                                    'chunksize': chunksize,
-                                    'alternate_load': True
-                                    })
+            #    'fiberassign': [{'filepaths': glob.glob(os.path.join(os.environ['SCRATCH'], f'{schemamodule.schemaname}.fiberassign.*.fits')),
+            #                     # 'filepaths': None,
+            #                     'tcls': schemamodule.Fiberassign,
+            #                     'hdu': 'FIBERASSIGN',
+            #                     # 'row_filter': no_sky,
+            #                     'q3c': 'target_ra',
+            #                     'chunksize': chunksize
+            #                     },
+            #                    {'filepaths': None,
+            #                     'tcls': schemamodule.Potential,
+            #                     'hdu': 'POTENTIAL_ASSIGNMENTS',
+            #                     'row_filter': no_sky,
+            #                     'chunksize': chunksize
+            #                     }]}
+    # if specprod != 'daily':
+    #     loaders['redshift'].append({'filepaths': os.path.join(os.environ['SCRATCH'], f'{schemamodule.schemaname}.zpix.fits'),
+    #                                 # 'filepaths': zpix_file,
+    #                                 'tcls': schemamodule.Zpix,
+    #                                 'hdu': 'ZCATALOG',
+    #                                 # 'row_filter': no_sky,
+    #                                 'chunksize': chunksize,
+    #                                 'alternate_load': True
+    #                                 })
     try:
         loader = loaders[options.load]
     except KeyError:
