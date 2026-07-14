@@ -1233,7 +1233,7 @@ class Ztile(SchemaMixin, Base):
                     s = np.array([surveyid(s) for s in data['SURVEY'][row_index].tolist()], dtype=np.int64)
                     id0 = s << 32 | data['TILEID'][row_index].astype(np.int64)
                 data_column = [(i0 << 64) | i1 for i0, i1 in zip(id0.tolist(), data['TARGETID'][row_index].tolist())]
-            elif column.name == 'desiname' and column.name.upper not in data.colnames:
+            elif column.name == 'desiname' and column.name.upper() not in data.colnames:
                 data_column = radec_to_desiname(data['TARGET_RA'][row_index], data['TARGET_DEC'][row_index]).tolist()
             elif column.name in default_columns and column.name.upper() not in data.colnames:
                 data_column = [default_columns[column.name]]*len(row_index)
