@@ -85,9 +85,9 @@ Obtain the name of a pod::
 Dump a database schema::
 
     rancher kubectl exec --namespace <namespace> <util> -i -t -- \
-        pg_dump -U desi -h db -d desi -n <schema> -F c -f <filename>
+        pg_dump -U desi -h db -d desi -n <schema> -v -F c -f <filename>
 
 Restore a database schema::
 
     rancher kubectl exec --namespace <namespace> <util> -i -t -- \
-        pg_restore -U desi_admin -h db2 -d desi -n <schema> -v <filename>
+        pg_restore -U desi_admin -h db2 -d desi -v <filename>

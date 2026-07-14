@@ -1237,6 +1237,8 @@ class Ztile(SchemaMixin, Base):
                 data_column = radec_to_desiname(data['TARGET_RA'][row_index], data['TARGET_DEC'][row_index]).tolist()
             elif column.name in default_columns and column.name.upper() not in data.colnames:
                 data_column = [default_columns[column.name]]*len(row_index)
+            elif column.name == 'spgrpval' and column.name.upper() not in data.colnames:
+                data_column = data['LASTNIGHT'][row_index].tolist()
             elif column.name in best_columns:
                 data_column = data[best_columns[column.name]][row_index].tolist()
             elif column.name.startswith('coeff_'):
