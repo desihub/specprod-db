@@ -106,7 +106,7 @@ def deduplicate_targetid(data):
 
 
 def load_file(filepaths, tcls, hdu=1, row_filter=None, q3c=None, chunksize=50000,
-              alternate_load=False):
+              alternate_load=False, use_upsert=False):
     """Load data file into the database, assuming that column names map
     to database column names with no surprises.
 
@@ -128,6 +128,9 @@ def load_file(filepaths, tcls, hdu=1, row_filter=None, q3c=None, chunksize=50000
         If set, load database `chunksize` rows at a time (default 50000).
     alternate_load : :class:`bool`, optional
         If ``True`` use an alternate loading scheme that may reduce memory use.
+    use_upsert : :class:`bool`, optional
+        If ``True`` use :func:`~specprodDB.load.upsert` to add rows that may
+        have already been added.
 
     Returns
     -------
@@ -179,7 +182,11 @@ def load_file(filepaths, tcls, hdu=1, row_filter=None, q3c=None, chunksize=50000
                 data_chunk = orm_objects[k*chunksize:(k+1)*chunksize]
             if len(data_chunk) > 0:
                 loaded_rows += len(data_chunk)
-                dbSession.add_all(data_chunk)
+                if use_upsert:
+                    statement = upsert(data_chunk, do_nothing=True)
+                    dbSession.execute(statement)
+                else:
+                    dbSession.add_all(data_chunk)
                 dbSession.commit()
                 log.info("Inserted %d rows in %s.",
                          min((k+1)*chunksize, finalrows), tn)
@@ -525,7 +532,8 @@ def main():
                              'hdu': 'ZCATALOG',
                              # 'row_filter': no_sky,
                              'chunksize': chunksize,
-                             'alternate_load': True
+                             'alternate_load': True,
+                             'use_upsert': options.add
                              }],
                'fiberassign': [{'filepaths': glob.glob(os.path.join(os.environ['SCRATCH'], f'{schemamodule.schemaname}.fiberassign.*.fits')),
                                 'tcls': schemamodule.Fiberassign,
