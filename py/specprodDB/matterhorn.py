@@ -720,22 +720,34 @@ class Fiberassign(SchemaMixin, Base):
         if len(row_index) == 0:
             return []
         data = finitize(data)
-        if tileid is None:
-            try:
-                tileid = data.meta['TILEID']
-            except KeyError:
-                if 'TILEID' in data.colnames:
-                    log.info("Obtaining '%s' from input data file.", 'TILEID')
+        default_columns = {'tileid': 0}
+        check_columns = {'tileid': tileid}
+        for column in check_columns:
+            if check_columns[column] is None:
+                if column.upper() in data.colnames:
+                    log.info("Obtaining '%s' from input data table.", column)
+                elif column.upper() in data.meta:
+                    log.info("Obtaining '%s' from input data header.", column)
+                    default_columns[column] = data.meta[column.upper()]
                 else:
-                    log.critical("Could not obtain 'TILEID' from metadata!")
-                    raise
+                    msg = "Could not obtain '%s' from input data file."
+                    log.critical(msg, column)
+                    raise KeyError(msg % (column, ))
+            else:
+                default_columns[column] = check_columns[column]
         data_columns = list()
         for column in cls.__table__.columns:
             if column.name == 'id':
-                id0 = (data['LOCATION'][row_index].base.astype(np.int64) << 32) | tileid
+                if tileid is None:
+                    id0 = (data['LOCATION'][row_index].base.astype(np.int64) << 32) | data['TILEID'][row_index].base.astype(np.int64)
+                else:
+                    id0 = (data['LOCATION'][row_index].base.astype(np.int64) << 32) | tileid
                 data_column = [(i0 << 64) | i1 for i0, i1 in zip(id0.tolist(), data['TARGETID'][row_index].tolist())]
             elif column.name == 'tileid':
-                data_column = [tileid]*len(row_index)
+                if tileid is None:
+                    data_column = data[column.name.upper()][row_index].tolist()
+                else:
+                    data_column = [tileid]*len(row_index)
             elif column.name == 'plate_ra' and 'PLATE_RA' not in data.colnames:
                 # This will usually be ignored, because plate_ra is not necessarily a database column.
                 data_column = data['TARGET_RA'][row_index].tolist()
