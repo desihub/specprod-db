@@ -51,6 +51,7 @@ jobs:
                 python -m pip install --upgrade pip setuptools wheel
                 python -m pip install --upgrade "numpy${{ matrix.numpy-version }}"
                 python -m pip install --upgrade "astropy${{ matrix.astropy-version }}" fitsio numba
+                python -m pip install --upgrade "matplotlib<3.11"
             - name: Install DESI packages
               run: python -m pip install desiutil desimodel desitarget desispec
             - name: Prepare package for testing
