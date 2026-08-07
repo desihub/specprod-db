@@ -159,6 +159,43 @@ def detect_files(specprod, output):
     return (missing_intermediate, missing_final)
 
 
+def split_load(specprod, tables, output, overwrite=True):
+    """Divide `tables` into smaller chunks.
+
+    Parameters
+    ----------
+    specprod : :class:`str`
+        Name of the specprod.
+    tables : :class:`tuple`
+        The set of tables to split.
+    output : :class:`str`
+        Output directory.
+    overwrite : :class:`bool`, optional
+        If ``True``, overwrite existing files.
+    """
+    log = get_logger()
+    for table in tables:
+        in_file = os.path.join(output, f'{specprod}.{table}.fits')
+        log.info(in_file)
+        with fits.open(in_file, character_as_bytes=True) as hdulist:
+            table_data = hdulist[1].data
+            table_header = hdulist[1].header
+        n_rows = len(table_data)
+        chunk_size = 10000000
+        n_chunks = n_rows // chunk_size
+        if n_rows % n_chunks:
+            n_chunks += 1
+        for k in range(n_chunks):
+            min_row = k * chunk_size
+            max_row = (k + 1) * chunk_size
+            data_chunk = table_data[min_row:max_row]
+            if len(data_chunk) > 0:
+                hdu = fits.BinTableHDU(data_chunk, name=table_header['EXTNAME'], character_as_bytes=True)
+                out_file = os.path.join(output, f'{specprod}.{table}.{k:02d}.fits')
+                log.info(out_file)
+                hdu.writeto(out_file, overwrite=overwrite)
+
+
 def main():
     """Entry-point for command-line scripts.
 
@@ -280,4 +317,11 @@ def main():
             output_file = os.path.join(options.output, f"{specprod}.{table}.fits")
             log.info(output_file)
             hdu.writeto(output_file, overwrite=options.overwrite)
+    #
+    # Step 3: split very large files into easily-digestible chunks
+    #
+    split_load(specprod,
+               ('photometry', 'target', 'fiberassign', 'ztile', 'zpix'),
+               options.output,
+               overwrite=options.overwrite)
     return 0
