@@ -12,6 +12,8 @@ from datetime import datetime
 from os.path import expanduser, exists, basename
 import importlib.resources as ir
 import numpy as np
+from astropy.table import MaskedColumn
+from desiutil.log import get_logger
 from desitarget.targets import decode_targetid
 
 from . import __version__ as specprodDB_version
@@ -304,6 +306,56 @@ def no_sky(catalog):
     """
     _, _, _, _, sky, _ = decode_targetid(catalog['TARGETID'])
     return np.where((sky == 0) & (catalog['TARGETID'] > 0))[0]
+
+
+def finitize(data, replacement_value=-9999.0):
+    """Convert ``NaN`` and other non-finite floating point values.
+
+    Parameters
+    ----------
+    data : :class:`~astropy.table.Table`
+        Data table to convert.
+    replacement_value : :class:`float`, optional
+        Replace ``NaN`` or other non-finite values with this value (default -9999.0).
+
+    Returns
+    -------
+    :class:`~astropy.table.Table`
+        The input `data` modified in-place.
+    """
+    log = get_logger()
+    try:
+        colnames = data.names
+    except AttributeError:
+        colnames = data.colnames
+    masked = dict()
+    for col in colnames:
+        if data[col].dtype.kind == 'f':
+            if isinstance(data[col], MaskedColumn):
+                bad = ~np.isfinite(data[col].data.data)
+                masked[col] = True
+            else:
+                bad = ~np.isfinite(data[col])
+            if np.any(bad):
+                if bad.ndim == 1:
+                    log.warning("%d rows of bad data detected in column " +
+                                "%s.", bad.sum(), col)
+                elif bad.ndim == 2:
+                    nbadrows = len(bad.sum(1).nonzero()[0])
+                    nbaditems = bad.sum(1).sum()
+                    log.warning("%d rows (%d items) of bad data detected in column " +
+                                "%s.", nbadrows, nbaditems, col)
+                else:
+                    log.warning("Bad data detected in high-dimensional column %s.", col)
+                if col in masked:
+                    log.debug("data['%s'].data.data[bad] = %f", col, replacement_value)
+                    log.debug("data['%s'].mask[bad] = False", col)
+                    data[col].data.data[bad] = replacement_value
+                    data[col].mask[bad] = False
+                else:
+                    log.debug("data['%s'][bad] = %f", col, replacement_value)
+                    data[col][bad] = replacement_value
+    return data
 
 
 def parse_pgpass(hostname='specprod-db.desi.lbl.gov', username='desi_admin'):
