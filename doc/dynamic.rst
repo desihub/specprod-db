@@ -66,3 +66,28 @@ Other Notes
   into cross-schema views, or daughter tables that inherit from both schemas.
 - Anticipate loading afterburners and VACs into the database.
 - How do q3c indexes work with dynamic loading?
+
+Copying Databases at NERSC
+--------------------------
+
+For testing, it can be useful to use the NERSC Spin development cluster.
+Currently a ``util`` pod with a compatible version of PostgreSQL can be used
+to transfer data between the clusters.
+
+Switch context (development or production)::
+
+    rancher context switch
+
+Obtain the name of a pod::
+
+    rancher kubectl get pods --namespace <namespace>
+
+Dump a database schema::
+
+    rancher kubectl exec --namespace <namespace> <util> -i -t -- \
+        pg_dump -U desi -h db -d desi -n <schema> -v -F c -f <filename>
+
+Restore a database schema::
+
+    rancher kubectl exec --namespace <namespace> <util> -i -t -- \
+        pg_restore -U desi_admin -h db2 -d desi -v <filename>
