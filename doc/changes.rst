@@ -2,15 +2,21 @@
 Change Log
 ==========
 
-1.4.0 (unreleased)
+1.5.0 (unreleased)
 ------------------
 
 *Planned*: Support loading ongoing daily reductions, in particular, updates
 to tiles already in the database.
 
+1.4.0 (unreleased)
+------------------
+
+* Refactor package to support multiple schemas; support loading database
+  "purely" from zcatalog files (PR `#21`_).
 * Minor updates to indexes; preparation for ``matterhorn`` (PR `#20`_).
 
 .. _`#20`: https://github.com/desihub/specprod-db/pull/20
+.. _`#21`: https://github.com/desihub/specprod-db/pull/21
 
 1.3.1 (2026-03-17)
 ------------------
