@@ -10,6 +10,7 @@ targeting and redshift data.
 import os
 import sys
 import glob
+import errno
 from importlib import import_module
 from configparser import ConfigParser
 
@@ -403,9 +404,10 @@ def find_files(specprod, config, options):
 
     Raises
     ------
+    :exc:`FileNotFoundError`
+        If any required file doesn't exist.
     :exc:`ValueError`
         If the configuration contains unexpected values.
-
     """
     log = get_logger()
     release = config[specprod]['release']
@@ -475,6 +477,18 @@ def find_files(specprod, config, options):
         else:
             raise ValueError("Unsupported redshift catalog type: '%s'!", redshift_type)
         filepaths['fiberassign'] = None
+    #
+    # Test that all files are present.
+    #
+    for key in filepaths:
+        if filepaths[key] is not None:
+            if isinstance(filepaths[key], list):
+                all_there = all([os.path.exists(f) for f in filepaths[key]])
+            else:
+                all_there = os.path.exists(filepaths[key])
+        if not all_there:
+            raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT),
+                                    key)
     return filepaths
 
 
@@ -540,6 +554,10 @@ def main():
         file_data = find_files(specprod, config, options)
     except ValueError as exc:
         log.critical(*exc.args)
+        close_db()
+        return 1
+    except FileNotFoundError as exc:
+        log.critical('One or more files required for table "%s" are missing!', exc.filename)
         close_db()
         return 1
     release = config[specprod]['release']

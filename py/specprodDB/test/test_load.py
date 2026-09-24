@@ -4,10 +4,10 @@
 """
 import os
 import unittest
-from unittest.mock import patch, call
+from unittest.mock import MagicMock, patch, call
 from tempfile import mkdtemp
 from shutil import rmtree
-from ..load import load_file, setup_db, q3c_index, get_options
+from ..load import load_file, setup_db, q3c_index, get_options, find_files, close_db
 
 
 class TestLoad(unittest.TestCase):
@@ -53,3 +53,38 @@ class TestLoad(unittest.TestCase):
         mock_session.execute.assert_called_once_with(text)
         mock_log().info.assert_has_calls([call("Creating q3c index on %s.%s.", 'fuji', 'target'),
                                           call("Finished q3c index on %s.%s.", 'fuji', 'target')])
+
+    @patch('specprodDB.load.dbSession')
+    @patch('specprodDB.load.engine')
+    def test_close_db(self, mock_engine, mock_session):
+        """Test actions that close db connection.
+        """
+        close_db()
+        mock_session.close.assert_called()
+        mock_engine.dispose.assert_called()
+
+    @patch('glob.glob')
+    @patch('os.path.exists')
+    def test_find_files(self, mock_exists, mock_glob):
+        """Test find_files.
+        """
+        specprod = 'mock_specprod'
+        datapath = '/mock/desi'
+        mock_exists.return_value = True
+        globs = list()
+        for t in ('photometry', 'target', 'ztile', 'zpix', 'fiberassign'):
+            globs.append([os.path.join(datapath, f'{specprod}.{t}.{n:d}.fits')
+                          for n in range(3)])
+        mock_glob.side_effect = globs
+        mock_options = MagicMock()
+        mock_options.datapath = datapath
+        mock_options.zcatalog = True
+        config = {specprod: MagicMock()}
+        config[specprod].getboolean.return_value = True
+        d = {'release': 'dr2', 'photometry': 'v2.0', 'redshift': 'patch/v2'}
+        config[specprod].__getitem__.side_effect = d.__getitem__
+        filepaths = find_files(specprod, config, mock_options)
+        self.assertEqual(filepaths['tile'],
+                         '/mock/desi/spectro/redux/mock_specprod/tiles-mock_specprod.fits')
+        self.assertEqual(filepaths['photometry'][0],
+                         '/mock/desi/mock_specprod.photometry.0.fits')
