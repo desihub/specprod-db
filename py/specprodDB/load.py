@@ -628,6 +628,9 @@ def main():
         log.critical("Unknown loading stage '%s'!", options.load)
         close_db()
         return 1
+    if options.add:
+        for l in loader:
+            l['use_upsert'] = True
     #
     # Modifications for pre-generated files.
     #
