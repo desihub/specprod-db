@@ -38,6 +38,9 @@ specprodDB API
 .. automodule:: specprodDB.merge
     :members:
 
+.. automodule:: specprodDB.nevis
+    :members:
+
 .. automodule:: specprodDB.patch
     :members:
 
