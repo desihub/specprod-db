@@ -17,8 +17,8 @@ class TestSpecprod(unittest.TestCase):
         """
         """
         for schema in ('daily', 'fuji', 'guadalupe', 'iron', 'loa',
-                       'matterhorn', 'nevis'):
-            if schema == 'nevis':
+                       'matterhorn', 'nevis', 'ono'):
+            if schema == 'ono':
                 with self.assertRaises(ImportError):
                     schemamodule = import_module(f"specprodDB.{schema}")
             else:
