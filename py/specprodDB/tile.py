@@ -14,6 +14,7 @@ in the future.
 """
 import os
 from configparser import ConfigParser
+from importlib import import_module
 
 import numpy as np
 
@@ -88,7 +89,7 @@ def potential_photometry(tile, targets):
 
     Parameters
     ----------
-    tile : :class:`~specprodDB.load.Tile`
+    tile : :class:`~specprodDB.daily.Tile`
         The tile associated with `targets`.
     targets : :class:`~astropy.table.Table`
         Effectively a list of ``TARGETID``.
@@ -103,8 +104,8 @@ def potential_photometry(tile, targets):
     potential_tractorphot_not_already_loaded = np.ones((len(targets),), dtype=bool)
     if len(potential_tractorphot_already_loaded) > 0:
         db.log.info("Removing %d objects already loaded.", len(potential_tractorphot_already_loaded))
-    for row in potential_tractorphot_already_loaded:
-        potential_tractorphot_not_already_loaded[targets['TARGETID'] == row[0]] = False
+        for row in potential_tractorphot_already_loaded:
+            potential_tractorphot_not_already_loaded[targets['TARGETID'] == row[0]] = False
     potential_cat = Table()
     potential_cat['TARGETID'] = targets['TARGETID'][potential_tractorphot_not_already_loaded]
     potential_cat['TILEID'] = tile.tileid
@@ -439,6 +440,8 @@ def get_options(description="Load data for one tile into a specprod database."):
         The parsed options.
     """
     prsr = common_options(description)
+    prsr.add_argument('-C', '--cache', action='store_true',
+                      help='Store photometry and target data associated with TILEID.')
     prsr.add_argument('-e', '--exposures-file', action='store', dest='exposures_file', metavar='FILE',
                       help='Override the top-level exposures file associated with a specprod.')
     prsr.add_argument('-p', '--primary', action='store_true', dest='primary',
@@ -489,16 +492,6 @@ def main():
         db.log.critical("Configuration has no section for '%s'!", specprod)
         return 1
     #
-    # Initialize DB.
-    #
-    freeze_iers()
-    postgresql = db.setup_db(hostname=config[specprod]['hostname'],
-                             username=config[specprod]['username'],
-                             schema=options.schema,
-                             overwrite=options.overwrite,
-                             public=options.public,
-                             verbose=options.verbose)
-    #
     # Load configuration.
     #
     release = config[specprod]['release']
@@ -511,11 +504,27 @@ def main():
         redshift_type, redshift_version = rsv[0], 'v0'
     tiles_version = config[specprod]['tiles']
     #
-    # Complete initialization.
+    # Initialize DB.
     #
-    if options.overwrite:
-        db.load_versions(photometry_version, f"{redshift_type}/{redshift_version}",
-                         release, specprod, tiles_version)
+    freeze_iers()
+    if options.cache:
+        postgresql = False
+        schemamodule = import_module(f"specprodDB.{options.schema}")
+        Tile = schemamodule.Tile
+    else:
+        postgresql = db.setup_db(hostname=config[specprod]['hostname'],
+                                username=config[specprod]['username'],
+                                schema=options.schema,
+                                overwrite=options.overwrite,
+                                public=options.public,
+                                verbose=options.verbose)
+        Tile = db.Tile
+        #
+        # Complete initialization.
+        #
+        if options.overwrite:
+            db.load_versions(photometry_version, f"{redshift_type}/{redshift_version}",
+                            release, specprod, tiles_version)
     #
     # Find the tile in the top-level tiles file.
     #
@@ -526,7 +535,8 @@ def main():
     tiles_table = Table.read(tiles_file, format='fits', hdu='TILES')
     row_index = np.where(tiles_table['TILEID'] == options.tile)[0]
     if len(row_index) == 1:
-        candidate_tiles = db.Tile.convert(tiles_table, row_index=row_index)
+        candidate_tiles = Tile.convert(tiles_table, row_index=row_index)
+        new_tile = candidate_tiles[0]
     elif len(row_index) > 1:
         db.log.critical("Multiple matching tiles found in %s for tile %d!",
                         tiles_file, options.tile)
@@ -535,66 +545,75 @@ def main():
         db.log.critical("No matching tiles found in %s for tile %d!",
                         tiles_file, options.tile)
         return 1
-    #
-    # Find the associated exposures.
-    #
-    if options.exposures_file is None:
-        exposures_file = findfile('exposures', readonly=True)
-    else:
-        exposures_file = options.exposures_file
-    exposures_table = Table.read(exposures_file, format='fits', hdu='EXPOSURES')
-    row_index = np.where((exposures_table['TILEID'] == candidate_tiles[0].tileid) & (exposures_table['EFFTIME_SPEC'] > 0))[0]
-    if len(row_index) > 0:
-        load_exposures = db.Exposure.convert(exposures_table, row_index=row_index)
-    else:
-        db.log.critical("No valid exposures found for tile %d, even though EFFTIME_SPEC == %f!",
-                        candidate_tiles[0].tileid, candidate_tiles[0].efftime_spec)
-        return 1
-    frames_table = Table.read(exposures_file, format='fits', hdu='FRAMES')
-    load_frames = list()
-    for exposure in load_exposures:
-        row_index = np.where(frames_table['EXPID'] == exposure.expid)[0]
-        assert len(row_index) > 0
-        load_frames += db.Frame.convert(frames_table, row_index=row_index)
-    try:
-        statement = db.upsert(candidate_tiles)
-        db.dbSession.execute(statement)
-        # db.dbSession.add_all(candidate_tiles)
-        db.dbSession.commit()
-    except IntegrityError as exc:
+    if not options.cache:
         #
-        # IntegrityError is thrown when a tile is already loaded, but also when
-        # a NOT NULL constraint is violated.
+        # Find the associated exposures.
         #
-        db.log.critical("Tile %d cannot be loaded!", candidate_tiles[0].tileid)
-        db.log.critical("Message was: %s", exc.args[0])
-        db.dbSession.rollback()
-        return 1
-    new_tile = candidate_tiles[0]
-    try:
-        statement = db.upsert(load_exposures)
+        if options.exposures_file is None:
+            exposures_file = findfile('exposures', readonly=True)
+        else:
+            exposures_file = options.exposures_file
+        exposures_table = Table.read(exposures_file, format='fits', hdu='EXPOSURES')
+        row_index = np.where((exposures_table['TILEID'] == candidate_tiles[0].tileid) & (exposures_table['EFFTIME_SPEC'] > 0))[0]
+        if len(row_index) > 0:
+            load_exposures = db.Exposure.convert(exposures_table, row_index=row_index)
+        else:
+            db.log.critical("No valid exposures found for tile %d, even though EFFTIME_SPEC == %f!",
+                            candidate_tiles[0].tileid, candidate_tiles[0].efftime_spec)
+            return 1
+        frames_table = Table.read(exposures_file, format='fits', hdu='FRAMES')
+        load_frames = list()
+        for exposure in load_exposures:
+            row_index = np.where(frames_table['EXPID'] == exposure.expid)[0]
+            assert len(row_index) > 0
+            load_frames += db.Frame.convert(frames_table, row_index=row_index)
+        try:
+            statement = db.upsert(candidate_tiles)
+            db.dbSession.execute(statement)
+            # db.dbSession.add_all(candidate_tiles)
+            db.dbSession.commit()
+        except IntegrityError as exc:
+            #
+            # IntegrityError is thrown when a tile is already loaded, but also when
+            # a NOT NULL constraint is violated.
+            #
+            db.log.critical("Tile %d cannot be loaded!", candidate_tiles[0].tileid)
+            db.log.critical("Message was: %s", exc.args[0])
+            db.dbSession.rollback()
+            return 1
+        try:
+            statement = db.upsert(load_exposures)
+            db.dbSession.execute(statement)
+            # db.dbSession.add_all(load_exposures)
+            db.dbSession.commit()
+        except IntegrityError as exc:
+            db.log.critical("Exposures for tile %d cannot be loaded!", new_tile.tileid)
+            db.log.critical("Message was: %s", exc.args[0])
+            db.dbSession.rollback()
+            db.dbSession.delete(new_tile)
+            db.dbSession.commit()
+            return 1
+        statement = db.upsert(load_frames)
         db.dbSession.execute(statement)
-        # db.dbSession.add_all(load_exposures)
+        # db.dbSession.add_all(load_frames)
         db.dbSession.commit()
-    except IntegrityError as exc:
-        db.log.critical("Exposures for tile %d cannot be loaded!", new_tile.tileid)
-        db.log.critical("Message was: %s", exc.args[0])
-        db.dbSession.rollback()
-        db.dbSession.delete(new_tile)
-        db.dbSession.commit()
-        return 1
-    statement = db.upsert(load_frames)
-    db.dbSession.execute(statement)
-    # db.dbSession.add_all(load_frames)
-    db.dbSession.commit()
     #
     # Load photometry. If this is an update, these should already be loaded.
     #
     if not options.update:
-        potential_targets_table = potential_targets(new_tile.tileid)
+        potential_targets_table = potential_targets(new_tile)
         potential_cat = potential_photometry(new_tile, potential_targets_table)
         potential_targetphot = targetphot(potential_cat)
         potential_tractorphot = tractorphot(potential_cat)
+        if options.cache:
+            #
+            # Save files and exit.
+            #
+            potential_tractorphot.write(overwrite=options.overwrite)
+            db.log.info('Wrote photometry data to filename.')
+            potential_targetphot.write(overwrite=options.overwrite)
+            db.log.info('Wrote target data to filename.')
+            return 0
         loaded_photometry = load_photometry(potential_tractorphot)
         loaded_targetphot = load_targetphot(potential_targetphot, loaded_photometry)
         #
