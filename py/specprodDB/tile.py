@@ -608,7 +608,7 @@ def main():
     # Load photometry. If this is an update, these should already be loaded.
     #
     if not options.update:
-        potential_targets_table = potential_targets(new_tile)
+        potential_targets_table = potential_targets(new_tile.tileid)
         potential_cat = potential_photometry(new_tile, potential_targets_table)
         potential_targetphot = targetphot(potential_cat)
         potential_tractorphot = tractorphot(potential_cat)
