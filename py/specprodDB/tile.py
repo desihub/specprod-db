@@ -535,7 +535,7 @@ def main():
         #
         if options.overwrite:
             db.load_versions(photometry_version, f"{redshift_type}/{redshift_version}",
-                            release, specprod, tiles_version)
+                             release, specprod, tiles_version)
     #
     # Find the tile in the top-level tiles file.
     #
