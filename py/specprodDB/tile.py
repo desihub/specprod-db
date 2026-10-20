@@ -620,12 +620,12 @@ def main():
             #
             # Save files and exit.
             #
-            # potential_tractorphot.meta['EXTNAME'] = 'TRACTORPHOT'
+            potential_tractorphot.meta['EXTNAME'] = 'TRACTORPHOT'
             tractor_file = os.path.join(options.cache,
                                         f"{specprod}.photometry.{new_tile.tileid:d}.fits")
             potential_tractorphot.write(tractor_file, overwrite=options.overwrite)
             db.log.info('Wrote photometry data to %s.', tractor_file)
-            # potential_targetphot.meta['EXTNAME'] = 'TARGETPHOT'
+            potential_targetphot.meta['EXTNAME'] = 'TARGETPHOT'
             target_file = os.path.join(options.cache,
                                        f"{specprod}.target.{new_tile.tileid:d}.fits")
             potential_targetphot.write(target_file, overwrite=options.overwrite)
