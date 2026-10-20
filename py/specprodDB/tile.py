@@ -440,8 +440,8 @@ def get_options(description="Load data for one tile into a specprod database."):
         The parsed options.
     """
     prsr = common_options(description)
-    prsr.add_argument('-C', '--cache', action='store_true',
-                      help='Store photometry and target data associated with TILEID.')
+    prsr.add_argument('-C', '--cache', action='store', metavar='DIR',
+                      help='Store photometry and target data associated with TILEID in DIR.')
     prsr.add_argument('-e', '--exposures-file', action='store', dest='exposures_file', metavar='FILE',
                       help='Override the top-level exposures file associated with a specprod.')
     prsr.add_argument('-p', '--primary', action='store_true', dest='primary',
@@ -507,17 +507,24 @@ def main():
     # Initialize DB.
     #
     freeze_iers()
-    if options.cache:
+    if options.cache is not None:
         postgresql = False
-        schemamodule = import_module(f"specprodDB.{options.schema}")
+        schemamodule = import_module(f"specprodDB.{specprod}")
         Tile = schemamodule.Tile
     else:
+        if options.schema is None:
+            setup_schema = specprod
+        else:
+            if specprod != options.schema:
+                db.log.warning("Environment variable SPECPROD ('%d') does not match options.schema ('%d')!",
+                               specprod, options.schema)
+            setup_schema = options.schema
         postgresql = db.setup_db(hostname=config[specprod]['hostname'],
-                                username=config[specprod]['username'],
-                                schema=options.schema,
-                                overwrite=options.overwrite,
-                                public=options.public,
-                                verbose=options.verbose)
+                                 username=config[specprod]['username'],
+                                 schema=setup_schema,
+                                 overwrite=options.overwrite,
+                                 public=options.public,
+                                 verbose=options.verbose)
         Tile = db.Tile
         #
         # Complete initialization.
@@ -545,7 +552,7 @@ def main():
         db.log.critical("No matching tiles found in %s for tile %d!",
                         tiles_file, options.tile)
         return 1
-    if not options.cache:
+    if options.cache is None:
         #
         # Find the associated exposures.
         #
@@ -605,14 +612,20 @@ def main():
         potential_cat = potential_photometry(new_tile, potential_targets_table)
         potential_targetphot = targetphot(potential_cat)
         potential_tractorphot = tractorphot(potential_cat)
-        if options.cache:
+        if options.cache is not None:
             #
             # Save files and exit.
             #
-            potential_tractorphot.write(overwrite=options.overwrite)
-            db.log.info('Wrote photometry data to filename.')
-            potential_targetphot.write(overwrite=options.overwrite)
-            db.log.info('Wrote target data to filename.')
+            # potential_tractorphot.meta['EXTNAME'] = 'TRACTORPHOT'
+            tractor_file = os.path.join(options.cache,
+                                        f"{specprod}.photometry.{new_tile.tileid:d}.fits")
+            potential_tractorphot.write(tractor_file, overwrite=options.overwrite)
+            db.log.info('Wrote photometry data to %s.', tractor_file)
+            # potential_targetphot.meta['EXTNAME'] = 'TARGETPHOT'
+            target_file = os.path.join(options.cache,
+                                       f"{specprod}.target.{new_tile.tileid:d}.fits")
+            potential_targetphot.write(target_file, overwrite=options.overwrite)
+            db.log.info('Wrote target data to %s.', target_file)
             return 0
         loaded_photometry = load_photometry(potential_tractorphot)
         loaded_targetphot = load_targetphot(potential_targetphot, loaded_photometry)
