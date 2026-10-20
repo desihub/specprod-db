@@ -100,7 +100,11 @@ def potential_photometry(tile, targets):
         A Table that will be the input to photometric search functions.
     """
     db.log.debug("Checking for existing photometry.")
-    potential_tractorphot_already_loaded = db.dbSession.query(db.Photometry.targetid).filter(db.Photometry.targetid.in_(targets['TARGETID'].tolist())).all()
+    try:
+        potential_tractorphot_already_loaded = db.dbSession.query(db.Photometry.targetid).filter(db.Photometry.targetid.in_(targets['TARGETID'].tolist())).all()
+    except AttributeError:
+        db.log.warning("Could not query photometry table, assuming 'cache' mode.")
+        potential_tractorphot_already_loaded = list()
     potential_tractorphot_not_already_loaded = np.ones((len(targets),), dtype=bool)
     if len(potential_tractorphot_already_loaded) > 0:
         db.log.info("Removing %d objects already loaded.", len(potential_tractorphot_already_loaded))
