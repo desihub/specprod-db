@@ -9,8 +9,10 @@ Code for loading one or more separate tiles into the spectroscopic production da
 Notes
 -----
 
-Some of this code may be combined or otherwise refactored with :mod:`specprodDB.load`
-in the future.
+* Some of this code may be combined or otherwise refactored with :mod:`specprodDB.load`
+  in the future.
+* When obtaining photometry, a function may be needed that converts tileid
+  to data release, *e.g.* ``dr9`` or ``dr11``.
 """
 import os
 from configparser import ConfigParser
