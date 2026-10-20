@@ -54,7 +54,7 @@ def fiberassign_file(tileid):
     global _fiberassign_cache
     if tileid not in _fiberassign_cache:
         f = findfile('fiberassignsvn', tile=tileid, readonly=True)
-        db.log.debug('Using tiles file = %d.', f)
+        db.log.debug('Using tiles file = %s.', f)
         _fiberassign_cache[tileid] = f
     return _fiberassign_cache[tileid]
 
@@ -511,7 +511,7 @@ def main():
     if tiles_version != 'trunk':
         fiber_assign_dir = os.path.join(os.environ['DESI_TARGET'], 'fiberassign',
                                         'tiles', 'tags', tiles_version)
-        db.log.info("Setting FIBER_ASSIGN_DIR = %d.", fiber_assign_dir)
+        db.log.info("Setting FIBER_ASSIGN_DIR = %s.", fiber_assign_dir)
         os.environ['FIBER_ASSIGN_DIR'] = fiber_assign_dir
     #
     # Initialize DB.
