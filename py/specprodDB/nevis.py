@@ -1069,6 +1069,7 @@ class Ztile(SchemaMixin, Base):
     z = Column(DOUBLE_PRECISION, index=True, nullable=False)  # zall, renamed to z_best
     zerr = Column(REAL, nullable=False)  # zall, renamed to zerr_best, type E
     zwarn = Column(Integer, index=True, nullable=False)  # zall, renamed to zwarn_best, type J
+    zconf = Column(SmallInteger, nullable=False)  # zall, see z_conf
     chi2 = Column(REAL, nullable=False)  # zall, renamed to chi2_best, type E
     coeff_0 = Column(REAL, nullable=False)  # zall-extra
     coeff_1 = Column(REAL, nullable=False)  # zall-extra
@@ -1148,6 +1149,7 @@ class Ztile(SchemaMixin, Base):
     min_mjd = Column(DOUBLE_PRECISION, nullable=False)  # zall
     mean_mjd = Column(DOUBLE_PRECISION, nullable=False)  # zall
     max_mjd = Column(DOUBLE_PRECISION, nullable=False)  # zall
+    good_spec = Column(Boolean, nullable=False)  # zall
 
     photometry = relationship("Photometry", back_populates="ztile_redshifts")
     tile = relationship("Tile", back_populates="ztile_redshifts")

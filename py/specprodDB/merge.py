@@ -61,7 +61,7 @@ column_sources = {'photometry': {'base': ['TARGETID', 'RA', 'DEC'],  # RA, DEC w
                                      'COADD_NUMEXP', 'COADD_EXPTIME', 'COADD_NUMNIGHT', 'COADD_NUMTILE',
                                      'SV_NSPEC', 'SV_PRIMARY', 'MAIN_NSPEC', 'MAIN_PRIMARY',
                                      'ZCAT_NSPEC', 'ZCAT_PRIMARY', 'LASTNIGHT',
-                                     'MIN_MJD', 'MEAN_MJD', 'MAX_MJD'],
+                                     'MIN_MJD', 'MEAN_MJD', 'MAX_MJD', 'GOOD_SPEC'],
                             'extra': ['COEFF', 'NPIXELS', 'NCOEFF', 'MEAN_DELTA_X', 'RMS_DELTA_X',
                                       'MEAN_DELTA_Y', 'RMS_DELTA_Y', 'MEAN_FIBER_RA', 'STD_FIBER_RA',
                                       'MEAN_FIBER_DEC', 'STD_FIBER_DEC', 'MEAN_PSF_TO_FIBER_SPECFLUX',
