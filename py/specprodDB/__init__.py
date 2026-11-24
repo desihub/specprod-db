@@ -14,4 +14,4 @@ It does *not* include:
 #. The full imaging and targeting databases, but only the imaging and
    targeting associated with a spectroscopic production.
 """
-from ._version import __version__
+from ._version import __version__  # noqa: F401

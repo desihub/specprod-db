@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 """Test specprodDB.patch.
 """
-import os
+# import os
 import unittest
-from unittest.mock import patch, mock_open, call
-from ..patch import get_options, get_data
+from unittest.mock import patch  # , mock_open, call
+from ..patch import get_options  # , get_data
 # from .. import __version__ as specprod_db_version
 
 

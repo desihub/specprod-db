@@ -120,7 +120,7 @@ exit ${{load_status}}
     def test_prepare_template_bash_version(self):
         """Test conversion of options to scripts with bash and alternate version name.
         """
-        expected = f"""#!/bin/bash
+        expected = """#!/bin/bash
 #SBATCH --qos=regular
 #SBATCH --constraint=cpu
 #SBATCH --nodes=1
@@ -135,10 +135,10 @@ module swap specprod-db/main
 export DESI_ROOT=/global/cfs/cdirs/desi
 export SPECPROD=fuji
 srun --ntasks=1 load_specprod_db  \\
-    --load photometry --schema ${{SPECPROD}} ${{DESI_ROOT}}
+    --load photometry --schema ${SPECPROD} ${DESI_ROOT}
 load_status=$?
-[[ ${{load_status}} == 0 ]] && /bin/mv -v /home/test/Documents/Jobs/load_specprod_db_fuji_photometry.sh /home/test/Documents/Jobs/done
-exit ${{load_status}}
+[[ ${load_status} == 0 ]] && /bin/mv -v /home/test/Documents/Jobs/load_specprod_db_fuji_photometry.sh /home/test/Documents/Jobs/done
+exit ${load_status}
 """
         with patch('os.environ', {'HOME': '/home/test'}):
             options = get_options()

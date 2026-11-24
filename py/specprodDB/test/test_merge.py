@@ -6,7 +6,7 @@
 import sys
 import unittest
 # from unittest.mock import patch, mock_open, call
-from ..merge import get_options, detect_files, split_load
+# from ..merge import get_options, detect_files, split_load
 
 
 class TestMerge(unittest.TestCase):

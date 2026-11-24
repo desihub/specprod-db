@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 """Test specprodDB.base.
 """
-import os
+# import os
 import sys
 import unittest
-from unittest.mock import patch, mock_open, call
-from sqlalchemy.orm import (DeclarativeBase, declarative_mixin, declared_attr)
+# from unittest.mock import patch, mock_open, call
+from sqlalchemy.orm import DeclarativeBase  # , declarative_mixin, declared_attr
 from ..base import Base, schema_mixin_factory
 
 

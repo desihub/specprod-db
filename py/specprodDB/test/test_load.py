@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import MagicMock, patch, call
 from tempfile import mkdtemp
 from shutil import rmtree
-from ..load import load_file, setup_db, q3c_index, get_options, find_files, close_db
+from ..load import q3c_index, get_options, find_files, close_db  # , load_file, setup_db
 
 
 class TestLoad(unittest.TestCase):
