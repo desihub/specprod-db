@@ -455,13 +455,13 @@ def find_files(specprod, config, options):
             filepaths['zpix'] = os.path.join(redshift_dir, f'zall-pix-{specprod}.fits')
             filepaths['ztile'] = os.path.join(redshift_dir, f'zall-tilecumulative-{specprod}.fits')
             if not os.path.exists(filepaths['zpix']):
-                log.warning("%s not found, will use individual survey-program files.")
+                log.warning("%s not found, will use individual survey-program files.", filepaths['zpix'])
                 if redshift_version == 'v2':
                     filepaths['zpix'] = glob.glob(os.path.join(redshift_dir, '*', f'zpix-*.fits'))
                 else:
                     filepaths['zpix'] = glob.glob(os.path.join(redshift_dir, f'zpix-*.fits'))
             if not os.path.exists(filepaths['ztile']):
-                log.warning("%s not found, will use individual survey-program files.")
+                log.warning("%s not found, will use individual survey-program files.", filepaths['ztile'])
                 if redshift_version == 'v2':
                     filepaths['ztile'] = glob.glob(os.path.join(redshift_dir, '*', f'ztile-*-cumulative.fits'))
                 else:
@@ -475,7 +475,8 @@ def find_files(specprod, config, options):
             filepaths['zpix'] = 'Daily loads are not meant to include Healpix redshifts.'
             filepaths['ztile'] = 'Only cumulative redshifts are needed for daily loads.'
         else:
-            raise ValueError("Unsupported redshift catalog type: '%s'!", redshift_type)
+            log.critical("Unsupported redshift catalog type: '%s'!", redshift_type)
+            raise ValueError(f"Unsupported redshift catalog type: '{redshift_type}'!")
         filepaths['fiberassign'] = None
     #
     # Test that all files are present.
