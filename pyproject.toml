@@ -1,3 +1,89 @@
 [build-system]
 requires = ["setuptools"]
 build-backend = 'setuptools.build_meta'
+
+[project]
+name = "specprod-db"
+dynamic = ["version"]
+authors = [ { name = "DESI Collaboration", email = "desi-data@desi.lbl.gov" } ]
+license = "BSD-3-Clause"
+license-files = ["LICENSE.rst"]
+description = "DESI spectroscopic production database."
+readme = "README.rst"
+requires-python = ">=3.10"
+dependencies = ["pytz", "astropy", "sqlalchemy"]
+keywords = ["DESI", "database"]
+classifiers = ["Development Status :: 5 - Production/Stable",
+               "Environment :: Console",
+               "Intended Audience :: Science/Research",
+               "Operating System :: OS Independent",
+               "Programming Language :: Python :: 3",
+               "Topic :: Scientific/Engineering :: Astronomy"]
+
+[project.optional-dependencies]
+test = ["pytest"]
+coverage = ["pytest-cov", "coveralls"]
+doc = ["Sphinx", "sphinx-rtd-theme"]
+
+[project.urls]
+Documentation = "https://specprod-db.readthedocs.io/en/latest"
+Repository = "https://github.com/desihub/specprod-db"
+Issues = "https://github.com/desihub/specprod-db/issues"
+Changelog = "https://github.com/desihub/specprod-db/blob/main/doc/changes.rst"
+
+# [project.scripts]
+# coeff_patch = "specprodDB.coeff:main"
+# load_specprod_db = "specprodDB.load:main"
+# load_specprod_tile = "specprodDB.tile:main"
+# patch_specprod = "specprodDB.patch:main"
+# prepare_batch_specprod_db = "specprodDB.batch:main"
+# zcatalog_merge = "specprodDB.merge:main"
+
+[tool.setuptools]
+package-dir = {"" = "py"}
+script-files = ["bin/coeff_patch",
+                "bin/load_specprod_db",
+                "bin/load_specprod_tile",
+                "bin/patch_specprod",
+                "bin/prepare_batch_specprod_db",
+                "bin/submit_load_specprod_db.sh",
+                "bin/submit_load_specprod_tile.sh",
+                "bin/zcatalog_merge"]
+
+[tool.setuptools.package-data]
+"specprodDB" = ["attic/*", "data/*"]
+"specprodDB.test" = ["t/*"]
+
+[tool.setuptools.packages.find]
+where = "py"
+exclude = ".github/*"
+
+[tool.setuptools.dynamic]
+version = {attr = "specprodDB.__version__"}
+
+[tool.coverage.run]
+relative_files = true
+source = ["py/specprodDB"]
+omit = ["py/specprodDB/_version.py",
+        "py/specprodDB/conftest*",
+        "py/specprodDB/test/*",
+        "*/specprodDB/_version.py",
+        "*/specprodDB/conftest*",
+        "*/specprodDB/test/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+                # Have to re-enable the standard pragma
+                "pragma: no cover",
+                # Don't complain about packages we have installed
+                "except ImportError",
+                # Don't complain if tests don't hit assertions
+                "raise AssertionError",
+                "raise NotImplementedError",
+                # Don't complain about script hooks
+                "def main\\(.*\\):",
+                # Ignore branches that don't pertain to this version of Python
+                "pragma: py{ignore_python_version}",
+                # Don't complain about IPython completion helper
+                "def _ipython_key_completions_",
+                ]

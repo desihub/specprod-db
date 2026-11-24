@@ -46,9 +46,9 @@ jobs:
 
         steps:
             - name: Checkout code
-              uses: actions/checkout@v6
+              uses: actions/checkout@v7
             - name: Set up Python ${{ matrix.python-version }}
-              uses: actions/setup-python@v6
+              uses: actions/setup-python@v7
               with:
                 python-version: ${{ matrix.python-version }}
             - name: Install Python dependencies
@@ -89,9 +89,9 @@ jobs:
 
         steps:
             - name: Checkout code
-              uses: actions/checkout@v6
+              uses: actions/checkout@v7
             - name: Set up Python ${{ matrix.python-version }}
-              uses: actions/setup-python@v6
+              uses: actions/setup-python@v7
               with:
                 python-version: ${{ matrix.python-version }}
             - name: Install Python dependencies
@@ -110,9 +110,9 @@ jobs:
 
         steps:
             - name: Checkout code
-              uses: actions/checkout@v6
+              uses: actions/checkout@v7
             - name: Set up Python ${{ matrix.python-version }}
-              uses: actions/setup-python@v6
+              uses: actions/setup-python@v7
               with:
                 python-version: ${{ matrix.python-version }}
             - name: Install Python dependencies
@@ -133,14 +133,17 @@ jobs:
 
         steps:
             - name: Checkout code
-              uses: actions/checkout@v6
+              uses: actions/checkout@v7
             - name: Set up Python ${{ matrix.python-version }}
-              uses: actions/setup-python@v6
+              uses: actions/setup-python@v7
               with:
                 python-version: ${{ matrix.python-version }}
             - name: Install Python dependencies
-              run: python -m pip install --upgrade pip setuptools wheel pycodestyle
-            - name: Test the style
+              run: python -m pip install --upgrade pip setuptools wheel pycodestyle flake8-bugbear
+            - name: Test the style with pycodestyle
               # Uncomment continue-on-error to allow failures.
               # continue-on-error: true
-              run: pycodestyle --count py/specprodDB
+              run: pycodestyle --statistics --count py/specprodDB
+            - name: Test the style and code more rigorously with flake 8
+              continue-on-error: true
+              run: flake8 --statistics --count py/specprodDB
