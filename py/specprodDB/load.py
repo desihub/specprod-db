@@ -620,13 +620,20 @@ def main():
                            'hdu': 'TARGETPHOT',
                            'chunksize': chunksize
                            }],
-               'redshift': [{'filepaths': file_data['ztile'],
-                             'tcls': schemamodule.Ztile,
-                             'hdu': 'ZCATALOG',
-                             'row_filter': no_sky,
-                             'chunksize': chunksize,
-                             'alternate_load': True,
-                             }],
+               'ztile': [{'filepaths': file_data['ztile'],
+                          'tcls': schemamodule.Ztile,
+                          'hdu': 'ZCATALOG',
+                          'row_filter': no_sky,
+                          'chunksize': chunksize,
+                          'alternate_load': True,
+                          }],
+               'zpix': [{'filepaths': file_data['zpix'],
+                         'tcls': schemamodule.Zpix,
+                         'hdu': 'ZCATALOG',
+                         'row_filter': no_sky,
+                         'chunksize': chunksize,
+                         'alternate_load': True
+                         }],
                'fiberassign': [{'filepaths': file_data['fiberassign'],
                                 'tcls': schemamodule.Fiberassign,
                                 'hdu': 'FIBERASSIGN',
@@ -640,14 +647,6 @@ def main():
                                 'row_filter': no_sky,
                                 'chunksize': chunksize
                                 }]}
-    if specprod != 'daily':
-        loaders['redshift'].append({'filepaths': file_data['zpix'],
-                                    'tcls': schemamodule.Zpix,
-                                    'hdu': 'ZCATALOG',
-                                    'row_filter': no_sky,
-                                    'chunksize': chunksize,
-                                    'alternate_load': True
-                                    })
     try:
         loader = loaders[options.load]
     except KeyError:
@@ -664,9 +663,10 @@ def main():
         if options.load == 'fiberassign':
             del loader[0]['row_filter']
             del loader[1]
-        elif options.load == 'redshift':
+        elif options.load == 'ztile':
             del loader[0]['row_filter']
-            del loader[1]['row_filter']
+        elif options.load == 'zpix':
+            del loader[0]['row_filter']
         else:
             pass
     #
