@@ -457,15 +457,15 @@ def find_files(specprod, config, options):
             if not os.path.exists(filepaths['zpix']):
                 log.warning("%s not found, will use individual survey-program files.", filepaths['zpix'])
                 if redshift_version == 'v2':
-                    filepaths['zpix'] = glob.glob(os.path.join(redshift_dir, '*', f'zpix-*.fits'))
+                    filepaths['zpix'] = glob.glob(os.path.join(redshift_dir, '*', 'zpix-*.fits'))
                 else:
-                    filepaths['zpix'] = glob.glob(os.path.join(redshift_dir, f'zpix-*.fits'))
+                    filepaths['zpix'] = glob.glob(os.path.join(redshift_dir, 'zpix-*.fits'))
             if not os.path.exists(filepaths['ztile']):
                 log.warning("%s not found, will use individual survey-program files.", filepaths['ztile'])
                 if redshift_version == 'v2':
-                    filepaths['ztile'] = glob.glob(os.path.join(redshift_dir, '*', f'ztile-*-cumulative.fits'))
+                    filepaths['ztile'] = glob.glob(os.path.join(redshift_dir, '*', 'ztile-*-cumulative.fits'))
                 else:
-                    filepaths['ztile'] = glob.glob(os.path.join(redshift_dir, f'ztile-*-cumulative.fits'))
+                    filepaths['ztile'] = glob.glob(os.path.join(redshift_dir, 'ztile-*-cumulative.fits'))
         elif redshift_type == 'zcat':
             redshift_dir = os.path.join(options.datapath, 'vac', release, 'zcat', specprod)
             filepaths['zpix'] = os.path.join(redshift_dir, redshift_version, f'zall-pix-{release}-vac.fits')
@@ -702,7 +702,7 @@ def main():
             log.info("Loading appears to be complete on %s.", tn)
         else:
             log.info("Loading %s from %s.", tn, str(ld['filepaths']))
-            load_file(**l)
+            load_file(**ld)
             log.info("Finished loading %s.", tn)
     if options.load == 'fiberassign':
         log.info("Consider running VACUUM FULL VERBOSE ANALYZE at this point.")
