@@ -437,9 +437,16 @@ def find_files(specprod, config, options):
                                                          'potential-targets', 'tractorphot',
                                                          'tractorphot*.fits'))
         if target_summary:
-            filepaths['target'] = os.path.join(options.datapath, 'vac', release, 'lsdr9-photometry', specprod, photometry_version, 'potential-targets', f'targetphot-potential-{specprod}.fits')
+            filepaths['target'] = os.path.join(options.datapath, 'vac', release,
+                                               'lsdr9-photometry', specprod,
+                                               photometry_version, 'potential-targets',
+                                               f'targetphot-potential-{specprod}.fits')
         else:
-            filepaths['target'] = glob.glob(os.path.join(options.datapath, 'vac', release, 'lsdr9-photometry', specprod, photometry_version, 'potential-targets', 'targetphot-potential-*.fits'))
+            filepaths['target'] = glob.glob(os.path.join(options.datapath, 'vac',
+                                                         release, 'lsdr9-photometry',
+                                                         specprod, photometry_version,
+                                                         'potential-targets',
+                                                         'targetphot-potential-*.fits'))
         rsv = config[specprod]['redshift'].split('/')
         if len(rsv) == 2:
             redshift_type, redshift_version = rsv[0], rsv[1]

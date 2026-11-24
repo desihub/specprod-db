@@ -566,8 +566,12 @@ def main():
     #
     # Write out data.
     #
-    dst_original_tiles = os.path.join(options.output, os.path.basename(dst['tiles_file']).replace(f"tiles-{options.dst}", f"tiles-{options.dst}-original-{ymd}"))
-    dst_original_exposures = os.path.join(options.output, os.path.basename(dst['exposures_file']).replace(f"exposures-{options.dst}", f"exposures-{options.dst}-original-{ymd}"))
+    dst_original_tiles = os.path.join(options.output,
+                                      os.path.basename(dst['tiles_file']).replace(f"tiles-{options.dst}",
+                                                                                  f"tiles-{options.dst}-original-{ymd}"))
+    dst_original_exposures = os.path.join(options.output,
+                                          os.path.basename(dst['exposures_file']).replace(f"exposures-{options.dst}",
+                                                                                          f"exposures-{options.dst}-original-{ymd}"))
     for existing in (patched['tiles_file'],
                      patched['exposures_file'],
                      patched['exposures_file'].replace('.fits', '.csv'),
