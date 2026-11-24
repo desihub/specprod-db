@@ -381,8 +381,8 @@ def parse_pgpass(hostname='specprod-db.desi.lbl.gov', username='desi_admin'):
     except FileNotFoundError:
         return None
     data = dict()
-    for l in lines:
-        d = l.strip().split(':')
+    for line in lines:
+        d = line.strip().split(':')
         if d[0] in data:
             data[d[0]][d[3]] = fmt.format(*d)
         else:

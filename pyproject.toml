@@ -55,8 +55,8 @@ script-files = ["bin/coeff_patch",
 "specprodDB.test" = ["t/*"]
 
 [tool.setuptools.packages.find]
-where = "py"
-exclude = ".github/*"
+where = ["py"]
+exclude = [".github/*"]
 
 [tool.setuptools.dynamic]
 version = {attr = "specprodDB.__version__"}

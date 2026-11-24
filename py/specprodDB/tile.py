@@ -53,7 +53,7 @@ def fiberassign_file(tileid):
     :class:`str`
         The path to the fiberassign file corresponding to tileid.
     """
-    global _fiberassign_cache
+    global _fiberassign_cache  # noqa: F824
     if tileid not in _fiberassign_cache:
         f = findfile('fiberassignsvn', tile=tileid, readonly=True)
         db.log.debug('Using tiles file = %s.', f)

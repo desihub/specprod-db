@@ -648,8 +648,8 @@ def main():
         close_db()
         return 1
     if options.add:
-        for l in loader:
-            l['use_upsert'] = True
+        for ld in loader:
+            ld['use_upsert'] = True
     #
     # Modifications for pre-generated files.
     #
@@ -692,16 +692,16 @@ def main():
     if options.load == 'exposures' and options.overwrite:
         load_versions(photometry_version, f"{redshift_type}/{redshift_version}",
                       release, specprod, tiles_version)
-    for l in loader:
-        tn = l['tcls'].__tablename__
-        loaded = dbSession.query(l['tcls']).count()
+    for ld in loader:
+        tn = ld['tcls'].__tablename__
+        loaded = dbSession.query(ld['tcls']).count()
         #
         # The targetphot stage adds to the existing photometry table.
         #
         if not options.add and loaded > 0 and options.load != 'targetphot':
             log.info("Loading appears to be complete on %s.", tn)
         else:
-            log.info("Loading %s from %s.", tn, str(l['filepaths']))
+            log.info("Loading %s from %s.", tn, str(ld['filepaths']))
             load_file(**l)
             log.info("Finished loading %s.", tn)
     if options.load == 'fiberassign':

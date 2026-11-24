@@ -48,7 +48,10 @@ class TestLoad(unittest.TestCase):
     def test_q3c_index(self, mock_log, mock_session, mock_text):
         """Test creation of q3c index.
         """
-        text = mock_text('CREATE INDEX IF NOT EXISTS ix_target_q3c_ang2ipix ON fuji.target (q3c_ang2ipix(tile_ra, tile_dec));\n    CLUSTER fuji.target USING ix_target_q3c_ang2ipix;\n    ANALYZE fuji.target;\n    ')
+        text = mock_text('CREATE INDEX IF NOT EXISTS ix_target_q3c_ang2ipix ON fuji.target ' +
+                         '(q3c_ang2ipix(tile_ra, tile_dec));\n    ' +
+                         'CLUSTER fuji.target USING ix_target_q3c_ang2ipix;\n    ' +
+                         'ANALYZE fuji.target;\n    ')
         q3c_index('fuji', 'target', ra='tile_ra')
         mock_session.execute.assert_called_once_with(text)
         mock_log().info.assert_has_calls([call("Creating q3c index on %s.%s.", 'fuji', 'target'),
