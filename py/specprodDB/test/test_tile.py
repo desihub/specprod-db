@@ -4,7 +4,7 @@
 """
 # import os
 import unittest
-from unittest.mock import patch, call
+from unittest.mock import patch  # , call
 from ..tile import get_options
 
 
